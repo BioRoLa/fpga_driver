@@ -382,8 +382,8 @@ void ModeFsm::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
                 case 0: // module_a
                 {
                     /* Publish feedback data from Motors */
-                    motor_fb_msg.mutable_module_a()->set_current_r(mod.rxdata_buffer_[0].position_); // phi R
-                    motor_fb_msg.mutable_module_a()->set_current_l(mod.rxdata_buffer_[1].position_); // phi L
+                    motor_fb_msg.mutable_module_a()->set_velocity_r(mod.rxdata_buffer_[0].velocity_); 
+                    motor_fb_msg.mutable_module_a()->set_velocity_l(mod.rxdata_buffer_[1].velocity_); 
                     Eigen::Vector2d phi_(mod.rxdata_buffer_[0].position_, mod.rxdata_buffer_[1].position_);
                     Eigen::Vector2d tb_ = phi2tb(phi_);
                     motor_fb_msg.mutable_module_a()->set_theta(tb_[0]);  // theta
@@ -396,8 +396,8 @@ void ModeFsm::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
                 case 1: // module_b
                 {
                     /* Publish feedback data from Motors */
-                    motor_fb_msg.mutable_module_b()->set_current_r(mod.rxdata_buffer_[0].position_); // phi R
-                    motor_fb_msg.mutable_module_b()->set_current_l(mod.rxdata_buffer_[1].position_); // phi L
+                    motor_fb_msg.mutable_module_b()->set_velocity_r(mod.rxdata_buffer_[0].velocity_); 
+                    motor_fb_msg.mutable_module_b()->set_velocity_l(mod.rxdata_buffer_[1].velocity_); 
                     Eigen::Vector2d phi_(mod.rxdata_buffer_[0].position_, mod.rxdata_buffer_[1].position_);
                     Eigen::Vector2d tb_ = phi2tb(phi_);
                     motor_fb_msg.mutable_module_b()->set_theta(tb_[0]);  // theta
@@ -410,8 +410,8 @@ void ModeFsm::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
                 case 2: // module_c
                 {
                     /* Publish feedback data from Motors */
-                    motor_fb_msg.mutable_module_c()->set_current_r(mod.rxdata_buffer_[0].position_); // phi R
-                    motor_fb_msg.mutable_module_c()->set_current_l(mod.rxdata_buffer_[1].position_); // phi L
+                    motor_fb_msg.mutable_module_c()->set_velocity_r(mod.rxdata_buffer_[0].velocity_); 
+                    motor_fb_msg.mutable_module_c()->set_velocity_l(mod.rxdata_buffer_[1].velocity_); 
                     Eigen::Vector2d phi_(mod.rxdata_buffer_[0].position_, mod.rxdata_buffer_[1].position_);
                     Eigen::Vector2d tb_ = phi2tb(phi_);
                     motor_fb_msg.mutable_module_c()->set_theta(tb_[0]);  // theta
@@ -424,8 +424,8 @@ void ModeFsm::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
                 case 3: // module_d
                 {
                     /* Publish feedback data from Motors */
-                    motor_fb_msg.mutable_module_d()->set_current_r(mod.rxdata_buffer_[0].position_); // phi R
-                    motor_fb_msg.mutable_module_d()->set_current_l(mod.rxdata_buffer_[1].position_); // phi L
+                    motor_fb_msg.mutable_module_d()->set_velocity_r(mod.rxdata_buffer_[0].velocity_); 
+                    motor_fb_msg.mutable_module_d()->set_velocity_l(mod.rxdata_buffer_[1].velocity_); 
                     Eigen::Vector2d phi_(mod.rxdata_buffer_[0].position_, mod.rxdata_buffer_[1].position_);
                     Eigen::Vector2d tb_ = phi2tb(phi_);
                     motor_fb_msg.mutable_module_d()->set_theta(tb_[0]);  // theta
@@ -443,8 +443,8 @@ void ModeFsm::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
                 case 0: // module_a
                 {
                     /* Publish feedback data from Motors */
-                    motor_fb_msg.mutable_module_a()->set_current_r(0); // phi R
-                    motor_fb_msg.mutable_module_a()->set_current_l(0); // phi L
+                    motor_fb_msg.mutable_module_a()->set_velocity_r(0); // phi R
+                    motor_fb_msg.mutable_module_a()->set_velocity_l(0); // phi L
                     motor_fb_msg.mutable_module_a()->set_theta(0);     // theta
                     motor_fb_msg.mutable_module_a()->set_beta(0);      // beta
                     motor_fb_msg.mutable_module_a()->set_torque_r(0); //torque R
@@ -455,8 +455,8 @@ void ModeFsm::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
                 case 1: // module_b
                 {
                     /* Publish feedback data from Motors */
-                    motor_fb_msg.mutable_module_b()->set_current_r(0); // phi R
-                    motor_fb_msg.mutable_module_b()->set_current_l(0); // phi L
+                    motor_fb_msg.mutable_module_b()->set_velocity_r(0); // phi R
+                    motor_fb_msg.mutable_module_b()->set_velocity_l(0); // phi L
                     motor_fb_msg.mutable_module_b()->set_theta(0);     // theta
                     motor_fb_msg.mutable_module_b()->set_beta(0);      // beta
                     motor_fb_msg.mutable_module_b()->set_torque_r(0); //torque R
@@ -467,8 +467,8 @@ void ModeFsm::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
                 case 2: // module_c
                 {
                     /* Publish feedback data from Motors */
-                    motor_fb_msg.mutable_module_c()->set_current_r(0); // phi R
-                    motor_fb_msg.mutable_module_c()->set_current_l(0); // phi L
+                    motor_fb_msg.mutable_module_c()->set_velocity_r(0); // phi R
+                    motor_fb_msg.mutable_module_c()->set_velocity_l(0); // phi L
                     motor_fb_msg.mutable_module_c()->set_theta(0);     // theta
                     motor_fb_msg.mutable_module_c()->set_beta(0);      // beta
                     motor_fb_msg.mutable_module_c()->set_torque_r(0); //torque R
@@ -479,8 +479,8 @@ void ModeFsm::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
                 case 3: // module_d
                 {
                     /* Publish feedback data from Motors */
-                    motor_fb_msg.mutable_module_d()->set_current_r(0); // phi R
-                    motor_fb_msg.mutable_module_d()->set_current_l(0); // phi L
+                    motor_fb_msg.mutable_module_d()->set_velocity_r(0); // phi R
+                    motor_fb_msg.mutable_module_d()->set_velocity_l(0); // phi L
                     motor_fb_msg.mutable_module_d()->set_theta(0);     // theta
                     motor_fb_msg.mutable_module_d()->set_beta(0);      // beta
                     motor_fb_msg.mutable_module_d()->set_torque_r(0); //torque R
