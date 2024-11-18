@@ -1,0 +1,198 @@
+# Data logging
+log_data: 1
+log_path: "/home/admin/quadruped/src/fpga_driver/log/sample_test.csv"
+
+# TCP node communication setup
+Master_IP: "192.168.0.107"
+Master_port: 9999
+Local_IP: "192.168.0.107"
+
+# Experiment scenario: "Robot" or "SingleModule"
+Scenario: "Robot"
+# Scenario: "SingleModule"
+
+# Command Frame Type: "theta_beta" or "phiR_phiL"
+# Command_type: "theta_beta"
+Command_type: "phiR_phiL"
+
+# Measure hall calibration offset
+# Set to 1 when measuring the offset value of each module
+Measure_offset: 0
+Hall_calibration_vel: 0.4
+Hall_calibration_tol: 0.05
+
+# Interrupt Setup, Triggered By FPGA IRQ
+# IRQ 0
+# Loop Period (type int) of the main loop, where controllers were implemented
+MainLoop_period_us: 1000
+# IRQ 1
+# Loop Period (type int) of the loop handling CAN transceiving, at least 1000 us
+CANLoop_period_us: 1000
+
+# CAN Bus timeout
+CAN_Timeout_us: 500
+
+# MOD A Bias represented in radian
+LF_Module:
+  Enable: 1
+  CAN_PORT: "MOD1CAN0"
+  # Impedance = [M_d, K_0, D_d] # default value
+  # Adaptive = [K_p, K_i, K_d] # default value
+  Impedance_x: [0.652, 30000, 400]
+  Impedance_y: [0.652, 30000, 400]
+  Adaptive_x: [30, 10, 20]
+  Adaptive_y: [30, 10, 20]
+  breakaway_friction: [0.44, 0.44]
+  breakaway_velocity: [0.01, 0.01]
+  coulumb_friction: [0.2, 0.2]
+  viscous_coeff: [0.3, 0.3]
+  Motor_R:
+    FW_Version: 3
+    CAN_ID: 1
+    Calibration_Bias: 0.035964
+    KP: 85
+    KI: 0
+    KD: 1.75
+    Torque_Feedfoward: 0
+  Motor_L:
+    FW_Version: 3
+    CAN_ID: 2
+    Calibration_Bias: 0.838424
+    KP: 85
+    KI: 0
+    KD: 1.75
+    Torque_Feedfoward: 0
+  
+  
+# MOD B
+RF_Module:
+  Enable: 1
+  CAN_PORT: "MOD1CAN1"
+  Impedance_x: [0.652, 30000, 400]
+  Impedance_y: [0.652, 30000, 400]
+  Adaptive_x: [30, 10, 20]
+  Adaptive_y: [30, 10, 20]
+  breakaway_friction: [0.50727871, 0.50727871]
+  breakaway_velocity: [0.01, 0.01]
+  coulumb_friction: [0.5072787, 0.5072787]
+  viscous_coeff: [0.01211775, 0.01211775]
+  Motor_R:
+    FW_Version: 3
+    CAN_ID: 1
+    Calibration_Bias: -0.87869
+    KP: 85
+    KI: 0
+    KD: 1.75
+    Torque_Feedfoward: 0
+  Motor_L:
+    FW_Version: 3
+    CAN_ID: 2
+    Calibration_Bias: -0.07335
+    KP: 85
+    KI: 0
+    KD: 1.75
+    Torque_Feedfoward: 0
+
+# MOD C
+RH_Module:
+  Enable: 1
+  CAN_PORT: "MOD2CAN0"
+  Impedance_x: [0.652, 30000, 400]
+  Impedance_y: [0.652, 30000, 400]
+  Adaptive_x: [30, 10, 20]
+  Adaptive_y: [30, 10, 20]
+  breakaway_friction: [0.44, 0.44]
+  breakaway_velocity: [0.01, 0.01]
+  coulumb_friction: [0.2, 0.2]
+  viscous_coeff: [0.3, 0.3]
+  Motor_R:
+    FW_Version: 3
+    CAN_ID: 1
+    Calibration_Bias: 0.021582
+    KP: 85
+    KI: 0
+    KD: 1.75
+    Torque_Feedfoward: 0
+  Motor_L:
+    FW_Version: 3
+    CAN_ID: 2
+    Calibration_Bias: 0.870063
+    KP: 85
+    KI: 0
+    KD: 1.75
+    Torque_Feedfoward: 0
+
+# MOD D
+LH_Module:
+  Enable: 1
+  CAN_PORT: "MOD2CAN1"
+  Impedance_x: [0.652, 30000, 400]
+  Impedance_y: [0.652, 30000, 400]
+  Adaptive_x: [30, 10, 20]
+  Adaptive_y: [30, 10, 20]
+  breakaway_friction: [0.44, 0.44]
+  breakaway_velocity: [0.01, 0.01]
+  coulumb_friction: [0.2, 0.2]
+  viscous_coeff: [0.3, 0.3]
+  Motor_R:
+    FW_Version: 3
+    CAN_ID: 1
+    Calibration_Bias: -0.86143
+    KP: 85
+    KI: 0
+    KD: 1.75
+    Torque_Feedfoward: 0
+  Motor_L:
+    FW_Version: 3
+    CAN_ID: 2
+    Calibration_Bias: 0.02158
+    KP: 85
+    KI: 0
+    KD: 1.75
+    Torque_Feedfoward: 0
+
+# ADD USED MODULE IN LIST
+Number_of_modules: 4
+Modules_list:
+  0: LF_Module
+  1: RF_Module
+  2: RH_Module
+  3: LH_Module
+
+Powerboard_Scaling_Factor:
+  - # 1 Power Battery
+    Current_Factor: 0.00991631707792460
+    Voltage_Factor: 0.013216521172
+  - # 2 CPU SBRIO, ORIN
+    Current_Factor: 0.00252211539099489
+    Voltage_Factor: 0.013184717564 
+  - # 3 SPARE 1
+    Current_Factor: 0.00253429871857981
+    Voltage_Factor: 0.013179732144
+  - # 4 SPARE 2
+    Current_Factor: 0.00261639240519919
+    Voltage_Factor: 0.013202809119
+  - # 5 Module 1
+    Current_Factor: 0.00259123591590584
+    Voltage_Factor: 0.013207462244
+  - # 6 Module 2
+    Current_Factor: 0.00258549349955540
+    Voltage_Factor: 0.013218091064
+  - # 7 Module 3
+    Current_Factor: 0.00258359558577896
+    Voltage_Factor: 0.013152769912
+  - # 8 Module 4
+    Current_Factor: 0.00258064472112894
+    Voltage_Factor: 0.013145054959
+  - # 9 Module 5
+    Current_Factor: 0.00258864769050496
+    Voltage_Factor: 0.013187199073
+  - # 10 Module 6
+    Current_Factor: 0.00258642289474003
+    Voltage_Factor: 0.013175387725
+  - # 11 Module 7
+    Current_Factor: 0.00258369194007044
+    Voltage_Factor: 0.013255058691
+  - # 12 Module 8
+    Current_Factor: 0.00258666541022275
+    Voltage_Factor: 0.013219184356
