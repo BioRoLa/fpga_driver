@@ -11,8 +11,13 @@
 #include <vector>
 #include <mutex>
 
-// #define CONFIG_PATH CONFIG_PATH
-// #define FPGA_PATH FPGA_PATH
+#ifndef CONFIG_PATH
+#define CONFIG_PATH "/home/tina997726/corgi_ws/fpga_driver/config/config.yaml"
+#endif
+
+#ifndef FPGA_PATH
+#define FPGA_PATH "/home/tina997726/corgi_ws/fpga_driver"
+#endif
 
 volatile sig_atomic_t sys_stop;
 void inthand(int signum);
