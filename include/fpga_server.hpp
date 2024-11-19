@@ -11,8 +11,8 @@
 #include <vector>
 #include <mutex>
 
-#define CONFIG_PATH "@CONFIG_PATH@"
-#define FPGA_PATH "@FPGA_PATH@"
+// #define CONFIG_PATH CONFIG_PATH
+// #define FPGA_PATH FPGA_PATH
 
 volatile sig_atomic_t sys_stop;
 void inthand(int signum);
