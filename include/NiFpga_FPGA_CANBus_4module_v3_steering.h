@@ -10,7 +10,6 @@
 #endif
 
 #include "NiFpga.h"
-
 /**
  * The filename of the FPGA bitfile.
  *
