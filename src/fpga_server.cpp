@@ -153,6 +153,7 @@ void Corgi::interruptHandler(core::Subscriber<power_msg::PowerCmdStamped>& cmd_p
         {
             if (irqsAsserted & NiFpga_Irq_0)
             {
+                mainLoop_(cmd_pb_sub_, state_pb_pub_, cmd_sub_, state_pub_);
                 // Acknowledge IRQ to begin DMA acquisition
                 NiFpga_MergeStatus(&fpga_.status_, NiFpga_AcknowledgeIrqs(fpga_.session_, irqsAsserted));
             }
