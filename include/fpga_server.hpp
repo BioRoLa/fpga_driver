@@ -11,18 +11,13 @@
 #include <vector>
 #include <mutex>
 
-// #include <iostream>
-// #include <cstdlib>
-// #include <ctime>
-// std::mutex mutex_;
-// void powerstatetest(power_msg::PowerStateStamped reply);
-// void inter_loop(core::Publisher<power_msg::PowerStateStamped>& power_pub);
-// void main_test(core::Publisher<power_msg::PowerStateStamped>& power_pub);
 #ifndef CONFIG_PATH
+// #define CONFIG_PATH "/home/admin/corgi_ws/fpga_driver/config/config.yaml"
 #define CONFIG_PATH "/home/tina997726/corgi_ws/fpga_driver/config/config.yaml"
 #endif
 
 #ifndef FPGA_PATH
+// #define FPGA_PATH "/home/admin/corgi_ws/fpga_driver"
 #define FPGA_PATH "/home/tina997726/corgi_ws/fpga_driver"
 #endif
 

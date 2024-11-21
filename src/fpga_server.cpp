@@ -184,9 +184,7 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
     power_msg::PowerStateStamped power_fb_msg;
     motor_msg::MotorStateStamped motor_fb_msg;
     fsm_.runFsm(motor_fb_msg, motor_cmd_data);
-    motor_message_updated = 0;
-    // update power msg
-    
+    motor_message_updated = 0;    
 
     HALL_CALIBRATED_ = fsm_.hall_calibrated;
 

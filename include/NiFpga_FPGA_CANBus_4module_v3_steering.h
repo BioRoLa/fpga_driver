@@ -18,7 +18,7 @@
  *    static const char* const Bitfile = "C:\\" NiFpga_FPGA_CANBus_4module_v3_steering_Bitfile;
  */
 #define NiFpga_FPGA_CANBus_4module_v3_steering_Bitfile "/home/tina997726/corgi_ws/fpga_driver/fpga_bitfile/NiFpga_FPGA_CANBus_4module_v3_steering.lvbitx"
-// #define NiFpga_FPGA_CANBus_IMU_4module_IRQ_Bitfile "/home/admin/quadruped/src/fpga_driver/fpga_bitfile/NiFpga_FPGA_CANBus_IMU_4module_IRQ_0530.lvbitx"
+// #define NiFpga_FPGA_CANBus_4module_v3_steering_Bitfile "/home/admin/corgi_ws/fpga_driver/fpga_bitfile/NiFpga_FPGA_CANBus_4module_v3_steering.lvbitx"
 
 /**
  * The signature of the FPGA bitfile.
