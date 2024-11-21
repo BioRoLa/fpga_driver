@@ -44,7 +44,7 @@ Install gRPC: https://grpc.io/docs/languages/cpp/quickstart/
 git clone https://github.com/Yatinghsu000627/fpga_driver.git
 cd fpga_driver
 mkdir build && cd build
-cmake .. -DCMAKE_PREFIX_PATH=$HOME/corgi_ws/install -DCMAKE_INSTALL_PREFIX=$HOME/corgi_ws/install
+$ cmake .. -DCMAKE_PREFIX_PATH=$HOME/corgi_ws/install -DCMAKE_INSTALL_PREFIX=$HOME/corgi_ws/install -DOPENSSL_ROOT_DIR=$HOME/corgi_ws/install/ssl
 make -j16
 ```
 

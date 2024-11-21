@@ -14,7 +14,7 @@ add_executable(fpga_driver  color.cpp
                             theta_error.cpp                        
 )
 find_package(yaml-cpp REQUIRED)
-target_link_libraries(fpga_driver yaml-cpp ${CURSES_LIBRARY} -lncurses ${CMAKE_DL_LIBS} ${_CORE_LIBRARIES} ${GRPC_PROTO_LIB})
+target_link_libraries(fpga_driver yaml-cpp::yaml-cpp ${CURSES_LIBRARY} -lncurses ${CMAKE_DL_LIBS} ${_CORE_LIBRARIES} ${GRPC_PROTO_LIB})
 
 find_package(Eigen3 REQUIRED)
 target_link_libraries(fpga_driver Eigen3::Eigen ${CURSES_LIBRARY} -lncurses ${CMAKE_DL_LIBS} ${_CORE_LIBRARIES} ${GRPC_PROTO_LIB})
