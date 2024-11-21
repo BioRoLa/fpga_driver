@@ -21,10 +21,10 @@ power_msg::PowerCmdStamped power_cmd_data;
 
 void power_data_cb(power_msg::PowerCmdStamped power_msg)
 {
-    mutex_.lock();
+    mutex_.unlock();
     fpga_message_updated = 1;
     power_cmd_data = power_msg;
-    mutex_.unlock();
+    mutex_.lock();
 }
 
 Corgi::Corgi()
@@ -185,6 +185,8 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
     motor_msg::MotorStateStamped motor_fb_msg;
     fsm_.runFsm(motor_fb_msg, motor_cmd_data);
     motor_message_updated = 0;
+    // update power msg
+    
 
     HALL_CALIBRATED_ = fsm_.hall_calibrated;
 
@@ -235,7 +237,7 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
         }
     }
     motor_fb_msg.mutable_header()->set_seq(seq);
-    mutex_.unlock();
+    
     state_pub_.publish(motor_fb_msg);
     state_pb_pub_.publish(power_fb_msg);
     logger(seq);
@@ -276,22 +278,21 @@ void Corgi::canLoop_()
 void Corgi::powerboardPack(power_msg::PowerStateStamped&power_dashboard_reply)
 {   
     
-    mutex_.lock();
+    mutex_.unlock();
     gettimeofday(&t_stamp, NULL);
-    auto power_digital_dashboard = power_dashboard_reply;
     power_dashboard_reply.mutable_header()->set_seq(seq);
     power_dashboard_reply.mutable_header()->mutable_stamp()->set_sec(t_stamp.tv_sec);
     power_dashboard_reply.mutable_header()->mutable_stamp()->set_usec(t_stamp.tv_usec);
 
-    power_digital_dashboard.set_digital(powerboard_state_.at(0));
-    power_digital_dashboard.set_signal(powerboard_state_.at(1));
-    power_digital_dashboard.set_power(powerboard_state_.at(2));
+    power_dashboard_reply.set_digital(powerboard_state_.at(0));
+    power_dashboard_reply.set_signal(powerboard_state_.at(1));
+    power_dashboard_reply.set_power(powerboard_state_.at(2));
     if (fsm_.hall_calibrated == true && NO_SWITCH_TIMEDOUT_ERROR_==true && NO_CAN_TIMEDOUT_ERROR_==true)
     {
-        power_digital_dashboard.set_clean(true);
+        power_dashboard_reply.set_clean(true);
     }
     else
-        power_digital_dashboard.set_clean(false);
+        power_dashboard_reply.set_clean(false);
 
     if (fsm_.workingMode_ == Mode::REST)
         power_dashboard_reply.set_robot_mode(power_msg::REST_MODE);
@@ -302,44 +303,43 @@ void Corgi::powerboardPack(power_msg::PowerStateStamped&power_dashboard_reply)
     else if (fsm_.workingMode_ == Mode::SET_ZERO)
         power_dashboard_reply.set_robot_mode(power_msg::SET_ZERO);
 
-    auto power_analog_dashboard = power_dashboard_reply;
-    power_analog_dashboard.set_v_0(fpga_.powerboard_V_list_[0]);
-    power_analog_dashboard.set_i_0(fpga_.powerboard_I_list_[0]);
+    power_dashboard_reply.set_v_0(fpga_.powerboard_V_list_[0]);
+    power_dashboard_reply.set_i_0(fpga_.powerboard_I_list_[0]);
 
-    power_analog_dashboard.set_v_1(fpga_.powerboard_V_list_[1]);
-    power_analog_dashboard.set_i_1(fpga_.powerboard_I_list_[1]);
+    power_dashboard_reply.set_v_1(fpga_.powerboard_V_list_[1]);
+    power_dashboard_reply.set_i_1(fpga_.powerboard_I_list_[1]);
 
-    power_analog_dashboard.set_v_2(fpga_.powerboard_V_list_[2]);
-    power_analog_dashboard.set_i_2(fpga_.powerboard_I_list_[2]);
+    power_dashboard_reply.set_v_2(fpga_.powerboard_V_list_[2]);
+    power_dashboard_reply.set_i_2(fpga_.powerboard_I_list_[2]);
 
-    power_analog_dashboard.set_v_3(fpga_.powerboard_V_list_[3]);
-    power_analog_dashboard.set_i_3(fpga_.powerboard_I_list_[3]);
+    power_dashboard_reply.set_v_3(fpga_.powerboard_V_list_[3]);
+    power_dashboard_reply.set_i_3(fpga_.powerboard_I_list_[3]);
 
-    power_analog_dashboard.set_v_4(fpga_.powerboard_V_list_[4]);
-    power_analog_dashboard.set_i_4(fpga_.powerboard_I_list_[4]);
+    power_dashboard_reply.set_v_4(fpga_.powerboard_V_list_[4]);
+    power_dashboard_reply.set_i_4(fpga_.powerboard_I_list_[4]);
 
-    power_analog_dashboard.set_v_5(fpga_.powerboard_V_list_[5]);
-    power_analog_dashboard.set_i_5(fpga_.powerboard_I_list_[5]);
+    power_dashboard_reply.set_v_5(fpga_.powerboard_V_list_[5]);
+    power_dashboard_reply.set_i_5(fpga_.powerboard_I_list_[5]);
 
-    power_analog_dashboard.set_v_6(fpga_.powerboard_V_list_[6]);
-    power_analog_dashboard.set_i_6(fpga_.powerboard_I_list_[6]);
+    power_dashboard_reply.set_v_6(fpga_.powerboard_V_list_[6]);
+    power_dashboard_reply.set_i_6(fpga_.powerboard_I_list_[6]);
 
-    power_analog_dashboard.set_v_7(fpga_.powerboard_V_list_[7]);
-    power_analog_dashboard.set_i_7(fpga_.powerboard_I_list_[7]);
+    power_dashboard_reply.set_v_7(fpga_.powerboard_V_list_[7]);
+    power_dashboard_reply.set_i_7(fpga_.powerboard_I_list_[7]);
 
-    power_analog_dashboard.set_v_8(fpga_.powerboard_V_list_[8]);
-    power_analog_dashboard.set_i_8(fpga_.powerboard_I_list_[8]);
+    power_dashboard_reply.set_v_8(fpga_.powerboard_V_list_[8]);
+    power_dashboard_reply.set_i_8(fpga_.powerboard_I_list_[8]);
 
-    power_analog_dashboard.set_v_9(fpga_.powerboard_V_list_[9]);
-    power_analog_dashboard.set_i_9(fpga_.powerboard_I_list_[9]);
+    power_dashboard_reply.set_v_9(fpga_.powerboard_V_list_[9]);
+    power_dashboard_reply.set_i_9(fpga_.powerboard_I_list_[9]);
 
-    power_analog_dashboard.set_v_10(fpga_.powerboard_V_list_[10]);
-    power_analog_dashboard.set_i_10(fpga_.powerboard_I_list_[10]);
+    power_dashboard_reply.set_v_10(fpga_.powerboard_V_list_[10]);
+    power_dashboard_reply.set_i_10(fpga_.powerboard_I_list_[10]);
 
-    power_analog_dashboard.set_v_11(fpga_.powerboard_V_list_[11]);
-    power_analog_dashboard.set_i_11(fpga_.powerboard_I_list_[11]);
+    power_dashboard_reply.set_v_11(fpga_.powerboard_V_list_[11]);
+    power_dashboard_reply.set_i_11(fpga_.powerboard_I_list_[11]);
 
-    mutex_.unlock();
+    mutex_.lock();
 }
 
 
@@ -461,7 +461,6 @@ int main(int argc, char* argv[])
     core::Subscriber<motor_msg::MotorCmdStamped>& motor_sub = nh.subscribe<motor_msg::MotorCmdStamped>("motor/command", 1000, motor_data_cb);
     corgi.interruptHandler(power_sub, power_pub, motor_sub, motor_pub);
 
-
     if (NiFpga_IsError(corgi.fpga_.status_))
     {
         std::cout << red << "[FPGA Server] Error! Exiting program. LabVIEW error code: " << corgi.fpga_.status_ << reset
@@ -481,4 +480,5 @@ void inthand(int signum)
 {
     sys_stop = 1;
 }
+
 
