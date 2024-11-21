@@ -21,10 +21,10 @@ power_msg::PowerCmdStamped power_cmd_data;
 
 void power_data_cb(power_msg::PowerCmdStamped power_msg)
 {
-    mutex_.unlock();
+    mutex_.lock();
     fpga_message_updated = 1;
     power_cmd_data = power_msg;
-    mutex_.lock();
+    mutex_.unlock();
 }
 
 Corgi::Corgi()
@@ -235,7 +235,7 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
         }
     }
     motor_fb_msg.mutable_header()->set_seq(seq);
-    
+    mutex_.unlock();
     state_pub_.publish(motor_fb_msg);
     state_pb_pub_.publish(power_fb_msg);
     logger(seq);
@@ -276,7 +276,7 @@ void Corgi::canLoop_()
 void Corgi::powerboardPack(power_msg::PowerStateStamped&power_dashboard_reply)
 {   
     
-    mutex_.unlock();
+    mutex_.lock();
     gettimeofday(&t_stamp, NULL);
     power_dashboard_reply.mutable_header()->set_seq(seq);
     power_dashboard_reply.mutable_header()->mutable_stamp()->set_sec(t_stamp.tv_sec);
@@ -337,7 +337,7 @@ void Corgi::powerboardPack(power_msg::PowerStateStamped&power_dashboard_reply)
     power_dashboard_reply.set_v_11(fpga_.powerboard_V_list_[11]);
     power_dashboard_reply.set_i_11(fpga_.powerboard_I_list_[11]);
 
-    mutex_.lock();
+    mutex_.unlock();
 }
 
 
