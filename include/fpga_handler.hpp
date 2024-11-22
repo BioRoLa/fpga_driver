@@ -34,6 +34,8 @@ public:
 
   NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32 r_CAN_id1_;
   NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32 r_CAN_id2_;
+  NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32 r_CAN_id1_FC_;
+  NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32 r_CAN_id2_FC_;
   NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayBool r_port_select_;
   NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayBoolSize r_port_select_size_;
   // tx buffer
@@ -56,6 +58,7 @@ public:
 
   // read write function
   void write_CAN_id_(uint32_t id1, uint32_t id2);
+  void write_CAN_id_fc_(uint32_t id1_fc, uint32_t id2_fc);
   void write_port_select_(const NiFpga_Bool *array);
 
   void write_tx_data_(const uint8_t *tx_arr1, const uint8_t *tx_arr2);

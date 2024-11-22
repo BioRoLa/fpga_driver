@@ -15,6 +15,9 @@ ModuleIO::ModuleIO(NiFpga_Status _status, NiFpga_Session _fpga_session, std::str
         r_CAN_id1_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod1CAN0ID1;
         r_CAN_id2_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod1CAN0ID2;
 
+        r_CAN_id1_FC_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod1CAN0ID1FC;
+        r_CAN_id2_FC_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod1CAN0ID2FC;
+
         r_port_select_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayBool_Mod1CAN0Select;
         r_port_select_size_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayBoolSize_Mod1CAN0Select;
 
@@ -40,6 +43,9 @@ ModuleIO::ModuleIO(NiFpga_Status _status, NiFpga_Session _fpga_session, std::str
     {
         r_CAN_id1_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod1CAN1ID1;
         r_CAN_id2_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod1CAN1ID2;
+
+        r_CAN_id1_FC_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod1CAN1ID1FC;
+        r_CAN_id2_FC_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod1CAN1ID2FC;
 
         r_port_select_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayBool_Mod1CAN1Select;
         r_port_select_size_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayBoolSize_Mod1CAN1Select;
@@ -67,6 +73,9 @@ ModuleIO::ModuleIO(NiFpga_Status _status, NiFpga_Session _fpga_session, std::str
         r_CAN_id1_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod2CAN0ID1;
         r_CAN_id2_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod2CAN0ID2;
 
+        r_CAN_id1_FC_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod2CAN0ID1FC;
+        r_CAN_id2_FC_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod2CAN0ID2FC;
+
         r_port_select_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayBool_Mod2CAN0Select;
         r_port_select_size_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayBoolSize_Mod2CAN0Select;
 
@@ -92,6 +101,9 @@ ModuleIO::ModuleIO(NiFpga_Status _status, NiFpga_Session _fpga_session, std::str
     {
         r_CAN_id1_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod2CAN1ID1;
         r_CAN_id2_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod2CAN1ID2;
+
+        r_CAN_id1_FC_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod2CAN1ID1FC;
+        r_CAN_id2_FC_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod2CAN1ID2FC;
 
         r_port_select_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayBool_Mod2CAN1Select;
         r_port_select_size_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayBoolSize_Mod2CAN1Select;
@@ -126,6 +138,13 @@ void ModuleIO::write_CAN_id_(uint32_t id1, uint32_t id2)
     NiFpga_MergeStatus(&status_, NiFpga_WriteU32(fpga_session_, r_CAN_id1_, id1));
     NiFpga_MergeStatus(&status_, NiFpga_WriteU32(fpga_session_, r_CAN_id2_, id2));
 }
+
+void ModuleIO::write_CAN_id_fc_(uint32_t id1_fc, uint32_t id2_fc)
+{
+    NiFpga_MergeStatus(&status_, NiFpga_WriteU32(fpga_session_, r_CAN_id1_FC_, id1_fc));
+    NiFpga_MergeStatus(&status_, NiFpga_WriteU32(fpga_session_, r_CAN_id2_FC_, id2_fc));
+}
+
 void ModuleIO::write_port_select_(const NiFpga_Bool *array)
 {
     NiFpga_MergeStatus(&status_, NiFpga_WriteArrayBool(fpga_session_, r_port_select_, array, r_port_select_size_));
@@ -191,7 +210,7 @@ NiFpga_Bool ModuleIO::read_rx_timeout_()
 void ModuleIO::CAN_setup(int timeout_us)
 {
     write_CAN_id_(motors_list_->at(0).CAN_ID_, motors_list_->at(1).CAN_ID_);
-
+    
     /* select two port to transceive */
     NiFpga_Bool _bool_arr[2] = {1, 1};
     write_port_select_(_bool_arr);
@@ -261,7 +280,7 @@ void ModuleIO::CAN_recieve_feedback(CAN_rxdata *rxdata_id1, CAN_rxdata *rxdata_i
     CAN_decode(rxmsg_id1, rxdata_id1);
     CAN_decode(rxmsg_id2, rxdata_id2);
 
-    // std::cout << "CAN_recieve_feedback" << std::endl;
+    std::cout << rxdata_id1->CAN_id_<< std::endl;
 
     rxdata_id1->position_ -= motorR_bias;
     rxdata_id2->position_ -= motorL_bias;
