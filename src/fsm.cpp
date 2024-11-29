@@ -334,8 +334,9 @@ bool ModeFsm::switchMode(Mode next_mode)
             success = true;
             break;
         }
-        else if (time_elapsed > 1)
+        else if (time_elapsed > 3)
         {
+            // time_elapsed > 1
             /* Timeout */
             success = false;
             break;
@@ -347,19 +348,19 @@ bool ModeFsm::switchMode(Mode next_mode)
         {
             if (modules_list_->at(i).enable_)
             {
+                // std::cout<< modules_list_->at(i).rxdata_buffer_[0].CAN_id_<< std::endl;
                 modules_list_->at(i).io_.CAN_set_mode(next_mode_switch);
 
-                modules_list_->at(i).io_.CAN_recieve_feedback(&modules_list_->at(i).rxdata_buffer_[0],
-                                                              &modules_list_->at(i).rxdata_buffer_[1]);
-
-                if (modules_list_->at(i).rxdata_buffer_[0].mode_ == next_mode_switch &&
-                    modules_list_->at(i).rxdata_buffer_[1].mode_ == next_mode_switch)
+                // modules_list_->at(i).io_.CAN_recieve_feedback(&modules_list_->at(i).rxdata_buffer_[0],
+                //                                               &modules_list_->at(i).rxdata_buffer_[1]);
+                important_message("here")
+                if (modules_list_->at(i).io_.read_CAN_success_())
                 {
                     mode_switched_cnt++;
                 }
             }
         }
-
+        
         time_elapsed += 0.01;
         usleep(1e4);
     }

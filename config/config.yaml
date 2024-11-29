@@ -1,7 +1,7 @@
 # Data logging
 log_data: 1
-log_path: "/home/tina997726/corgi_ws/fpga_driver/log/sample_test.csv"
-# log_path: "/home/admin/corgi_ws/fpga_driver/log/sample_test.csv"
+# log_path: "/home/tina997726/corgi_ws/fpga_driver/log/sample_test.csv"
+log_path: "/home/admin/corgi_ws/fpga_driver/log/sample_test.csv"
 
 # TCP node communication setup
 Master_IP: "192.168.0.107"
@@ -31,8 +31,8 @@ MainLoop_period_us: 1000
 CANLoop_period_us: 1000
 
 # CAN Bus timeout
-CAN_Timeout_us: 500
-
+CAN_Timeout_us: 1000
+# 1500
 # MOD A Bias represented in radian
 LF_Module:
   Enable: 1
@@ -67,7 +67,7 @@ LF_Module:
   
 # MOD B
 RF_Module:
-  Enable: 1
+  Enable: 0
   CAN_PORT: "MOD1CAN1"
   Impedance_x: [0.652, 30000, 400]
   Impedance_y: [0.652, 30000, 400]
@@ -96,7 +96,7 @@ RF_Module:
 
 # MOD C
 RH_Module:
-  Enable: 1
+  Enable: 0
   CAN_PORT: "MOD2CAN0"
   Impedance_x: [0.652, 30000, 400]
   Impedance_y: [0.652, 30000, 400]
@@ -125,7 +125,7 @@ RH_Module:
 
 # MOD D
 LH_Module:
-  Enable: 1
+  Enable: 0
   CAN_PORT: "MOD2CAN1"
   Impedance_x: [0.652, 30000, 400]
   Impedance_y: [0.652, 30000, 400]

@@ -14,6 +14,9 @@
 #include <vector>
 #include <ncurses.h>
 #include <curses.h>
+#include <iostream>
+#include <bitset>
+#include <string>
 #undef OK
 
 class ModuleIO

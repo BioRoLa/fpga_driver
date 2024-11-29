@@ -410,6 +410,7 @@ void InputPanel::commandDecode(string buf)
     else if (!switchFSM_success)
     {
         mvwprintw(win_, 0, 1, "Switch Mode Timeout !");
+        // mvwprintw(win_, 0, 1, std::to_string((int)(md_ptr_->rxdata_buffer_[0].mode_)).c_str());
     }
     else
     {

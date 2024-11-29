@@ -262,7 +262,8 @@ void Corgi::canLoop_()
 
             if (timeout_cnt_ < max_timeout_cnt_)
             {
-                write_CAN_id_fc_((int)fsm_.workingMode_,(int)fsm_.workingMode_);
+                // modules_list_[i].io_.write_CAN_id_fc_((int)fsm_.workingMode_, (int)fsm_.workingMode_);
+                // std::cout<< (int)fsm_.workingMode_ <<endl;
                 modules_list_[i].io_.CAN_send_command(modules_list_[i].txdata_buffer_[0], modules_list_[i].txdata_buffer_[1]);
                 NO_CAN_TIMEDOUT_ERROR_ = true;
             }

@@ -2,19 +2,21 @@
 #define __MODE_H
 
 #define _REST_MODE 0
-#define _SET_ZERO 1
-#define _HALL_CALIBRATE 2 
-#define _MOTOR_MODE 3
-#define _CONFIG_MODE 4
+#define _CONFIG_MODE 1
+#define _SET_ZERO 2
+#define _HALL_CALIBRATE 3
+#define _MOTOR_MODE 4
+
 
 
 enum class Mode
 {
     REST,
+    CONFIG,
     SET_ZERO,
     HALL_CALIBRATE,
     MOTOR,
-    CONFIG
+    
 };
 
 enum class Behavior
