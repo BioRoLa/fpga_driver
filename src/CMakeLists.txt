@@ -10,8 +10,7 @@ add_executable(fpga_driver  color.cpp
                             fsm.cpp
                             leg_module.cpp
                             NiFpga_FPGA_CANBus_4module_v3_steering.c
-                            NiFpga.c    
-                            theta_error.cpp                        
+                            NiFpga.c                       
 )
 find_package(yaml-cpp REQUIRED)
 target_link_libraries(fpga_driver yaml-cpp::yaml-cpp ${CURSES_LIBRARY} -lncurses ${CMAKE_DL_LIBS} ${_CORE_LIBRARIES} ${GRPC_PROTO_LIB})

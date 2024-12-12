@@ -1,6 +1,5 @@
 #include <fpga_handler.hpp>
 
-
 ModuleIO::ModuleIO(NiFpga_Status _status, NiFpga_Session _fpga_session, std::string CAN_port_,
                    std::vector<Motor> *motors_list)
 {
@@ -8,8 +7,7 @@ ModuleIO::ModuleIO(NiFpga_Status _status, NiFpga_Session _fpga_session, std::str
     fpga_session_ = _fpga_session;
     motors_list_ = motors_list;
 
-    CAN_timeout_us_ = 500;
-
+    CAN_timeout_us_ = 1000;
     if (CAN_port_ == "MOD1CAN0")
     {
         r_CAN_id1_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod1CAN0ID1;
@@ -145,6 +143,12 @@ void ModuleIO::write_CAN_id_fc_(uint32_t id1_fc, uint32_t id2_fc)
     NiFpga_MergeStatus(&status_, NiFpga_WriteU32(fpga_session_, r_CAN_id2_FC_, id2_fc));
 }
 
+void ModuleIO::read_CAN_id_fc_(uint32_t *fc1, uint32_t *fc2)
+{
+    NiFpga_MergeStatus(&status_, NiFpga_ReadU32(fpga_session_, r_CAN_id1_FC_, fc1));
+    NiFpga_MergeStatus(&status_, NiFpga_ReadU32(fpga_session_, r_CAN_id2_FC_, fc2));
+}
+
 void ModuleIO::write_port_select_(const NiFpga_Bool *array)
 {
     NiFpga_MergeStatus(&status_, NiFpga_WriteArrayBool(fpga_session_, r_port_select_, array, r_port_select_size_));
@@ -220,24 +224,7 @@ void ModuleIO::CAN_setup(int timeout_us)
 
 void ModuleIO::CAN_set_mode(Mode mode)
 {
-    uint8_t tx_msg[8] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFD};
-    switch (mode)
-    {
-    case Mode::SET_ZERO:
-        tx_msg[7] = 0xFE;
-        break;
-    case Mode::REST:
-        tx_msg[7] = 0xFD;
-        break;
-    case Mode::HALL_CALIBRATE:
-        tx_msg[7] = 0xFA;
-        break;
-    case Mode::MOTOR:
-        tx_msg[7] = 0xFC;
-        break;
-    }
-    write_tx_data_(tx_msg, tx_msg);
-    write_CAN_transmit_(1);
+    write_CAN_id_fc_((int)mode, (int)mode);
 }
 
 void ModuleIO::CAN_send_command(CAN_txdata txdata_id1, CAN_txdata txdata_id2)
@@ -259,16 +246,17 @@ void ModuleIO::CAN_send_command(CAN_txdata txdata_id1, CAN_txdata txdata_id2)
     txdata2_biased.KI_ = txdata_id2.KI_;
     txdata2_biased.KD_ = txdata_id2.KD_;
 
-    // std::cout << "R bias : " << motorR_bias << std::endl;
-    // std::cout << "L bias : " << motorL_bias << std::endl;
-
     CAN_encode(txmsg_id1, txdata1_biased);
     CAN_encode(txmsg_id2, txdata2_biased);
 
-    // CAN_encode(txmsg_id1, txdata_id1);
-    // CAN_encode(txmsg_id2, txdata_id2);
+    uint32_t fc1, fc2;
+    read_CAN_id_fc_(&fc1, &fc2);
+    
+    if (fc1 == 1) txmsg_id1[0] = 255;
+    if (fc2 == 1) txmsg_id2[0] = 255;
 
     write_tx_data_(txmsg_id1, txmsg_id2);
+    usleep(100);
     write_CAN_transmit_(1);
 }
 
@@ -280,14 +268,11 @@ void ModuleIO::CAN_recieve_feedback(CAN_rxdata *rxdata_id1, CAN_rxdata *rxdata_i
     CAN_decode(rxmsg_id1, rxdata_id1);
     CAN_decode(rxmsg_id2, rxdata_id2);
 
-    std::cout << rxdata_id1->CAN_id_<< std::endl;
-
     rxdata_id1->position_ -= motorR_bias;
     rxdata_id2->position_ -= motorL_bias;
 }
 
 // pack CAN data
-
 void ModuleIO::CAN_encode(uint8_t (&txmsg)[8], CAN_txdata txdata)
 {
     int pos_int, torque_int, KP_int, KI_int, KD_int;
@@ -309,47 +294,26 @@ void ModuleIO::CAN_encode(uint8_t (&txmsg)[8], CAN_txdata txdata)
 
 void ModuleIO::CAN_decode(uint8_t (&rxmsg)[8], CAN_rxdata *rxdata)
 {
-    int pos_raw, vel_raw, torque_raw, ver_raw, cal_raw, mode_raw;
+    int pos_raw, vel_raw, torque_raw, cal_raw, ver_raw, mode_raw;
 
-    // CAN bus ID, 8-bit
-    // Position Measurement, 16-bit
-    // Velocity Measurement, 12-bit
-    // Torque Estimated, 12-bit
-    // Version, 4-bit
-    // Hall Calibrate status, 4-bit
-    // Mode, 8-bit
-
-    rxdata->CAN_id_ = (int)rxmsg[0];
-    pos_raw = ((int)(rxmsg[1]) << 8) | rxmsg[2];
-    vel_raw = (((int)(rxmsg[3]) << 4)) | ((rxmsg[4] & 0xF0) >> 4);
-    torque_raw = ((((int)rxmsg[4]) & 0x0F) << 8) | rxmsg[5];
-    ver_raw = ((int)(rxmsg[6] >> 4));
+    pos_raw = ((int)(rxmsg[0]) << 8) | rxmsg[1];
+    vel_raw = ((int)(rxmsg[2]) << 8) | rxmsg[3];
+    torque_raw = ((int)(rxmsg[4]) << 8) | rxmsg[5];
     cal_raw = ((int)(rxmsg[6] & 0x0F));
-    mode_raw = ((int)(rxmsg[7]));
+    ver_raw = ((int)(rxmsg[7] >> 4));
+    mode_raw = ((int)(rxmsg[7]& 0x0F));
 
     rxdata->position_ = uint_to_float(pos_raw, P_FB_MIN, P_FB_MAX, 16);
-    rxdata->velocity_ = uint_to_float(vel_raw, V_MIN, V_MAX, 12);
-    rxdata->torque_ = uint_to_float(torque_raw, T_MIN, T_MAX, 12);
+    rxdata->velocity_ = uint_to_float(vel_raw, V_MIN, V_MAX, 16);
+    rxdata->torque_ = uint_to_float(torque_raw, T_MIN, T_MAX, 16);
     rxdata->version_ = ver_raw;
     rxdata->calibrate_finish_ = cal_raw;
     rxdata->mode_state_ = mode_raw;
 
-    if (mode_raw == _SET_ZERO)
-    {
-        rxdata->mode_ = Mode::SET_ZERO;
-    }
-    else if (mode_raw == _MOTOR_MODE)
-    {
-        rxdata->mode_ = Mode::MOTOR;
-    }
-    else if (mode_raw == _HALL_CALIBRATE)
-    {
-        rxdata->mode_ = Mode::HALL_CALIBRATE;
-    }
-    else if (mode_raw == _REST_MODE)
-    {
-        rxdata->mode_ = Mode::REST;
-    }
+    if (mode_raw == _SET_ZERO)rxdata->mode_ = Mode::SET_ZERO;
+    else if (mode_raw == _MOTOR_MODE)rxdata->mode_ = Mode::MOTOR;
+    else if (mode_raw == _HALL_CALIBRATE)rxdata->mode_ = Mode::HALL_CALIBRATE;
+    else if (mode_raw == _REST_MODE)rxdata->mode_ = Mode::REST;
 }
 
 int ModuleIO::float_to_uint(float x, float x_min, float x_max, int bits)
@@ -366,12 +330,6 @@ float ModuleIO::uint_to_float(int x_int, float x_min, float x_max, int bits)
     float span = x_max - x_min;
     float offset = x_min;
     return ((float)x_int) * span / ((float)((1 << bits) - 1)) + offset;
-}
-
-void ModuleIO::set_calibration_bias(double mtrR_bias, double mtrL_bias)
-{
-    motorR_bias = mtrR_bias;
-    motorL_bias = mtrL_bias;
 }
 
 FpgaHandler::FpgaHandler()
@@ -394,7 +352,6 @@ FpgaHandler::FpgaHandler()
     size_powerboard_data_ = NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorArrayU16Size_Data;
 
     w_vicon_trigger = NiFpga_FPGA_CANBus_4module_v3_steering_ControlBool_Conn9_2w;
-    w_orin_trigger = NiFpga_FPGA_CANBus_4module_v3_steering_ControlBool_Conn9_1w;
 
     for (int i = 0; i < 12; i++)
     {
@@ -440,11 +397,6 @@ void FpgaHandler::write_vicon_trigger(bool trigger)
     NiFpga_MergeStatus(&status_, NiFpga_WriteBool(session_, w_vicon_trigger, trigger));
 }
 
-void FpgaHandler::write_orin_trigger(bool trigger)
-{
-    NiFpga_MergeStatus(&status_, NiFpga_WriteBool(session_, w_orin_trigger, trigger));
-}
-
 void FpgaHandler::read_powerboard_data_()
 {
     uint16_t rx_arr[24];
@@ -453,14 +405,7 @@ void FpgaHandler::read_powerboard_data_()
 
     for (int i = 0; i < 24; i++)
     {
-        if (i % 2 == 0)
-        {
-            powerboard_I_list_[i / 2] = rx_arr[i] * powerboard_Ifactor[i / 2];
-            // printf("Ifactor = %f\n", powerboard_Ifactor[i / 2]);
-        }
-        if (i % 2 == 1)
-        {
-            powerboard_V_list_[(i - 1) / 2] = rx_arr[i] * powerboard_Vfactor[(i - 1) / 2];
-        }
+        if (i % 2 == 0)powerboard_I_list_[i / 2] = rx_arr[i] * powerboard_Ifactor[i / 2];
+        if (i % 2 == 1)powerboard_V_list_[(i - 1) / 2] = rx_arr[i] * powerboard_Vfactor[(i - 1) / 2];
     }
 }

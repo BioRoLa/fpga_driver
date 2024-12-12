@@ -90,7 +90,6 @@ private:
 class Console
 {
 public:
-  // Console(vector<LegModule>* mods_, std::vector<bool>* powerboard_state_, );
   Console()
   {
   }

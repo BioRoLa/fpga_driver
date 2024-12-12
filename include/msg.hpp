@@ -14,7 +14,6 @@ typedef struct Motor
     double ki_;
     double kd_;
     double torque_ff_;
-
     double calibration_bias;
 } Motor;
 

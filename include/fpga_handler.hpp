@@ -7,6 +7,7 @@
 #include "color.hpp"
 #include "msg.hpp"
 
+#include <unistd.h>
 #include <iostream>
 #include <functional>
 #include <signal.h>
@@ -14,6 +15,9 @@
 #include <vector>
 #include <ncurses.h>
 #include <curses.h>
+#include <iostream>
+#include <bitset>
+#include <string>
 #undef OK
 
 class ModuleIO
@@ -57,14 +61,15 @@ public:
   NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32 r_timeout_us_;
 
   // read write function
+  void write_CAN_transmit_(NiFpga_Bool value);
   void write_CAN_id_(uint32_t id1, uint32_t id2);
+  void write_port_select_(const NiFpga_Bool *array);  
   void write_CAN_id_fc_(uint32_t id1_fc, uint32_t id2_fc);
-  void write_port_select_(const NiFpga_Bool *array);
-
   void write_tx_data_(const uint8_t *tx_arr1, const uint8_t *tx_arr2);
+  
+  void read_CAN_id_fc_(uint32_t *fc1, uint32_t *fc2);
   void read_rx_data_(uint8_t *rx_arr1, uint8_t *rx_arr2);
 
-  void write_CAN_transmit_(NiFpga_Bool value);
   NiFpga_Bool read_CAN_complete_();
   NiFpga_Bool read_CAN_success_();
   int16_t read_CAN_complete_counter_();
@@ -81,7 +86,6 @@ public:
   void CAN_encode(uint8_t (&txmsg)[8], CAN_txdata txdata);
   void CAN_decode(uint8_t (&rxmsg)[8], CAN_rxdata *rxdata);
 
-  void set_calibration_bias(double mtrR_bias, double mtrL_bias);
   double motorR_bias;
   double motorL_bias;
 
@@ -116,7 +120,6 @@ public:
   void write_powerboard_(std::vector<bool> *powerboard_state_);
   
   void write_vicon_trigger(bool trigger);
-  void write_orin_trigger(bool trigger);
 
   void read_powerboard_data_();
 

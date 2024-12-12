@@ -1,17 +1,6 @@
-/*
- * FPGA Interface C API 19.0 header file.
- *
- * Copyright (c) 2019,
- * National Instruments Corporation.
- * All rights reserved.
- */
-
 #ifndef __NiFpga_h__
 #define __NiFpga_h__
 
-/*
- * Determine platform details.
- */
 #if defined(_M_IX86) \
  || defined(_M_X64) \
  || defined(_M_AMD64) \

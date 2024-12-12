@@ -262,6 +262,7 @@ static NiFpga_Status (NiFpga_CCall *NiFpga_readU32)(
 NiFpga_Status NiFpga_ReadU32(NiFpga_Session session,
                              uint32_t       indicator,
                              uint32_t*      value)
+                             
 {
    return NiFpga_readU32
         ? NiFpga_readU32(session, indicator, value)

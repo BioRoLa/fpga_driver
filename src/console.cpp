@@ -25,7 +25,6 @@ void Console::init(FpgaHandler *fpga, vector<LegModule> *mods_, std::vector<bool
     init_pair(CYAN_PAIR, COLOR_CYAN, COLOR_BLACK);
 
     frontend_rate_ = 3;
-    // InputPanel input_panel_(mdA_, mdB_, mdC_, mdD_, term_max_x_, term_max_y_);
     input_panel_.init(mods_, &if_resetPanel, term_max_x_, term_max_y_);
 
     input_panel_.main_mtx_ = mtx_ptr_;
@@ -49,18 +48,13 @@ void Console::refreshWindow()
     LegModule *lm_null = 0;
     Panel p_power_("[P] Power Board ", "power", lm_null, 1, 9, 60, 40, true);
     Panel p_cmain_("[F] FPGA Server ", "c_main", lm_null, 1, 1, 8, 40, true);
-
     Panel p_modA_("[A] LF_Module ", "module", modA_ptr_, 41, 1, (term_max_y_ - 2) / 2 - 1, 60, true);
     Panel p_modD_("[D] LH_Module ", "module", modD_ptr_, 41, (term_max_y_) / 2, (term_max_y_ - 2) / 2 - 1, 60, true);
     Panel p_modB_("[B] RF_Module ", "module", modB_ptr_, 101, 1, (term_max_y_ - 2) / 2 - 1, 60, true);
     Panel p_modC_("[C] RH_Module ", "module", modC_ptr_, 101, (term_max_y_) / 2, (term_max_y_ - 2) / 2 - 1, 60, true);
 
-    /* Panel p_debug_("[D] Debug Console ", "debug", lm_null, 1, (term_max_y_ - 1) - debug_cons_h, debug_cons_h - 2, 40,
-                   true); */
-
     p_power_.powerboard_state_ = powerboard_state_;
     p_cmain_.fsm_ = fsm_;
-    // refresh();
 
     while (1)
     {
@@ -72,8 +66,6 @@ void Console::refreshWindow()
         p_modB_.infoDisplay();
         p_modC_.infoDisplay();
         p_modD_.infoDisplay();
-        // p_cmain_.infoDisplay(Behavior::TCP_SLAVE, Mode::MOTOR, 1);
-
         cons_mtx_.unlock();
 
         usleep(0.1 * 1000 * 1000);
@@ -83,7 +75,6 @@ void Console::refreshWindow()
 void InputPanel::init(vector<LegModule> *mods_, bool *if_resetPanel, int term_max_x, int term_max_y)
 {
     win_ = newwin(3, term_max_x - 1, term_max_y - 3, 1);
-    // box(win_, 0, 0);
 
     modA_ptr_ = &mods_->at(0);
     modB_ptr_ = &mods_->at(1);
@@ -110,7 +101,6 @@ void InputPanel::inputHandler(WINDOW *win_, std::mutex &input_mutex)
             {
                 endwin();
                 std::cout << "Normal Mode" << std::endl;
-                // refresh();
                 refresh_flag = 0;
             }
             if (ch == 'E')
@@ -557,7 +547,7 @@ void Panel::infoDisplay(Behavior bhv, Mode fsm_mode)
         mvwprintw(win_, 3, 1, "[M] FSM Mode: HALL_CALIBRATE");
     else if (fsm_mode == Mode::MOTOR)
         mvwprintw(win_, 3, 1, "[M] FSM Mode:          MOTOR");
-    mvwprintw(win_, 5, 1, "[R] REST  [S] SET_ZERO [I] IMPEDANCE");
+    mvwprintw(win_, 5, 1, "[R] REST  [S] SET_ZERO ");
     mvwprintw(win_, 6, 1, "[M] MOTOR [H] HALL_CALIBRATE");
 
     wrefresh(win_);

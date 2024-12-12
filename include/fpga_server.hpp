@@ -78,7 +78,6 @@ class Corgi
                    core::Publisher<motor_msg::MotorStateStamped>& state_pub_);
 
     void canLoop_();
-
     void logger_init();
     void logger(int seq);
     double logbuf[100][134];

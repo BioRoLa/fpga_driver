@@ -1,13 +1,13 @@
 #ifndef __FSM_H
 #define __FSM_H
 
+#include <math.h>
 #include <vector>
 #include <fstream>
 #include <unistd.h>
 #include <Eigen/Dense>
 
 #include "leg_module.hpp"
-#include "theta_error.hpp"
 #include "case_enum.hpp"
 
 #include "Motor.pb.h"
@@ -47,5 +47,6 @@ public:
   bool switchMode(Mode next_mode);
   void publishMsg(motor_msg::MotorStateStamped &motor_fb_msg);
 };
+double theta_error(double start_theta, double goal_theta);
 
 #endif
