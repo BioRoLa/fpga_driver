@@ -12,7 +12,6 @@ MainLoop_period_us: 1000
 CANLoop_period_us: 1000
 # CAN Bus timeout
 CAN_Timeout_us: 1000
-<<<<<<< HEAD
 
 # Measure hall calibration offset
 # Set to 1 when measuring the offset value of each module
@@ -24,9 +23,6 @@ Hall_calibration_tol: 0.05
 Scenario: "Robot"
 # Scenario: "SingleModule"
 
-=======
-# 1500
->>>>>>> 8402645366b4fe92aef8ad10a2112812b90f87be
 # MOD A Bias represented in radian
 LF_Module:
   Enable: 1

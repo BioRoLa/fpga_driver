@@ -10,20 +10,8 @@
 #endif
 
 #include "NiFpga.h"
-<<<<<<< HEAD
-#define NiFpga_FPGA_CANBus_4module_v3_steering_Bitfile "/home/tina997726/corgi_ws/fpga_driver/fpga_bitfile/NiFpga_FPGA_CANBus_4module_v3_steering.lvbitx"
-// #define NiFpga_FPGA_CANBus_4module_v3_steering_Bitfile "/home/admin/corgi_ws/fpga_driver/fpga_bitfile/NiFpga_FPGA_CANBus_4module_v3_steering.lvbitx"
-=======
-/**
- * The filename of the FPGA bitfile.
- *
- * This is a #define to allow for string literal concatenation. For example:
- *
- *    static const char* const Bitfile = "C:\\" NiFpga_FPGA_CANBus_4module_v3_steering_Bitfile;
- */
 // #define NiFpga_FPGA_CANBus_4module_v3_steering_Bitfile "/home/tina997726/corgi_ws/fpga_driver/fpga_bitfile/NiFpga_FPGA_CANBus_4module_v3_steering.lvbitx"
 #define NiFpga_FPGA_CANBus_4module_v3_steering_Bitfile "/home/admin/corgi_ws/fpga_driver/fpga_bitfile/NiFpga_FPGA_CANBus_4module_v3_steering.lvbitx"
->>>>>>> 8402645366b4fe92aef8ad10a2112812b90f87be
 
 static const char* const NiFpga_FPGA_CANBus_4module_v3_steering_Signature = "935F14FF8253BA377DE0C1E3DE452DAF";
 
