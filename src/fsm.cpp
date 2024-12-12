@@ -344,6 +344,7 @@ bool ModeFsm::switchMode(Mode next_mode)
         }
         else if (time_elapsed > 3)
         {
+            // time_elapsed > 1
             /* Timeout */
             success = false;
             break;
@@ -354,6 +355,7 @@ bool ModeFsm::switchMode(Mode next_mode)
         {
             if (modules_list_->at(i).enable_)
             {
+<<<<<<< HEAD
                 modules_list_->at(i).io_.write_CAN_id_fc_((int)next_mode_switch, (int)next_mode_switch);
                 modules_list_->at(i).io_.write_CAN_transmit_(1);
                 modules_list_->at(i).io_.CAN_recieve_feedback(&modules_list_->at(i).rxdata_buffer_[0],
@@ -364,6 +366,15 @@ bool ModeFsm::switchMode(Mode next_mode)
                     || 
                     ((int)modules_list_->at(i).rxdata_buffer_[0].mode_ == (int)next_mode_switch
                     && (int)modules_list_->at(i).rxdata_buffer_[1].mode_ == (int)next_mode_switch))
+=======
+                // std::cout<< modules_list_->at(i).rxdata_buffer_[0].CAN_id_<< std::endl;
+                modules_list_->at(i).io_.CAN_set_mode(next_mode_switch);
+
+                // modules_list_->at(i).io_.CAN_recieve_feedback(&modules_list_->at(i).rxdata_buffer_[0],
+                //                                               &modules_list_->at(i).rxdata_buffer_[1]);
+                important_message("here")
+                if (modules_list_->at(i).io_.read_CAN_success_())
+>>>>>>> 8402645366b4fe92aef8ad10a2112812b90f87be
                 {
                     mode_switched_cnt++;
                 }

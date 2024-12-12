@@ -8,6 +8,10 @@ ModuleIO::ModuleIO(NiFpga_Status _status, NiFpga_Session _fpga_session, std::str
     motors_list_ = motors_list;
 
     CAN_timeout_us_ = 1000;
+<<<<<<< HEAD
+=======
+    // 1500
+>>>>>>> 8402645366b4fe92aef8ad10a2112812b90f87be
     if (CAN_port_ == "MOD1CAN0")
     {
         r_CAN_id1_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod1CAN0ID1;
@@ -224,7 +228,30 @@ void ModuleIO::CAN_setup(int timeout_us)
 
 void ModuleIO::CAN_set_mode(Mode mode)
 {
+<<<<<<< HEAD
     write_CAN_id_fc_((int)mode, (int)mode);
+=======
+    // uint8_t tx_msg[8] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFD};
+    // switch (mode)
+    // {
+    // case Mode::SET_ZERO:
+    //     tx_msg[7] = 0xFE;
+    //     break;
+    // case Mode::REST:
+    //     tx_msg[7] = 0xFD;
+    //     break;
+    // case Mode::HALL_CALIBRATE:
+    //     tx_msg[7] = 0xFA;
+    //     break;
+    // case Mode::MOTOR:
+    //     tx_msg[7] = 0xFC;
+    //     break;
+    // }
+    // write_tx_data_(tx_msg, tx_msg);
+
+    write_CAN_id_fc_((int)mode, (int)mode);
+    write_CAN_transmit_(1);
+>>>>>>> 8402645366b4fe92aef8ad10a2112812b90f87be
 }
 
 void ModuleIO::CAN_send_command(CAN_txdata txdata_id1, CAN_txdata txdata_id2)
@@ -268,8 +295,63 @@ void ModuleIO::CAN_recieve_feedback(CAN_rxdata *rxdata_id1, CAN_rxdata *rxdata_i
     CAN_decode(rxmsg_id1, rxdata_id1);
     CAN_decode(rxmsg_id2, rxdata_id2);
 
+<<<<<<< HEAD
+=======
+    // std::cout << rxdata_id1->CAN_id_<< std::endl;
+
+>>>>>>> 8402645366b4fe92aef8ad10a2112812b90f87be
     rxdata_id1->position_ -= motorR_bias;
     rxdata_id2->position_ -= motorL_bias;
+
+    std::bitset<8> binary_representation_1(rxdata_id1->CAN_id_);
+    std::string binary_str_1 = binary_representation_1.to_string();
+    std::string extracted_bits_1 = binary_str_1.substr(1, 3);
+    int extracted_value_1 = std::stoi(extracted_bits_1, nullptr, 2);
+    
+    switch (extracted_value_1) {
+        case _REST_MODE:
+            rxdata_id1->mode_ = Mode::REST;
+            break;
+        case _CONFIG_MODE: 
+            rxdata_id1->mode_ = Mode::CONFIG;
+            break;
+        case _SET_ZERO: 
+            rxdata_id1->mode_ = Mode::SET_ZERO;
+            break;
+        case _HALL_CALIBRATE: 
+            rxdata_id1->mode_ = Mode::HALL_CALIBRATE;
+            break;
+        case _MOTOR_MODE: 
+            rxdata_id1->mode_ = Mode::MOTOR;
+            break;
+    }
+
+    std::bitset<8> binary_representation_2(rxdata_id2->CAN_id_);
+    std::string binary_str_2 = binary_representation_2.to_string();
+    std::string extracted_bits_2 = binary_str_2.substr(1, 3);
+    int extracted_value_2 = std::stoi(extracted_bits_2, nullptr, 2);
+
+    switch (extracted_value_2) {
+        case _REST_MODE:
+            rxdata_id2->mode_ = Mode::REST;
+            break;
+        case _CONFIG_MODE: 
+            rxdata_id2->mode_ = Mode::CONFIG;
+            break;
+        case _SET_ZERO: 
+            rxdata_id2->mode_ = Mode::SET_ZERO;
+            break;
+        case _HALL_CALIBRATE: 
+            rxdata_id2->mode_ = Mode::HALL_CALIBRATE;
+            break;
+        case _MOTOR_MODE: 
+            rxdata_id2->mode_ = Mode::MOTOR;
+            break;
+    }
+    // rxdata_id1->CAN_id_ = extracted_value_1;
+    // rxdata_id2->CAN_id_ = extracted_value_1;
+    
+
 }
 
 // pack CAN data
