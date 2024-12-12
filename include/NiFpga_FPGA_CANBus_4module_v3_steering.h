@@ -10,8 +10,8 @@
 #endif
 
 #include "NiFpga.h"
-// #define NiFpga_FPGA_CANBus_4module_v3_steering_Bitfile "/home/tina997726/corgi_ws/fpga_driver/fpga_bitfile/NiFpga_FPGA_CANBus_4module_v3_steering.lvbitx"
-#define NiFpga_FPGA_CANBus_4module_v3_steering_Bitfile "/home/admin/corgi_ws/fpga_driver/fpga_bitfile/NiFpga_FPGA_CANBus_4module_v3_steering.lvbitx"
+#define NiFpga_FPGA_CANBus_4module_v3_steering_Bitfile "/home/tina997726/corgi_ws/fpga_driver/fpga_bitfile/NiFpga_FPGA_CANBus_4module_v3_steering.lvbitx"
+// #define NiFpga_FPGA_CANBus_4module_v3_steering_Bitfile "/home/admin/corgi_ws/fpga_driver/fpga_bitfile/NiFpga_FPGA_CANBus_4module_v3_steering.lvbitx"
 
 static const char* const NiFpga_FPGA_CANBus_4module_v3_steering_Signature = "935F14FF8253BA377DE0C1E3DE452DAF";
 

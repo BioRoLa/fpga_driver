@@ -12,13 +12,13 @@
 #include <mutex>
 
 #ifndef CONFIG_PATH
-#define CONFIG_PATH "/home/admin/corgi_ws/fpga_driver/config/config.yaml"
-// #define CONFIG_PATH "/home/tina997726/corgi_ws/fpga_driver/config/config.yaml"
+// #define CONFIG_PATH "/home/admin/corgi_ws/fpga_driver/config/config.yaml"
+#define CONFIG_PATH "/home/tina997726/corgi_ws/fpga_driver/config/config.yaml"
 #endif
 
 #ifndef FPGA_PATH
-#define FPGA_PATH "/home/admin/corgi_ws/fpga_driver"
-// #define FPGA_PATH "/home/tina997726/corgi_ws/fpga_driver"
+// #define FPGA_PATH "/home/admin/corgi_ws/fpga_driver"
+#define FPGA_PATH "/home/tina997726/corgi_ws/fpga_driver"
 #endif
 
 volatile sig_atomic_t sys_stop;
