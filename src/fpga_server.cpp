@@ -60,8 +60,6 @@ Corgi::Corgi()
 
     fpga_.setIrqPeriod(main_irq_period_us_, can_irq_period_us_);
     fpga_.write_vicon_trigger(false);
-
-    MSG_Stream.open(string(FPGA_PATH) + "/log/log.txt");
 }
 
 void Corgi::load_config_()

@@ -20,8 +20,6 @@ include_directories(${CMAKE_PREFIX_PATH}/include/eigen)
 
 set(HOME_DIR $ENV{HOME})
 add_definitions(-DCONFIG_PATH=\"${HOME_DIR}/corgi_ws/fpga_driver/config/config.yaml\")
-add_definitions(-DFPGA_PATH=\"${HOME_DIR}/corgi_ws/fpga_driver\")
-
 add_subdirectory(src)
 
 
