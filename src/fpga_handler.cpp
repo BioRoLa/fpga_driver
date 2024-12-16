@@ -276,7 +276,7 @@ void ModuleIO::CAN_recieve_feedback(CAN_rxdata *rxdata_id1, CAN_rxdata *rxdata_i
 void ModuleIO::CAN_encode(uint8_t (&txmsg)[8], CAN_txdata txdata)
 {
     int pos_int, torque_int, KP_int, KI_int, KD_int;
-    pos_int = float_to_uint(txdata.position_, P_CMD_MIN, P_CMD_MAX, 16);
+    pos_int = float_to_uint(-txdata.position_, P_CMD_MIN, P_CMD_MAX, 16);
     KP_int = float_to_uint(txdata.KP_, KP_MIN, KP_MAX, 12);
     KI_int = float_to_uint(txdata.KI_, KI_MIN, KI_MAX, 12);
     KD_int = float_to_uint(txdata.KD_, KD_MIN, KD_MAX, 12);
@@ -303,7 +303,7 @@ void ModuleIO::CAN_decode(uint8_t (&rxmsg)[8], CAN_rxdata *rxdata)
     ver_raw = ((int)(rxmsg[7] >> 4));
     mode_raw = ((int)(rxmsg[7]& 0x0F));
 
-    rxdata->position_ = uint_to_float(pos_raw, P_FB_MIN, P_FB_MAX, 16);
+    rxdata->position_ = -uint_to_float(pos_raw, P_FB_MIN, P_FB_MAX, 16);
     rxdata->velocity_ = uint_to_float(vel_raw, V_MIN, V_MAX, 16);
     rxdata->torque_ = uint_to_float(torque_raw, T_MIN, T_MAX, 16);
     rxdata->version_ = ver_raw;
