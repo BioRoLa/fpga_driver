@@ -409,3 +409,38 @@ void FpgaHandler::read_powerboard_data_()
         if (i % 2 == 1)powerboard_V_list_[(i - 1) / 2] = rx_arr[i] * powerboard_Vfactor[(i - 1) / 2];
     }
 }
+
+// steering functions
+void FpgaHandler::switch_steering(bool steering)
+{
+    NiFpga_MergeStatus(&status_, NiFpga_WriteBool(session_, enable_btn_, steering));
+}
+
+NiFpga_Bool FpgaHandler::read_steer_hall(){
+    //default = 1 (not in the range)
+    NiFpga_Bool steerhall = 0;
+    NiFpga_MergeStatus(&status_, NiFpga_ReadBool(session_, hall, &steerhall));
+    return steerhall;
+}
+
+int32_t FpgaHandler::read_steer_encoder()
+{   
+    int32_t position = 0;
+    NiFpga_MergeStatus(&status_, NiFpga_ReadI32(session_, encoder, &position));
+    return position;
+}
+
+void FpgaHandler::write_steer_vol(uint16_t vol)
+{
+    NiFpga_MergeStatus(&status_, NiFpga_WriteU16(session_, voltage, vol));
+}
+
+void FpgaHandler::switch_steer_dir(bool direction)
+{
+    // default 0 = right turn
+    // 1 = left turn
+    NiFpga_MergeStatus(&status_, NiFpga_WriteBool(session_, dir, direction));
+}
+
+
+

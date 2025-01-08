@@ -12,6 +12,7 @@
 
 #include "Motor.pb.h"
 #include "Power.pb.h"
+#include "Steering.pb.h"
 
 
 class ModeFsm
@@ -48,5 +49,6 @@ public:
   void publishMsg(motor_msg::MotorStateStamped &motor_fb_msg);
 };
 double theta_error(double start_theta, double goal_theta);
+
 
 #endif

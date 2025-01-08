@@ -60,24 +60,41 @@ class Corgi
     bool stop_;
     bool vicon_trigger_;
 
+    bool Steer_Cali;
+
     void interruptHandler(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
                           core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
                           core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
-                          core::Publisher<motor_msg::MotorStateStamped>& state_pub_);
+                          core::Publisher<motor_msg::MotorStateStamped>& state_pub_,
+                          core::Subscriber<steering_msg::SteeringCmdStamped>& steer_sub,
+                          core::Publisher<steering_msg::SteeringStateStamped>& steer_pub);
 
     void powerboardPack(power_msg::PowerStateStamped &power_fb_msg);
-
+    void steeringPack(steering_msg::SteeringStateStamped &steer_fb_msg);
     void mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
                    core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
                    core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
-                   core::Publisher<motor_msg::MotorStateStamped>& state_pub_);
+                   core::Publisher<motor_msg::MotorStateStamped>& state_pub_,
+                   core::Subscriber<steering_msg::SteeringCmdStamped>& steer_sub,
+                   core::Publisher<steering_msg::SteeringStateStamped>& steer_pub);
 
     void canLoop_();
     void logger_init();
     void logger(int seq);
     double logbuf[100][134];
+    void steering_calibration();
 
     int log_data;
     std::string log_path;
     std::ofstream log_stream;
+    NiFpga_Bool complete;
+    int32_t steering_cali_state;
+    bool steering_state_complete;
+    uint16_t voltage;
+    int32_t steer_position;
+    int32_t r_hall;
+    int32_t l_hall;
+    int32_t zero_offset;
+    double steer_current_angle;
+    uint16_t steering_state;
 };

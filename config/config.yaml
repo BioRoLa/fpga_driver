@@ -16,8 +16,8 @@ CAN_Timeout_us: 1000
 # Measure hall calibration offset
 # Set to 1 when measuring the offset value of each module
 Measure_offset: 0
-Hall_calibration_vel: 0.4
-Hall_calibration_tol: 0.05
+Hall_calibration_vel: 0.2
+Hall_calibration_tol: 0.005
 
 # Experiment scenario: "Robot" or "SingleModule"
 Scenario: "Robot"
@@ -30,7 +30,7 @@ LF_Module:
   Motor_R:
     FW_Version: 3
     CAN_ID: 1
-    Calibration_Bias: 0.035964
+    Calibration_Bias: 0.021583
     KP: 85
     KI: 0
     KD: 1.75
@@ -38,7 +38,7 @@ LF_Module:
   Motor_L:
     FW_Version: 3
     CAN_ID: 2
-    Calibration_Bias: 0.838424
+    Calibration_Bias: -0.85281
     KP: 85
     KI: 0
     KD: 1.75
@@ -46,12 +46,12 @@ LF_Module:
 
 # MOD B
 RF_Module:
-  Enable: 0
+  Enable: 1
   CAN_PORT: "MOD1CAN1"
   Motor_R:
     FW_Version: 3
     CAN_ID: 1
-    Calibration_Bias: -0.87869
+    Calibration_Bias: 0.878694
     KP: 85
     KI: 0
     KD: 1.75
@@ -59,7 +59,7 @@ RF_Module:
   Motor_L:
     FW_Version: 3
     CAN_ID: 2
-    Calibration_Bias: -0.07335
+    Calibration_Bias: -0.021583
     KP: 85
     KI: 0
     KD: 1.75
@@ -67,12 +67,12 @@ RF_Module:
 
 # MOD C
 RH_Module:
-  Enable: 0
+  Enable: 1
   CAN_PORT: "MOD2CAN0"
   Motor_R:
     FW_Version: 3
     CAN_ID: 1
-    Calibration_Bias: 0.021582
+    Calibration_Bias: 0.021583
     KP: 85
     KI: 0
     KD: 1.75
@@ -80,7 +80,7 @@ RH_Module:
   Motor_L:
     FW_Version: 3
     CAN_ID: 2
-    Calibration_Bias: 0.870063
+    Calibration_Bias: -0.85856
     KP: 85
     KI: 0
     KD: 1.75
@@ -88,12 +88,12 @@ RH_Module:
 
 # MOD D
 LH_Module:
-  Enable: 0
+  Enable: 1
   CAN_PORT: "MOD2CAN1"
   Motor_R:
     FW_Version: 3
     CAN_ID: 1
-    Calibration_Bias: -0.86143
+    Calibration_Bias: 0.855688
     KP: 85
     KI: 0
     KD: 1.75
@@ -101,7 +101,7 @@ LH_Module:
   Motor_L:
     FW_Version: 3
     CAN_ID: 2
-    Calibration_Bias: 0.02158
+    Calibration_Bias: -0.021583
     KP: 85
     KI: 0
     KD: 1.75

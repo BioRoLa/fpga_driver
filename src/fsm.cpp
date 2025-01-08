@@ -27,6 +27,7 @@ double theta_error(double start_theta, double goal_theta)
     return theta_err;
 }
 
+
 void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg::MotorCmdStamped& motor_cmd_msg)
 {
     // position = P_CMD_MAX is to make sure the data received from CONFIG function code is the default one
@@ -146,11 +147,11 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
 
                             cal_command[i][0] = - modules_list_->at(i).linkR_bias;
                             modules_list_->at(i).txdata_buffer_[0].position_ = - modules_list_->at(i).linkR_bias;
-                            cal_dir_[i][0] = -1;
+                            cal_dir_[i][0] = 1;
 
                             cal_command[i][1] = - modules_list_->at(i).linkL_bias;
                             modules_list_->at(i).txdata_buffer_[1].position_ = - modules_list_->at(i).linkL_bias;
-                            cal_dir_[i][1] = 1;
+                            cal_dir_[i][1] = -1;
                         }
                     }
                     hall_calibrate_status++;

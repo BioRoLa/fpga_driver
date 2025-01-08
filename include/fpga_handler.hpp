@@ -121,6 +121,20 @@ public:
   
   void write_vicon_trigger(bool trigger);
 
+  // steering
+  NiFpga_FPGA_CANBus_4module_v3_steering_ControlBool enable_btn_;
+  NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorBool hall;
+  NiFpga_FPGA_CANBus_4module_v3_steering_ControlU16 voltage;
+  NiFpga_FPGA_CANBus_4module_v3_steering_ControlBool dir;
+  NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorI32 encoder;
+  void switch_steering(bool steering);
+  NiFpga_Bool read_steer_hall();
+  int32_t read_steer_encoder();
+  
+  
+  void write_steer_vol(uint16_t vol);
+  void switch_steer_dir(bool direction);
+
   void read_powerboard_data_();
 
   double powerboard_Ifactor[12];
