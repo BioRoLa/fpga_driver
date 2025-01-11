@@ -7,8 +7,8 @@ volatile int steer_message_updated = 0; //steering
 
 std::ofstream term;
 std::mutex mutex_;
-motor_msg::MotorCmdStamped motor_cmd_data;
 
+motor_msg::MotorCmdStamped motor_cmd_data;
 void motor_data_cb(motor_msg::MotorCmdStamped motor_msg)
 {
     mutex_.lock();
@@ -18,7 +18,6 @@ void motor_data_cb(motor_msg::MotorCmdStamped motor_msg)
 }
 
 power_msg::PowerCmdStamped power_cmd_data;
-
 void power_data_cb(power_msg::PowerCmdStamped power_msg)
 {
     mutex_.lock();
@@ -28,7 +27,6 @@ void power_data_cb(power_msg::PowerCmdStamped power_msg)
 }
 
 steering_msg::SteeringCmdStamped steering_cmd_data;
-
 void steer_data_cb(steering_msg::SteeringCmdStamped steer_msg)
 {
     mutex_.lock();
@@ -53,6 +51,7 @@ Corgi::Corgi()
     NO_CAN_TIMEDOUT_ERROR_ = true;
     NO_SWITCH_TIMEDOUT_ERROR_ = true;
     HALL_CALIBRATED_ = false;
+
     Steer_Cali = false;
     steering_cali_state = 0;
     steering_state_complete = false;
@@ -237,16 +236,8 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
             fpga_.write_vicon_trigger(power_cmd_data.trigger());
             vicon_trigger_ = power_cmd_data.trigger();
 
-            if (power_cmd_data.robot_mode() == (int)Mode::MOTOR && fsm_.workingMode_ != Mode::MOTOR)fsm_.switchMode(Mode::MOTOR);
-            else if (power_cmd_data.robot_mode() == (int)Mode::HALL_CALIBRATE && fsm_.workingMode_ != Mode::HALL_CALIBRATE && fsm_.workingMode_ != Mode::MOTOR)fsm_.switchMode(Mode::HALL_CALIBRATE);
-            else if (power_cmd_data.robot_mode() == (int)Mode::SET_ZERO && fsm_.workingMode_ != Mode::SET_ZERO)fsm_.switchMode(Mode::SET_ZERO);
-            else if (power_cmd_data.robot_mode() == (int)Mode::CONFIG && fsm_.workingMode_ != Mode::CONFIG)fsm_.switchMode(Mode::CONFIG);
-            else if (power_cmd_data.robot_mode() == (int)Mode::REST && fsm_.workingMode_ != Mode::REST)fsm_.switchMode(Mode::REST);
-            fpga_message_updated = 0;
-        }
-        if (steer_message_updated)
-        {   
-            if (steering_cmd_data.calibration()==true && steering_cali_state<3){
+            if (power_cmd_data.steering_cali()==true && steering_cali_state<3)
+            {   
                 steering_state_complete = false;
                 Steer_Cali = false;
                 fpga_.switch_steering(true);
@@ -303,16 +294,25 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
                     }                    
                     break;
                 }
-
             }
-            else if (Steer_Cali = true && steering_cmd_data.voltage()!=0)
+
+            if (power_cmd_data.robot_mode() == (int)Mode::MOTOR && fsm_.workingMode_ != Mode::MOTOR)fsm_.switchMode(Mode::MOTOR);
+            else if (power_cmd_data.robot_mode() == (int)Mode::HALL_CALIBRATE && fsm_.workingMode_ != Mode::HALL_CALIBRATE && fsm_.workingMode_ != Mode::MOTOR)fsm_.switchMode(Mode::HALL_CALIBRATE);
+            else if (power_cmd_data.robot_mode() == (int)Mode::SET_ZERO && fsm_.workingMode_ != Mode::SET_ZERO)fsm_.switchMode(Mode::SET_ZERO);
+            else if (power_cmd_data.robot_mode() == (int)Mode::CONFIG && fsm_.workingMode_ != Mode::CONFIG)fsm_.switchMode(Mode::CONFIG);
+            else if (power_cmd_data.robot_mode() == (int)Mode::REST && fsm_.workingMode_ != Mode::REST)fsm_.switchMode(Mode::REST);
+            fpga_message_updated = 0;
+        }
+        if (steer_message_updated)
+        {   
+            if (Steer_Cali = true && steering_cmd_data.voltage()!=0)
             {   
                 steering_cali_state = 0;
                 // angle > max -> recali
                 fpga_.switch_steering(true);
                 steering_state_complete = false;
                 voltage = steering_cmd_data.voltage();
-                if ((int32_t)steering_cmd_data.angle()*512+zero_offset >r_hall || (int32_t)steering_cmd_data.angle()*512+zero_offset< l_hall){
+                if ((int32_t)steering_cmd_data.angle()*2048+zero_offset >r_hall || (int32_t)steering_cmd_data.angle()*512+zero_offset< l_hall){
                     fpga_.switch_steering(false);
                     voltage = 0;
                     fpga_.write_steer_vol(voltage);
@@ -345,12 +345,14 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
                 }      
 
             }
+            steer_message_updated = 0;
         }
     }
     motor_fb_msg.mutable_header()->set_seq(seq);
     mutex_.unlock();
     state_pub_.publish(motor_fb_msg);
     state_pb_pub_.publish(power_fb_msg);
+    steer_pub_.publish(steer_fb_msg);
     logger(seq);
     seq++;
 }
@@ -567,8 +569,10 @@ int main(int argc, char* argv[])
     core::Publisher<motor_msg::MotorStateStamped>& motor_pub = nh.advertise<motor_msg::MotorStateStamped>("motor/state");
     core::Subscriber<motor_msg::MotorCmdStamped>& motor_sub = nh.subscribe<motor_msg::MotorCmdStamped>("motor/command", 1000, motor_data_cb);
 
-    core::Subscriber<steering_msg::SteeringCmdStamped>& steer_sub = nh.subscribe<steering_msg::SteeringCmdStamped>("steer/command", 1000, steer_data_cb);
     core::Publisher<steering_msg::SteeringStateStamped>& steer_pub = nh.advertise<steering_msg::SteeringStateStamped>("steer/state");
+    core::Subscriber<steering_msg::SteeringCmdStamped>& steer_sub = nh.subscribe<steering_msg::SteeringCmdStamped>("steer/command", 1000, steer_data_cb);
+
+    
     corgi.interruptHandler(power_sub, power_pub, motor_sub, motor_pub, steer_sub, steer_pub);
 
     if (NiFpga_IsError(corgi.fpga_.status_)) std::cout << red << "[FPGA Server] Error! Exiting program. LabVIEW error code: " << corgi.fpga_.status_ << reset << std::endl;
