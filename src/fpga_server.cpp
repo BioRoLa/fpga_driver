@@ -54,7 +54,7 @@ Corgi::Corgi()
 
     Steer_Cali = false;
     steering_cali_state = 0;
-    steering_state_complete = false;
+    steering_state_complete = 0;
     voltage = 4000;
     max_timeout_cnt_ = 100;
     steer_position = 0;
@@ -62,7 +62,7 @@ Corgi::Corgi()
     l_hall = 0;
     zero_offset = 0;
     steer_current_angle = 0.00;
-    steering_state = 3;
+    steering_state = false;
 
     powerboard_state_.push_back(digital_switch_);
     powerboard_state_.push_back(signal_switch_);
@@ -236,9 +236,10 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
             fpga_.write_vicon_trigger(power_cmd_data.trigger());
             vicon_trigger_ = power_cmd_data.trigger();
 
-            if (power_cmd_data.steering_cali()==true && steering_cali_state<3)
+            if (power_cmd_data.steering_cali()==true && steering_cali_state<3 )
             {   
-                steering_state_complete = false;
+                steering_state=false;
+                steering_state_complete = 0;
                 Steer_Cali = false;
                 fpga_.switch_steering(true);
                 switch (steering_cali_state)
@@ -288,9 +289,9 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
                         fpga_.switch_steering(false);
                         Steer_Cali = true;
                         steer_current_angle = 0.00;
-                        steering_state_complete = true;
+                        steering_state_complete = 2;
                         steering_cali_state++;
-                        steering_state = 2;
+                        steering_state = true;
                     }                    
                     break;
                 }
@@ -310,34 +311,33 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
                 steering_cali_state = 0;
                 // angle > max -> recali
                 fpga_.switch_steering(true);
-                steering_state_complete = false;
+                steering_state_complete = 0;
                 voltage = steering_cmd_data.voltage();
-                if ((int32_t)steering_cmd_data.angle()*2048+zero_offset >r_hall || (int32_t)steering_cmd_data.angle()*512+zero_offset< l_hall){
+                if ((int32_t)steering_cmd_data.angle()*(512*4)+zero_offset >r_hall || (int32_t)steering_cmd_data.angle()*(512*4)+zero_offset< l_hall){
                     fpga_.switch_steering(false);
+                    steering_state_complete = 1;
                     voltage = 0;
                     fpga_.write_steer_vol(voltage);
-                    steering_state_complete = false;
-                    steering_state = 1;
                 }
                 else if (steering_cmd_data.angle()!= steer_current_angle && (steering_cmd_data.angle()-steer_current_angle)> 0.0 )
                 {
-                    steering_state = 2;
+                    steering_state_complete = 0;
                     fpga_.switch_steer_dir(false);
                     fpga_.write_steer_vol(voltage);
                     steer_position = fpga_.read_steer_encoder();
-                    steer_current_angle = (steer_position-zero_offset)/512;
+                    steer_current_angle = (steer_position-zero_offset)*360/(512*4);
                 }
                 else if (steering_cmd_data.angle()!= steer_current_angle && (steering_cmd_data.angle()-steer_current_angle)< 0.0 )
                 {
-                    steering_state = 2;
+                    steering_state_complete = 0;
                     fpga_.switch_steer_dir(true);
                     fpga_.write_steer_vol(voltage);
                     steer_position = fpga_.read_steer_encoder();
-                    steer_current_angle = (steer_position-zero_offset)/512;
+                    steer_current_angle = (steer_position-zero_offset)*360/(512*4);
                 }
                 else if (steering_cmd_data.angle()== steer_current_angle)
                 {
-                    steering_state = 2;
+                    steering_state_complete = 2;
                     voltage = 0;
                     fpga_.write_steer_vol(voltage);
                     steering_state_complete = true;
@@ -446,7 +446,7 @@ void Corgi::steeringPack(steering_msg::SteeringStateStamped &steer_fb_msg)
     steer_fb_msg.mutable_header()->mutable_stamp()->set_sec(t_stamp.tv_sec);
     steer_fb_msg.mutable_header()->mutable_stamp()->set_usec(t_stamp.tv_usec);
     steer_position = fpga_.read_steer_encoder();
-    steer_current_angle = (steer_position-zero_offset)/512;
+    steer_current_angle = (steer_position-zero_offset)*360/(512*4);
     steer_fb_msg.set_current_angle(steer_current_angle);
     steer_fb_msg.set_current_state(steering_state);
     steer_fb_msg.set_cmd_finish(steering_state_complete);
