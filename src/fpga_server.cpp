@@ -236,6 +236,12 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
             fpga_.write_vicon_trigger(power_cmd_data.trigger());
             vicon_trigger_ = power_cmd_data.trigger();
 
+            if (powerboard_state_.at(1)  ==false)
+            {
+                steering_state=false;
+                steering_state_complete = 0;
+                Steer_Cali = false;
+            }
             if (power_cmd_data.steering_cali()==true && steering_cali_state<3 )
             {   
                 steering_state=false;
