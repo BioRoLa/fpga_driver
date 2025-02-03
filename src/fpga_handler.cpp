@@ -353,6 +353,13 @@ FpgaHandler::FpgaHandler()
 
     w_vicon_trigger = NiFpga_FPGA_CANBus_4module_v3_steering_ControlBool_Conn9_2w;
 
+    enable_btn_ =  NiFpga_FPGA_CANBus_4module_v3_steering_ControlBool_EN;
+    hall = NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorBool_Hall_effect;
+   
+    voltage = NiFpga_FPGA_CANBus_4module_v3_steering_ControlU16_input_voltage;
+    dir = NiFpga_FPGA_CANBus_4module_v3_steering_ControlBool_DIR;
+    encoder = NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorI32_EncoderPosition;
+
     for (int i = 0; i < 12; i++)
     {
         powerboard_V_list_[i] = 0;

@@ -87,11 +87,14 @@ class Corgi
     int log_data;
     std::string log_path;
     std::ofstream log_stream;
-    NiFpga_Bool complete;
+  
     int32_t steering_cali_state;
     int32_t steering_state_complete;
-    uint16_t voltage;
+    int32_t voltage;
+
+    bool hall_complete;
     int32_t steer_position;
+
     int32_t r_hall;
     int32_t l_hall;
     int32_t zero_offset;
