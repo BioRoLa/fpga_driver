@@ -23,12 +23,14 @@ LegModule::LegModule(std::string _label, YAML::Node _config, NiFpga_Status _stat
     txdata_buffer_[0].KP_ = motors_list_[0].kp_;
     txdata_buffer_[0].KI_ = motors_list_[0].ki_;
     txdata_buffer_[0].KD_ = motors_list_[0].kd_;
+    txdata_buffer_[0].KT_ = motors_list_[0].kt_;
 
     txdata_buffer_[1].position_ = 0;
     txdata_buffer_[1].torque_ = 0;
     txdata_buffer_[1].KP_ = motors_list_[1].kp_;
     txdata_buffer_[1].KI_ = motors_list_[1].ki_;
     txdata_buffer_[1].KD_ = motors_list_[1].kd_;
+    txdata_buffer_[1].KT_ = motors_list_[1].kt_;
 
     rxdata_buffer_[0].mode_ = Mode::REST;
     rxdata_buffer_[0].mode_state_ = _REST_MODE;
@@ -72,6 +74,7 @@ void LegModule::load_config()
     motor_r.kp_ = config_[label_]["Motor_R"]["KP"].as<double>();
     motor_r.ki_ = config_[label_]["Motor_R"]["KI"].as<double>();
     motor_r.kd_ = config_[label_]["Motor_R"]["KD"].as<double>();
+    motor_r.kt_ = config_[label_]["Motor_R"]["KT"].as<double>();
     motor_r.torque_ff_ = config_[label_]["Motor_R"]["Torque_Feedfoward"].as<double>();
 
     linkR_bias = config_[label_]["Motor_R"]["Calibration_Bias"].as<double>();
@@ -83,6 +86,7 @@ void LegModule::load_config()
     motor_l.kp_ = config_[label_]["Motor_L"]["KP"].as<double>();
     motor_l.ki_ = config_[label_]["Motor_L"]["KI"].as<double>();
     motor_l.kd_ = config_[label_]["Motor_L"]["KD"].as<double>();
+    motor_l.kt_ = config_[label_]["Motor_L"]["KT"].as<double>();
     motor_l.torque_ff_ = config_[label_]["Motor_L"]["Torque_Feedfoward"].as<double>();
 
     linkL_bias = config_[label_]["Motor_L"]["Calibration_Bias"].as<double>();
@@ -99,6 +103,7 @@ void LegModule::load_config()
     std::cout << std::setw(14) << "  KP: " << std::setw(13) << motor_r.kp_ << std::endl;
     std::cout << std::setw(14) << "  KI: " << std::setw(13) << motor_r.ki_ << std::endl;
     std::cout << std::setw(14) << "  KD: " << std::setw(13) << motor_r.kd_ << std::endl;
+    std::cout << std::setw(14) << "  KT: " << std::setw(13) << motor_r.kt_ << std::endl;
     std::cout << std::setw(14) << "  Torque_ff: " << std::setw(13) << motor_r.torque_ff_ << std::endl;
     std::cout << std::setw(14) << "  Bias: " << std::setw(13) << linkR_bias << std::endl;
     std::cout << std::setw(14) << "---------------------------" << std::endl;
@@ -109,6 +114,7 @@ void LegModule::load_config()
     std::cout << std::setw(14) << "  KP: " << std::setw(13) << motor_l.kp_ << std::endl;
     std::cout << std::setw(14) << "  KI: " << std::setw(13) << motor_l.ki_ << std::endl;
     std::cout << std::setw(14) << "  KD: " << std::setw(13) << motor_l.kd_ << std::endl;
+    std::cout << std::setw(14) << "  KT: " << std::setw(13) << motor_l.kt_ << std::endl;
     std::cout << std::setw(14) << "  Torque_ff: " << std::setw(13) << motor_l.torque_ff_ << std::endl;
     std::cout << std::setw(14) << "  Bias: " << std::setw(13) << linkL_bias << std::endl;
     std::cout << std::setw(14) << "---------------------------" << std::endl;

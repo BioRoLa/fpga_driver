@@ -15,6 +15,7 @@ typedef struct Motor
     double kd_;
     double torque_ff_;
     double calibration_bias;
+    double kt_;
 } Motor;
 
 // transmitted to SBRIO
@@ -25,6 +26,7 @@ typedef struct CAN_txdata
     float KP_;
     float KI_;
     float KD_;
+    float KT_;
 } CAN_txdata;
 
 typedef struct CAN_rxdata

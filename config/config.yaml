@@ -34,6 +34,7 @@ LF_Module:
     KP: 85
     KI: 0
     KD: 1.75
+    KT: 2
     Torque_Feedfoward: 0
   Motor_L:
     FW_Version: 3
@@ -42,6 +43,7 @@ LF_Module:
     KP: 85
     KI: 0
     KD: 1.75
+    KT: 2
     Torque_Feedfoward: 0 
 
 # MOD B
@@ -55,6 +57,7 @@ RF_Module:
     KP: 85
     KI: 0
     KD: 1.75
+    KT: 2
     Torque_Feedfoward: 0
   Motor_L:
     FW_Version: 3
@@ -63,6 +66,7 @@ RF_Module:
     KP: 85
     KI: 0
     KD: 1.75
+    KT: 2
     Torque_Feedfoward: 0
 
 # MOD C
@@ -76,6 +80,7 @@ RH_Module:
     KP: 85
     KI: 0
     KD: 1.75
+    KT: 2
     Torque_Feedfoward: 0
   Motor_L:
     FW_Version: 3
@@ -84,6 +89,7 @@ RH_Module:
     KP: 85
     KI: 0
     KD: 1.75
+    KT: 2
     Torque_Feedfoward: 0
 
 # MOD D
@@ -97,6 +103,7 @@ LH_Module:
     KP: 85
     KI: 0
     KD: 1.75
+    KT: 2
     Torque_Feedfoward: 0
   Motor_L:
     FW_Version: 3
@@ -105,6 +112,7 @@ LH_Module:
     KP: 85
     KI: 0
     KD: 1.75
+    KT: 2
     Torque_Feedfoward: 0
 
 # ADD USED MODULE IN LIST

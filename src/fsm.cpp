@@ -236,15 +236,15 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                                 
                                 mod.txdata_buffer_[0].position_ = phi_cmd[0];
                                 mod.txdata_buffer_[0].torque_ = motor_cmd_msg.module_a().torque_r();
-                                mod.txdata_buffer_[0].KP_ = motor_cmd_msg.module_a().kp();
-                                mod.txdata_buffer_[0].KI_ = motor_cmd_msg.module_a().ki();
-                                mod.txdata_buffer_[0].KD_ = motor_cmd_msg.module_a().kd();
+                                mod.txdata_buffer_[0].KP_ = motor_cmd_msg.module_a().kp_r();
+                                mod.txdata_buffer_[0].KI_ = motor_cmd_msg.module_a().ki_r();
+                                mod.txdata_buffer_[0].KD_ = motor_cmd_msg.module_a().kd_r();
 
                                 mod.txdata_buffer_[1].position_ = phi_cmd[1];
                                 mod.txdata_buffer_[1].torque_ = motor_cmd_msg.module_a().torque_l();
-                                mod.txdata_buffer_[1].KP_ = motor_cmd_msg.module_a().kp();
-                                mod.txdata_buffer_[1].KI_ = motor_cmd_msg.module_a().ki();
-                                mod.txdata_buffer_[1].KD_ = motor_cmd_msg.module_a().kd();
+                                mod.txdata_buffer_[1].KP_ = motor_cmd_msg.module_a().kp_l();
+                                mod.txdata_buffer_[1].KI_ = motor_cmd_msg.module_a().ki_l();
+                                mod.txdata_buffer_[1].KD_ = motor_cmd_msg.module_a().kd_l();
                             }
                             break;
 
@@ -255,15 +255,15 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                                 Eigen::Vector2d phi_cmd = tb2phi(tb_cmd);
                                 mod.txdata_buffer_[0].position_ = phi_cmd[0];
                                 mod.txdata_buffer_[0].torque_ = motor_cmd_msg.module_b().torque_r();
-                                mod.txdata_buffer_[0].KP_ = motor_cmd_msg.module_b().kp();
-                                mod.txdata_buffer_[0].KI_ = motor_cmd_msg.module_b().ki();
-                                mod.txdata_buffer_[0].KD_ = motor_cmd_msg.module_b().kd();
+                                mod.txdata_buffer_[0].KP_ = motor_cmd_msg.module_b().kp_r();
+                                mod.txdata_buffer_[0].KI_ = motor_cmd_msg.module_b().ki_r();
+                                mod.txdata_buffer_[0].KD_ = motor_cmd_msg.module_b().kd_r();
 
                                 mod.txdata_buffer_[1].position_ = phi_cmd[1];
                                 mod.txdata_buffer_[1].torque_ = motor_cmd_msg.module_b().torque_l();
-                                mod.txdata_buffer_[1].KP_ = motor_cmd_msg.module_b().kp();
-                                mod.txdata_buffer_[1].KI_ = motor_cmd_msg.module_b().ki();
-                                mod.txdata_buffer_[1].KD_ = motor_cmd_msg.module_b().kd();
+                                mod.txdata_buffer_[1].KP_ = motor_cmd_msg.module_b().kp_l();
+                                mod.txdata_buffer_[1].KI_ = motor_cmd_msg.module_b().ki_l();
+                                mod.txdata_buffer_[1].KD_ = motor_cmd_msg.module_b().kd_l();
                             }
                             break;
 
@@ -274,15 +274,15 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                                 Eigen::Vector2d phi_cmd = tb2phi(tb_cmd);
                                 mod.txdata_buffer_[0].position_ = phi_cmd[0];
                                 mod.txdata_buffer_[0].torque_ = motor_cmd_msg.module_c().torque_r();
-                                mod.txdata_buffer_[0].KP_ = motor_cmd_msg.module_c().kp();
-                                mod.txdata_buffer_[0].KI_ = motor_cmd_msg.module_c().ki();
-                                mod.txdata_buffer_[0].KD_ = motor_cmd_msg.module_c().kd();
+                                mod.txdata_buffer_[0].KP_ = motor_cmd_msg.module_c().kp_r();
+                                mod.txdata_buffer_[0].KI_ = motor_cmd_msg.module_c().ki_r();
+                                mod.txdata_buffer_[0].KD_ = motor_cmd_msg.module_c().kd_r();
 
                                 mod.txdata_buffer_[1].position_ = phi_cmd[1];
                                 mod.txdata_buffer_[1].torque_ = motor_cmd_msg.module_c().torque_l();
-                                mod.txdata_buffer_[1].KP_ = motor_cmd_msg.module_c().kp();
-                                mod.txdata_buffer_[1].KI_ = motor_cmd_msg.module_c().ki();
-                                mod.txdata_buffer_[1].KD_ = motor_cmd_msg.module_c().kd();
+                                mod.txdata_buffer_[1].KP_ = motor_cmd_msg.module_c().kp_l();
+                                mod.txdata_buffer_[1].KI_ = motor_cmd_msg.module_c().ki_l();
+                                mod.txdata_buffer_[1].KD_ = motor_cmd_msg.module_c().kd_l();
                             }
                             break;
 
@@ -293,15 +293,15 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                                 Eigen::Vector2d phi_cmd = tb2phi(tb_cmd);
                                 mod.txdata_buffer_[0].position_ = phi_cmd[0];
                                 mod.txdata_buffer_[0].torque_ = motor_cmd_msg.module_d().torque_r();
-                                mod.txdata_buffer_[0].KP_ = motor_cmd_msg.module_d().kp();
-                                mod.txdata_buffer_[0].KI_ = motor_cmd_msg.module_d().ki();
-                                mod.txdata_buffer_[0].KD_ = motor_cmd_msg.module_d().kd();
+                                mod.txdata_buffer_[0].KP_ = motor_cmd_msg.module_d().kp_r();
+                                mod.txdata_buffer_[0].KI_ = motor_cmd_msg.module_d().ki_r();
+                                mod.txdata_buffer_[0].KD_ = motor_cmd_msg.module_d().kd_r();
 
                                 mod.txdata_buffer_[1].position_ = phi_cmd[1];
                                 mod.txdata_buffer_[1].torque_ = motor_cmd_msg.module_d().torque_l();
-                                mod.txdata_buffer_[1].KP_ = motor_cmd_msg.module_d().kp();
-                                mod.txdata_buffer_[1].KI_ = motor_cmd_msg.module_d().ki();
-                                mod.txdata_buffer_[1].KD_ = motor_cmd_msg.module_d().kd();
+                                mod.txdata_buffer_[1].KP_ = motor_cmd_msg.module_d().kp_l();
+                                mod.txdata_buffer_[1].KI_ = motor_cmd_msg.module_d().ki_l();
+                                mod.txdata_buffer_[1].KD_ = motor_cmd_msg.module_d().kd_l();
                             }
                             break;
                         }
@@ -404,8 +404,8 @@ void ModeFsm::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
                     Eigen::Vector2d tb_ = phi2tb(phi_);
                     motor_fb_msg.mutable_module_a()->set_theta(tb_[0]);  // theta
                     motor_fb_msg.mutable_module_a()->set_beta(tb_[1]);   // beta
-                    motor_fb_msg.mutable_module_a()->set_torque_r(mod.rxdata_buffer_[0].torque_); //torque R
-                    motor_fb_msg.mutable_module_a()->set_torque_l(mod.rxdata_buffer_[1].torque_); //torque L
+                    motor_fb_msg.mutable_module_a()->set_torque_r(mod.rxdata_buffer_[0].torque_*mod.txdata_buffer_[0].KT_); //torque R
+                    motor_fb_msg.mutable_module_a()->set_torque_l(mod.rxdata_buffer_[1].torque_*mod.txdata_buffer_[1].KT_); //torque L
                 }
                 break;
 
@@ -418,8 +418,8 @@ void ModeFsm::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
                     Eigen::Vector2d tb_ = phi2tb(phi_);
                     motor_fb_msg.mutable_module_b()->set_theta(tb_[0]);  // theta
                     motor_fb_msg.mutable_module_b()->set_beta(tb_[1]);   // beta
-                    motor_fb_msg.mutable_module_b()->set_torque_r(mod.rxdata_buffer_[0].torque_); //torque R
-                    motor_fb_msg.mutable_module_b()->set_torque_l(mod.rxdata_buffer_[1].torque_); //torque L
+                    motor_fb_msg.mutable_module_b()->set_torque_r(mod.rxdata_buffer_[0].torque_*mod.txdata_buffer_[0].KT_); //torque R
+                    motor_fb_msg.mutable_module_b()->set_torque_l(mod.rxdata_buffer_[1].torque_*mod.txdata_buffer_[1].KT_); //torque L
                 }
                 break;
 
@@ -432,8 +432,8 @@ void ModeFsm::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
                     Eigen::Vector2d tb_ = phi2tb(phi_);
                     motor_fb_msg.mutable_module_c()->set_theta(tb_[0]);  // theta
                     motor_fb_msg.mutable_module_c()->set_beta(tb_[1]);   // beta
-                    motor_fb_msg.mutable_module_c()->set_torque_r(mod.rxdata_buffer_[0].torque_); //torque R
-                    motor_fb_msg.mutable_module_c()->set_torque_l(mod.rxdata_buffer_[1].torque_); //torque L
+                    motor_fb_msg.mutable_module_c()->set_torque_r(mod.rxdata_buffer_[0].torque_*mod.txdata_buffer_[0].KT_); //torque R
+                    motor_fb_msg.mutable_module_c()->set_torque_l(mod.rxdata_buffer_[1].torque_*mod.txdata_buffer_[1].KT_); //torque L
                 }
                 break;
 
@@ -446,8 +446,8 @@ void ModeFsm::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
                     Eigen::Vector2d tb_ = phi2tb(phi_);
                     motor_fb_msg.mutable_module_d()->set_theta(tb_[0]);  // theta
                     motor_fb_msg.mutable_module_d()->set_beta(tb_[1]);   // beta
-                    motor_fb_msg.mutable_module_d()->set_torque_r(mod.rxdata_buffer_[0].torque_); //torque R
-                    motor_fb_msg.mutable_module_d()->set_torque_l(mod.rxdata_buffer_[1].torque_); //torque L
+                    motor_fb_msg.mutable_module_d()->set_torque_r(mod.rxdata_buffer_[0].torque_*mod.txdata_buffer_[0].KT_); //torque R
+                    motor_fb_msg.mutable_module_d()->set_torque_l(mod.rxdata_buffer_[1].torque_*mod.txdata_buffer_[1].KT_); //torque L
                 }
                 break;
             }
