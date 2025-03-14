@@ -222,7 +222,15 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                             case 0:
                             {
                                 Eigen::Vector2d tb_cmd;
-                                tb_cmd<< motor_cmd_msg.module_a().theta(), motor_cmd_msg.module_a().beta();                            
+                                if(motor_cmd_msg.module_a().theta()<17*PI/180){
+                                    tb_cmd<< 17*PI/180, motor_cmd_msg.module_a().beta();
+                                }
+                                else if(motor_cmd_msg.module_a().theta()>160*PI/180){
+                                    tb_cmd<< 160*PI/180, motor_cmd_msg.module_a().beta();
+                                }
+                                else{
+                                    tb_cmd<< motor_cmd_msg.module_a().theta(), motor_cmd_msg.module_a().beta();                            
+                                }
                                 Eigen::Vector2d phi_cmd = tb2phi(tb_cmd);
 
                                 // test data
@@ -251,7 +259,17 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                             case 1:
                             {
                                 Eigen::Vector2d tb_cmd;
-                                tb_cmd<< motor_cmd_msg.module_b().theta(), motor_cmd_msg.module_b().beta();                            
+
+                                if(motor_cmd_msg.module_a().theta()<17*PI/180){
+                                    tb_cmd<< 17*PI/180, motor_cmd_msg.module_b().beta();
+                                }
+                                else if(motor_cmd_msg.module_a().theta()>160*PI/180){
+                                    tb_cmd<< 160*PI/180, motor_cmd_msg.module_b().beta();
+                                }
+                                else{
+                                    tb_cmd<< motor_cmd_msg.module_b().theta(), motor_cmd_msg.module_b().beta();                         
+                                }
+
                                 Eigen::Vector2d phi_cmd = tb2phi(tb_cmd);
                                 mod.txdata_buffer_[0].position_ = phi_cmd[0];
                                 mod.txdata_buffer_[0].torque_ = motor_cmd_msg.module_b().torque_r();
@@ -270,7 +288,15 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                             case 2:
                             {
                                 Eigen::Vector2d tb_cmd;
-                                tb_cmd<< motor_cmd_msg.module_c().theta(), motor_cmd_msg.module_c().beta();                            
+                                if(motor_cmd_msg.module_a().theta()<17*PI/180){
+                                    tb_cmd<< 17*PI/180, motor_cmd_msg.module_c().beta();
+                                }
+                                else if(motor_cmd_msg.module_a().theta()>160*PI/180){
+                                    tb_cmd<< 160*PI/180, motor_cmd_msg.module_c().beta();
+                                }
+                                else{
+                                    tb_cmd<< motor_cmd_msg.module_c().theta(), motor_cmd_msg.module_c().beta();                         
+                                }                           
                                 Eigen::Vector2d phi_cmd = tb2phi(tb_cmd);
                                 mod.txdata_buffer_[0].position_ = phi_cmd[0];
                                 mod.txdata_buffer_[0].torque_ = motor_cmd_msg.module_c().torque_r();
@@ -289,7 +315,17 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                             case 3:
                             {
                                 Eigen::Vector2d tb_cmd;
-                                tb_cmd<< motor_cmd_msg.module_d().theta(), motor_cmd_msg.module_d().beta();                            
+
+                                if(motor_cmd_msg.module_a().theta()<17*PI/180){
+                                    tb_cmd<< 17*PI/180, motor_cmd_msg.module_d().beta();
+                                }
+                                else if(motor_cmd_msg.module_a().theta()>160*PI/180){
+                                    tb_cmd<< 160*PI/180, motor_cmd_msg.module_d().beta();
+                                }
+                                else{
+                                    tb_cmd<< motor_cmd_msg.module_d().theta(), motor_cmd_msg.module_d().beta();                         
+                                }
+                         
                                 Eigen::Vector2d phi_cmd = tb2phi(tb_cmd);
                                 mod.txdata_buffer_[0].position_ = phi_cmd[0];
                                 mod.txdata_buffer_[0].torque_ = motor_cmd_msg.module_d().torque_r();
