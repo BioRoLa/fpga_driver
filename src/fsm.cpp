@@ -260,10 +260,10 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                             {
                                 Eigen::Vector2d tb_cmd;
 
-                                if(motor_cmd_msg.module_a().theta()<17*PI/180){
+                                if(motor_cmd_msg.module_b().theta()<17*PI/180){
                                     tb_cmd<< 17*PI/180, motor_cmd_msg.module_b().beta();
                                 }
-                                else if(motor_cmd_msg.module_a().theta()>160*PI/180){
+                                else if(motor_cmd_msg.module_b().theta()>160*PI/180){
                                     tb_cmd<< 160*PI/180, motor_cmd_msg.module_b().beta();
                                 }
                                 else{
@@ -288,10 +288,10 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                             case 2:
                             {
                                 Eigen::Vector2d tb_cmd;
-                                if(motor_cmd_msg.module_a().theta()<17*PI/180){
+                                if(motor_cmd_msg.module_c().theta()<17*PI/180){
                                     tb_cmd<< 17*PI/180, motor_cmd_msg.module_c().beta();
                                 }
-                                else if(motor_cmd_msg.module_a().theta()>160*PI/180){
+                                else if(motor_cmd_msg.module_c().theta()>160*PI/180){
                                     tb_cmd<< 160*PI/180, motor_cmd_msg.module_c().beta();
                                 }
                                 else{
@@ -316,10 +316,10 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                             {
                                 Eigen::Vector2d tb_cmd;
 
-                                if(motor_cmd_msg.module_a().theta()<17*PI/180){
+                                if(motor_cmd_msg.module_d().theta()<17*PI/180){
                                     tb_cmd<< 17*PI/180, motor_cmd_msg.module_d().beta();
                                 }
-                                else if(motor_cmd_msg.module_a().theta()>160*PI/180){
+                                else if(motor_cmd_msg.module_d().theta()>160*PI/180){
                                     tb_cmd<< 160*PI/180, motor_cmd_msg.module_d().beta();
                                 }
                                 else{
