@@ -243,13 +243,13 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                                 // mod.txdata_buffer_[1].KD_ = 1;
                                 
                                 mod.txdata_buffer_[0].position_ = phi_cmd[0];
-                                mod.txdata_buffer_[0].torque_ = motor_cmd_msg.module_a().torque_r();
+                                mod.txdata_buffer_[0].torque_ = motor_cmd_msg.module_a().torque_r()/mod.txdata_buffer_[0].KT_;
                                 mod.txdata_buffer_[0].KP_ = motor_cmd_msg.module_a().kp_r();
                                 mod.txdata_buffer_[0].KI_ = motor_cmd_msg.module_a().ki_r();
                                 mod.txdata_buffer_[0].KD_ = motor_cmd_msg.module_a().kd_r();
 
                                 mod.txdata_buffer_[1].position_ = phi_cmd[1];
-                                mod.txdata_buffer_[1].torque_ = motor_cmd_msg.module_a().torque_l();
+                                mod.txdata_buffer_[1].torque_ = motor_cmd_msg.module_a().torque_l()/mod.txdata_buffer_[1].KT_;
                                 mod.txdata_buffer_[1].KP_ = motor_cmd_msg.module_a().kp_l();
                                 mod.txdata_buffer_[1].KI_ = motor_cmd_msg.module_a().ki_l();
                                 mod.txdata_buffer_[1].KD_ = motor_cmd_msg.module_a().kd_l();
@@ -272,13 +272,13 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
 
                                 Eigen::Vector2d phi_cmd = tb2phi(tb_cmd);
                                 mod.txdata_buffer_[0].position_ = phi_cmd[0];
-                                mod.txdata_buffer_[0].torque_ = motor_cmd_msg.module_b().torque_r();
+                                mod.txdata_buffer_[0].torque_ = motor_cmd_msg.module_b().torque_r()/mod.txdata_buffer_[0].KT_;
                                 mod.txdata_buffer_[0].KP_ = motor_cmd_msg.module_b().kp_r();
                                 mod.txdata_buffer_[0].KI_ = motor_cmd_msg.module_b().ki_r();
                                 mod.txdata_buffer_[0].KD_ = motor_cmd_msg.module_b().kd_r();
 
                                 mod.txdata_buffer_[1].position_ = phi_cmd[1];
-                                mod.txdata_buffer_[1].torque_ = motor_cmd_msg.module_b().torque_l();
+                                mod.txdata_buffer_[1].torque_ = motor_cmd_msg.module_b().torque_l()/mod.txdata_buffer_[1].KT_;
                                 mod.txdata_buffer_[1].KP_ = motor_cmd_msg.module_b().kp_l();
                                 mod.txdata_buffer_[1].KI_ = motor_cmd_msg.module_b().ki_l();
                                 mod.txdata_buffer_[1].KD_ = motor_cmd_msg.module_b().kd_l();
@@ -299,13 +299,13 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                                 }                           
                                 Eigen::Vector2d phi_cmd = tb2phi(tb_cmd);
                                 mod.txdata_buffer_[0].position_ = phi_cmd[0];
-                                mod.txdata_buffer_[0].torque_ = motor_cmd_msg.module_c().torque_r();
+                                mod.txdata_buffer_[0].torque_ = motor_cmd_msg.module_c().torque_r()/mod.txdata_buffer_[0].KT_;
                                 mod.txdata_buffer_[0].KP_ = motor_cmd_msg.module_c().kp_r();
                                 mod.txdata_buffer_[0].KI_ = motor_cmd_msg.module_c().ki_r();
                                 mod.txdata_buffer_[0].KD_ = motor_cmd_msg.module_c().kd_r();
 
                                 mod.txdata_buffer_[1].position_ = phi_cmd[1];
-                                mod.txdata_buffer_[1].torque_ = motor_cmd_msg.module_c().torque_l();
+                                mod.txdata_buffer_[1].torque_ = motor_cmd_msg.module_c().torque_l()/mod.txdata_buffer_[1].KT_;
                                 mod.txdata_buffer_[1].KP_ = motor_cmd_msg.module_c().kp_l();
                                 mod.txdata_buffer_[1].KI_ = motor_cmd_msg.module_c().ki_l();
                                 mod.txdata_buffer_[1].KD_ = motor_cmd_msg.module_c().kd_l();
@@ -328,13 +328,13 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                          
                                 Eigen::Vector2d phi_cmd = tb2phi(tb_cmd);
                                 mod.txdata_buffer_[0].position_ = phi_cmd[0];
-                                mod.txdata_buffer_[0].torque_ = motor_cmd_msg.module_d().torque_r();
+                                mod.txdata_buffer_[0].torque_ = motor_cmd_msg.module_d().torque_r()/mod.txdata_buffer_[0].KT_;
                                 mod.txdata_buffer_[0].KP_ = motor_cmd_msg.module_d().kp_r();
                                 mod.txdata_buffer_[0].KI_ = motor_cmd_msg.module_d().ki_r();
                                 mod.txdata_buffer_[0].KD_ = motor_cmd_msg.module_d().kd_r();
 
                                 mod.txdata_buffer_[1].position_ = phi_cmd[1];
-                                mod.txdata_buffer_[1].torque_ = motor_cmd_msg.module_d().torque_l();
+                                mod.txdata_buffer_[1].torque_ = motor_cmd_msg.module_d().torque_l()/mod.txdata_buffer_[1].KT_;
                                 mod.txdata_buffer_[1].KP_ = motor_cmd_msg.module_d().kp_l();
                                 mod.txdata_buffer_[1].KI_ = motor_cmd_msg.module_d().ki_l();
                                 mod.txdata_buffer_[1].KD_ = motor_cmd_msg.module_d().kd_l();
