@@ -246,7 +246,7 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
             }
             if (power_cmd_data.steering_cali()==true && steering_cali_state<3 )
             {   
-                voltage = 3000;
+                voltage = 2500;
                 steering_state=false;
                 steering_state_complete = 0;
                 Steer_Cali = false;
@@ -265,7 +265,7 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
                         fpga_.write_steer_vol(voltage);
                         r_hall = steer_position;
                         steering_cali_state++;
-                        voltage = 3000;
+                        voltage = 2500;
                         fpga_.switch_steer_dir(true);  
                         fpga_.write_steer_vol(voltage); 
                         usleep(1000*1000);
@@ -283,7 +283,7 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
                         fpga_.write_steer_vol(voltage);
                         l_hall = steer_position;
                         steering_cali_state++;
-                        voltage = 3000;
+                        voltage = 2500;
                         zero_offset = (r_hall+l_hall)/2;
                         r_hall = r_hall-zero_offset;
                         l_hall = l_hall-zero_offset;
