@@ -284,7 +284,7 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
                         l_hall = steer_position;
                         steering_cali_state++;
                         voltage = 2500;
-                        zero_offset = (r_hall+l_hall)/2;
+                        zero_offset = (r_hall+l_hall)/2+100;
                         r_hall = r_hall-zero_offset;
                         l_hall = l_hall-zero_offset;
                     }
