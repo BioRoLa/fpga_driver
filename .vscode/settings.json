@@ -1,5 +1,7 @@
 {
     "files.associations": {
+        "*.txt": "cmake",
+        "*.proto": "java",
         "array": "cpp",
         "string_view": "cpp",
         "cctype": "cpp",
@@ -71,7 +73,16 @@
         "hash_map": "cpp",
         "hash_set": "cpp",
         "forward_list": "cpp",
-        "shared_mutex": "cpp"
+        "shared_mutex": "cpp",
+        "csetjmp": "cpp",
+        "any": "cpp",
+        "charconv": "cpp",
+        "cuchar": "cpp",
+        "netfwd": "cpp",
+        "regex": "cpp",
+        "rope": "cpp",
+        "slist": "cpp",
+        "scoped_allocator": "cpp"
     },
     "python.autoComplete.extraPaths": [
         "/opt/ros/noetic/lib/python3/dist-packages"
