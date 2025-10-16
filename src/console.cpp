@@ -46,8 +46,8 @@ void Console::refreshWindow()
 
     int refresh_period_ = (int)(1 / frontend_rate_) * 1000000;
     LegModule *lm_null = 0;
-    Panel p_power_("[P] Power Board ", "power", lm_null, 1, 9, 60, 40, true);
-    Panel p_cmain_("[F] FPGA Server ", "c_main", lm_null, 1, 1, 8, 40, true);
+    Panel p_power_("[P] Power Board ", "power", lm_null, 1, 10, 60, 40, true);
+    Panel p_cmain_("[F] FPGA Server ", "c_main", lm_null, 1, 1, 9, 40, true);
     Panel p_modA_("[A] LF_Module ", "module", modA_ptr_, 41, 1, (term_max_y_ - 2) / 2 - 1, 60, true);
     Panel p_modD_("[D] LH_Module ", "module", modD_ptr_, 41, (term_max_y_) / 2, (term_max_y_ - 2) / 2 - 1, 60, true);
     Panel p_modB_("[B] RF_Module ", "module", modB_ptr_, 101, 1, (term_max_y_ - 2) / 2 - 1, 60, true);
@@ -276,6 +276,10 @@ void InputPanel::commandDecode(string buf)
                 else if (bufs[2] == "H")
                 {
                     switchFSM_success = fsm_->switchMode(Mode::HALL_CALIBRATE);
+                }
+                else if (bufs[2] == "C")
+                {
+                    switchFSM_success = fsm_->switchMode(Mode::CONFIG);
                 }
                 else
                 {
@@ -547,8 +551,11 @@ void Panel::infoDisplay(Behavior bhv, Mode fsm_mode)
         mvwprintw(win_, 3, 1, "[M] FSM Mode: HALL_CALIBRATE");
     else if (fsm_mode == Mode::MOTOR)
         mvwprintw(win_, 3, 1, "[M] FSM Mode:          MOTOR");
+    else if (fsm_mode == Mode::CONFIG)
+        mvwprintw(win_, 3, 1, "[M] FSM Mode:         CONFIG");
     mvwprintw(win_, 5, 1, "[R] REST  [S] SET_ZERO ");
     mvwprintw(win_, 6, 1, "[M] MOTOR [H] HALL_CALIBRATE");
+    mvwprintw(win_, 7, 1, "[C] CONFIG");
 
     wrefresh(win_);
 }
