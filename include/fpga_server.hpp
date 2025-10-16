@@ -13,7 +13,7 @@
 
 #ifndef CONFIG_PATH
 // #define CONFIG_PATH "/home/admin/corgi_ws/fpga_driver/config/config.yaml"
-#define CONFIG_PATH "/home/tina997726/corgi_ws/fpga_driver/config/config.yaml"
+#define CONFIG_PATH "/home/hiho817/corgi_ws/fpga_driver/config/config.yaml" // Change to your local path
 #endif
 
 volatile sig_atomic_t sys_stop;

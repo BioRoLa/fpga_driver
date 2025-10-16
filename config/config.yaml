@@ -1,6 +1,6 @@
 # Data logging
 log_data: 1
-log_path: "/home/tina997726/corgi_ws/fpga_driver/log/sample_test.csv"
+log_path: "/home/hiho817/corgi_ws/fpga_driver/log/sample_test.csv"  # Change to your local path
 # log_path: "/home/admin/corgi_ws/fpga_driver/log/sample_test.csv"
 
 # Interrupt Setup, Triggered By FPGA IRQ
