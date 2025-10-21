@@ -39,6 +39,9 @@ public:
   CAN_txcmd txcmd_buffer_[2];
   CAN_rxcmd rxcmd_buffer_[2];
 
+  CAN_txconfig txconfig_buffer_[2];
+  CAN_rxconfig rxconfig_buffer_[2];
+
   double linkR_bias = 0;
   double linkL_bias = 0;
 

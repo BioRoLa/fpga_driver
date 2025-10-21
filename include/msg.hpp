@@ -41,6 +41,14 @@ typedef struct CAN_rxcmd
     Mode mode_;
 } CAN_rxcmd;
 
+typedef struct CAN_txconfig
+{
+} CAN_txconfig;
+
+typedef struct CAN_rxconfig
+{
+} CAN_rxconfig;
+
 class Module
 {
 public:
