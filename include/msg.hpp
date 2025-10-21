@@ -43,16 +43,48 @@ typedef struct CAN_rxcmd
 
 typedef struct CAN_txconfig
 {
+    int CAN_id_;
+    Config_type config_type_;
+    Data_type data_type_;
+    int target_addr_;
+    float data_value_;
 } CAN_txconfig;
 
 typedef struct CAN_rxconfig
 {
+    int CAN_id_;
+    Config_state config_state_;
+    Config_type config_type_;
+    int target_addr_;
+    float data_value_;
+    int mode_state_;
 } CAN_rxconfig;
 
 class Module
 {
 public:
     std::vector<CAN_txcmd> txdata_;
+};
+
+enum class Data_type
+{
+    FLOAT,
+    INT
+};
+
+enum class Config_type
+{
+    READ,
+    WRITE
+};
+
+enum class Config_state
+{
+    CONFIG_SUCCESS,
+    INVALID_VALUE,
+    READ_ONLY,
+    INVALID_ADDR,
+    INVALID_CMD
 };
 
 #endif
