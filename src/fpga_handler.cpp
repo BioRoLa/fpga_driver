@@ -227,12 +227,12 @@ void ModuleIO::CAN_set_mode(Mode mode)
     write_CAN_id_fc_((int)mode, (int)mode);
 }
 
-void ModuleIO::CAN_send_command(CAN_txdata txdata_id1, CAN_txdata txdata_id2)
+void ModuleIO::CAN_send_command(CAN_txcmd txdata_id1, CAN_txcmd txdata_id2)
 {
     uint8_t txmsg_id1[8];
     uint8_t txmsg_id2[8];
-    CAN_txdata txdata1_biased;
-    CAN_txdata txdata2_biased;
+    CAN_txcmd txdata1_biased;
+    CAN_txcmd txdata2_biased;
 
     txdata1_biased.position_ = txdata_id1.position_ + motorR_bias;
     txdata1_biased.torque_ = txdata_id1.torque_;
@@ -260,7 +260,7 @@ void ModuleIO::CAN_send_command(CAN_txdata txdata_id1, CAN_txdata txdata_id2)
     write_CAN_transmit_(1);
 }
 
-void ModuleIO::CAN_recieve_feedback(CAN_rxdata *rxdata_id1, CAN_rxdata *rxdata_id2)
+void ModuleIO::CAN_recieve_feedback(CAN_rxcmd *rxdata_id1, CAN_rxcmd *rxdata_id2)
 {
     uint8_t rxmsg_id1[8];
     uint8_t rxmsg_id2[8];
@@ -273,7 +273,7 @@ void ModuleIO::CAN_recieve_feedback(CAN_rxdata *rxdata_id1, CAN_rxdata *rxdata_i
 }
 
 // pack CAN data
-void ModuleIO::CAN_encode(uint8_t (&txmsg)[8], CAN_txdata txdata)
+void ModuleIO::CAN_encode(uint8_t (&txmsg)[8], CAN_txcmd txdata)
 {
     int pos_int, torque_int, KP_int, KI_int, KD_int;
     pos_int = float_to_uint(-txdata.position_, P_CMD_MIN, P_CMD_MAX, 16);
@@ -292,7 +292,7 @@ void ModuleIO::CAN_encode(uint8_t (&txmsg)[8], CAN_txdata txdata)
     txmsg[7] = torque_int & 0xFF;
 }
 
-void ModuleIO::CAN_decode(uint8_t (&rxmsg)[8], CAN_rxdata *rxdata)
+void ModuleIO::CAN_decode(uint8_t (&rxmsg)[8], CAN_rxcmd *rxdata)
 {
     int pos_raw, vel_raw, torque_raw, cal_raw, ver_raw, mode_raw;
 

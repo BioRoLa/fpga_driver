@@ -36,8 +36,8 @@ public:
   bool CAN_mtr_timedout[2];
   bool CAN_module_timedout;
 
-  CAN_txdata txdata_buffer_[2];
-  CAN_rxdata rxdata_buffer_[2];
+  CAN_txcmd txcmd_buffer_[2];
+  CAN_rxcmd rxcmd_buffer_[2];
 
   double linkR_bias = 0;
   double linkL_bias = 0;

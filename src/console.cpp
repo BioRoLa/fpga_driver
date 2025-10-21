@@ -335,7 +335,7 @@ void InputPanel::commandDecode(string buf)
             {
                 try
                 {
-                    md_ptr_->txdata_buffer_[mtr_idx].position_ = stof(bufs[3]);
+                    md_ptr_->txcmd_buffer_[mtr_idx].position_ = stof(bufs[3]);
                 }
                 catch (exception &e)
                 {
@@ -346,7 +346,7 @@ void InputPanel::commandDecode(string buf)
             {
                 try
                 {
-                    md_ptr_->txdata_buffer_[mtr_idx].torque_ = stof(bufs[3]);
+                    md_ptr_->txcmd_buffer_[mtr_idx].torque_ = stof(bufs[3]);
                 }
                 catch (exception &e)
                 {
@@ -357,7 +357,7 @@ void InputPanel::commandDecode(string buf)
             {
                 try
                 {
-                    md_ptr_->txdata_buffer_[mtr_idx].KP_ = stof(bufs[3]);
+                    md_ptr_->txcmd_buffer_[mtr_idx].KP_ = stof(bufs[3]);
                 }
                 catch (exception &e)
                 {
@@ -368,7 +368,7 @@ void InputPanel::commandDecode(string buf)
             {
                 try
                 {
-                    md_ptr_->txdata_buffer_[mtr_idx].KI_ = stof(bufs[3]);
+                    md_ptr_->txcmd_buffer_[mtr_idx].KI_ = stof(bufs[3]);
                 }
                 catch (exception &e)
                 {
@@ -379,7 +379,7 @@ void InputPanel::commandDecode(string buf)
             {
                 try
                 {
-                    md_ptr_->txdata_buffer_[mtr_idx].KD_ = stof(bufs[3]);
+                    md_ptr_->txcmd_buffer_[mtr_idx].KD_ = stof(bufs[3]);
                 }
                 catch (exception &e)
                 {
@@ -472,37 +472,37 @@ void Panel::infoDisplay()
     mvwprintw(win_, 1, 1, "[F] Motor_R-----------------------------------------------");
     mvwprintw(win_, 2, 1, "[C] [CAN] ID: %9d", md_ptr_->motors_list_[0].CAN_ID_);
     mvwprintw(win_, 3, 1, "    [tx] TIMEDOUT: %4d", md_ptr_->CAN_tx_timedout_[0]);
-    mvwprintw(win_, y_org + 2, 1, "[A] [tx] Pos:  %5.5f", md_ptr_->txdata_buffer_[0].position_);
-    mvwprintw(win_, y_org + 3, 1, "[T] [tx] Trq:  %5.5f", md_ptr_->txdata_buffer_[0].torque_);
-    mvwprintw(win_, y_org + 4, 1, "[P] [tx] KP:   %4.5f", md_ptr_->txdata_buffer_[0].KP_);
-    mvwprintw(win_, y_org + 5, 1, "[I] [tx] KI:   %5.5f", md_ptr_->txdata_buffer_[0].KI_);
-    mvwprintw(win_, y_org + 6, 1, "[D] [tx] KD:   %5.5f", md_ptr_->txdata_buffer_[0].KD_);
+    mvwprintw(win_, y_org + 2, 1, "[A] [tx] Pos:  %5.5f", md_ptr_->txcmd_buffer_[0].position_);
+    mvwprintw(win_, y_org + 3, 1, "[T] [tx] Trq:  %5.5f", md_ptr_->txcmd_buffer_[0].torque_);
+    mvwprintw(win_, y_org + 4, 1, "[P] [tx] KP:   %4.5f", md_ptr_->txcmd_buffer_[0].KP_);
+    mvwprintw(win_, y_org + 5, 1, "[I] [tx] KI:   %5.5f", md_ptr_->txcmd_buffer_[0].KI_);
+    mvwprintw(win_, y_org + 6, 1, "[D] [tx] KD:   %5.5f", md_ptr_->txcmd_buffer_[0].KD_);
     // reply
     mvwprintw(win_, 3, 30, "[rx] TIMEDOUT: %4d", md_ptr_->CAN_rx_timedout_[0]);
-    mvwprintw(win_, y_org + 2, 30, "[rx] Ver:   %7d", md_ptr_->rxdata_buffer_[0].version_);
-    mvwprintw(win_, y_org + 3, 30, "[rx] Mode:  %7d", md_ptr_->rxdata_buffer_[0].mode_state_);
-    mvwprintw(win_, y_org + 4, 30, "[rx] Pos:   %4.5f", md_ptr_->rxdata_buffer_[0].position_);
-    mvwprintw(win_, y_org + 5, 30, "[rx] Vel:   %4.5f", md_ptr_->rxdata_buffer_[0].velocity_);
-    mvwprintw(win_, y_org + 6, 30, "[rx] Trq:   %4.5f", md_ptr_->rxdata_buffer_[0].torque_);
-    mvwprintw(win_, y_org + 7, 30, "[rx] Cal:   %7d", md_ptr_->rxdata_buffer_[0].calibrate_finish_);
+    mvwprintw(win_, y_org + 2, 30, "[rx] Ver:   %7d", md_ptr_->rxcmd_buffer_[0].version_);
+    mvwprintw(win_, y_org + 3, 30, "[rx] Mode:  %7d", md_ptr_->rxcmd_buffer_[0].mode_state_);
+    mvwprintw(win_, y_org + 4, 30, "[rx] Pos:   %4.5f", md_ptr_->rxcmd_buffer_[0].position_);
+    mvwprintw(win_, y_org + 5, 30, "[rx] Vel:   %4.5f", md_ptr_->rxcmd_buffer_[0].velocity_);
+    mvwprintw(win_, y_org + 6, 30, "[rx] Trq:   %4.5f", md_ptr_->rxcmd_buffer_[0].torque_);
+    mvwprintw(win_, y_org + 7, 30, "[rx] Cal:   %7d", md_ptr_->rxcmd_buffer_[0].calibrate_finish_);
 
     // Motor H
     mvwprintw(win_, 10, 1, "[H] Motor_L-----------------------------------------------");
     mvwprintw(win_, 11, 1, "[C] [CAN] ID: %9d", md_ptr_->motors_list_[1].CAN_ID_);
     mvwprintw(win_, 12, 1, "    [tx] TIMEDOUT: %4d", md_ptr_->CAN_tx_timedout_[1]);
-    mvwprintw(win_, y_org + 11, 1, "[A] [tx] Pos:  %5.5f", md_ptr_->txdata_buffer_[1].position_);
-    mvwprintw(win_, y_org + 12, 1, "[T] [tx] Trq:  %5.5f", md_ptr_->txdata_buffer_[1].torque_);
-    mvwprintw(win_, y_org + 13, 1, "[P] [tx] KP:   %4.5f", md_ptr_->txdata_buffer_[1].KP_);
-    mvwprintw(win_, y_org + 14, 1, "[I] [tx] KI:   %5.5f", md_ptr_->txdata_buffer_[1].KI_);
-    mvwprintw(win_, y_org + 15, 1, "[D] [tx] KD:   %5.5f", md_ptr_->txdata_buffer_[1].KD_);
+    mvwprintw(win_, y_org + 11, 1, "[A] [tx] Pos:  %5.5f", md_ptr_->txcmd_buffer_[1].position_);
+    mvwprintw(win_, y_org + 12, 1, "[T] [tx] Trq:  %5.5f", md_ptr_->txcmd_buffer_[1].torque_);
+    mvwprintw(win_, y_org + 13, 1, "[P] [tx] KP:   %4.5f", md_ptr_->txcmd_buffer_[1].KP_);
+    mvwprintw(win_, y_org + 14, 1, "[I] [tx] KI:   %5.5f", md_ptr_->txcmd_buffer_[1].KI_);
+    mvwprintw(win_, y_org + 15, 1, "[D] [tx] KD:   %5.5f", md_ptr_->txcmd_buffer_[1].KD_);
     // reply
     mvwprintw(win_, 12, 30, "[rx] TIMEDOUT: %4d", md_ptr_->CAN_rx_timedout_[1]);
-    mvwprintw(win_, y_org + 11, 30, "[rx] Ver:   %7d", md_ptr_->rxdata_buffer_[1].version_);
-    mvwprintw(win_, y_org + 12, 30, "[rx] Mode:  %7d", md_ptr_->rxdata_buffer_[1].mode_state_);
-    mvwprintw(win_, y_org + 13, 30, "[rx] Pos:   %4.5f", md_ptr_->rxdata_buffer_[1].position_);
-    mvwprintw(win_, y_org + 14, 30, "[rx] Vel:   %4.5f", md_ptr_->rxdata_buffer_[1].velocity_);
-    mvwprintw(win_, y_org + 15, 30, "[rx] Trq:   %4.5f", md_ptr_->rxdata_buffer_[1].torque_);
-    mvwprintw(win_, y_org + 16, 30, "[rx] Cal:   %7d", md_ptr_->rxdata_buffer_[1].calibrate_finish_);
+    mvwprintw(win_, y_org + 11, 30, "[rx] Ver:   %7d", md_ptr_->rxcmd_buffer_[1].version_);
+    mvwprintw(win_, y_org + 12, 30, "[rx] Mode:  %7d", md_ptr_->rxcmd_buffer_[1].mode_state_);
+    mvwprintw(win_, y_org + 13, 30, "[rx] Pos:   %4.5f", md_ptr_->rxcmd_buffer_[1].position_);
+    mvwprintw(win_, y_org + 14, 30, "[rx] Vel:   %4.5f", md_ptr_->rxcmd_buffer_[1].velocity_);
+    mvwprintw(win_, y_org + 15, 30, "[rx] Trq:   %4.5f", md_ptr_->rxcmd_buffer_[1].torque_);
+    mvwprintw(win_, y_org + 16, 30, "[rx] Cal:   %7d", md_ptr_->rxcmd_buffer_[1].calibrate_finish_);
     wrefresh(win_);
 }
 

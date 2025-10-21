@@ -385,14 +385,14 @@ void Corgi::canLoop_()
     {
         if (modules_list_[i].enable_ && powerboard_state_.at(2) == true)
         {
-            modules_list_[i].io_.CAN_recieve_feedback(&modules_list_[i].rxdata_buffer_[0], &modules_list_[i].rxdata_buffer_[1]);
+            modules_list_[i].io_.CAN_recieve_feedback(&modules_list_[i].rxcmd_buffer_[0], &modules_list_[i].rxcmd_buffer_[1]);
             modules_list_[i].CAN_timeoutCheck();
 
             if (modules_list_[i].CAN_module_timedout)timeout_cnt_++;
             else timeout_cnt_ = 0;
             if (timeout_cnt_ < max_timeout_cnt_)
             {
-                modules_list_[i].io_.CAN_send_command(modules_list_[i].txdata_buffer_[0], modules_list_[i].txdata_buffer_[1]);
+                modules_list_[i].io_.CAN_send_command(modules_list_[i].txcmd_buffer_[0], modules_list_[i].txcmd_buffer_[1]);
                 NO_CAN_TIMEDOUT_ERROR_ = true;
             }
             else NO_CAN_TIMEDOUT_ERROR_ = false;
@@ -538,19 +538,19 @@ void Corgi::logger(int seq)
         {
             // Log Position Control Data
             log_stream << std::setprecision(5);
-            log_stream << modules_list_.at(i).txdata_buffer_[0].position_ << ",";
-            log_stream << modules_list_.at(i).txdata_buffer_[0].torque_ << ",";
-            log_stream << modules_list_.at(i).txdata_buffer_[0].KP_ << ",";
-            log_stream << modules_list_.at(i).txdata_buffer_[0].KD_ << ",";
-            log_stream << modules_list_.at(i).rxdata_buffer_[0].position_ << ",";
-            log_stream << modules_list_.at(i).rxdata_buffer_[0].torque_ << ",";
+            log_stream << modules_list_.at(i).txcmd_buffer_[0].position_ << ",";
+            log_stream << modules_list_.at(i).txcmd_buffer_[0].torque_ << ",";
+            log_stream << modules_list_.at(i).txcmd_buffer_[0].KP_ << ",";
+            log_stream << modules_list_.at(i).txcmd_buffer_[0].KD_ << ",";
+            log_stream << modules_list_.at(i).rxcmd_buffer_[0].position_ << ",";
+            log_stream << modules_list_.at(i).rxcmd_buffer_[0].torque_ << ",";
 
-            log_stream << modules_list_.at(i).txdata_buffer_[1].position_ << ",";
-            log_stream << modules_list_.at(i).txdata_buffer_[1].torque_ << ",";
-            log_stream << modules_list_.at(i).txdata_buffer_[1].KP_ << ",";
-            log_stream << modules_list_.at(i).txdata_buffer_[1].KD_ << ",";
-            log_stream << modules_list_.at(i).rxdata_buffer_[1].position_ << ",";
-            log_stream << modules_list_.at(i).rxdata_buffer_[1].torque_ << ",";
+            log_stream << modules_list_.at(i).txcmd_buffer_[1].position_ << ",";
+            log_stream << modules_list_.at(i).txcmd_buffer_[1].torque_ << ",";
+            log_stream << modules_list_.at(i).txcmd_buffer_[1].KP_ << ",";
+            log_stream << modules_list_.at(i).txcmd_buffer_[1].KD_ << ",";
+            log_stream << modules_list_.at(i).rxcmd_buffer_[1].position_ << ",";
+            log_stream << modules_list_.at(i).rxcmd_buffer_[1].torque_ << ",";
         }
         // Log Powerboard data
         log_stream << fpga_.powerboard_V_list_[0] << "," << fpga_.powerboard_I_list_[0] << ",";

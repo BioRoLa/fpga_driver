@@ -19,7 +19,7 @@ typedef struct Motor
 } Motor;
 
 // transmitted to SBRIO
-typedef struct CAN_txdata
+typedef struct CAN_txcmd
 {
     float position_;
     float torque_;
@@ -27,9 +27,9 @@ typedef struct CAN_txdata
     float KI_;
     float KD_;
     float KT_;
-} CAN_txdata;
+} CAN_txcmd;
 
-typedef struct CAN_rxdata
+typedef struct CAN_rxcmd
 {
     int CAN_id_;
     float position_;
@@ -39,12 +39,12 @@ typedef struct CAN_rxdata
     int calibrate_finish_;
     int mode_state_;
     Mode mode_;
-} CAN_rxdata;
+} CAN_rxcmd;
 
 class Module
 {
 public:
-    std::vector<CAN_txdata> txdata_;
+    std::vector<CAN_txcmd> txdata_;
 };
 
 #endif

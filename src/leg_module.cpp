@@ -18,37 +18,37 @@ LegModule::LegModule(std::string _label, YAML::Node _config, NiFpga_Status _stat
 
     CAN_module_timedout = false;
 
-    txdata_buffer_[0].position_ = 0;
-    txdata_buffer_[0].torque_ = 0;
-    txdata_buffer_[0].KP_ = motors_list_[0].kp_;
-    txdata_buffer_[0].KI_ = motors_list_[0].ki_;
-    txdata_buffer_[0].KD_ = motors_list_[0].kd_;
-    txdata_buffer_[0].KT_ = motors_list_[0].kt_;
+    txcmd_buffer_[0].position_ = 0;
+    txcmd_buffer_[0].torque_ = 0;
+    txcmd_buffer_[0].KP_ = motors_list_[0].kp_;
+    txcmd_buffer_[0].KI_ = motors_list_[0].ki_;
+    txcmd_buffer_[0].KD_ = motors_list_[0].kd_;
+    txcmd_buffer_[0].KT_ = motors_list_[0].kt_;
 
-    txdata_buffer_[1].position_ = 0;
-    txdata_buffer_[1].torque_ = 0;
-    txdata_buffer_[1].KP_ = motors_list_[1].kp_;
-    txdata_buffer_[1].KI_ = motors_list_[1].ki_;
-    txdata_buffer_[1].KD_ = motors_list_[1].kd_;
-    txdata_buffer_[1].KT_ = motors_list_[1].kt_;
+    txcmd_buffer_[1].position_ = 0;
+    txcmd_buffer_[1].torque_ = 0;
+    txcmd_buffer_[1].KP_ = motors_list_[1].kp_;
+    txcmd_buffer_[1].KI_ = motors_list_[1].ki_;
+    txcmd_buffer_[1].KD_ = motors_list_[1].kd_;
+    txcmd_buffer_[1].KT_ = motors_list_[1].kt_;
 
-    rxdata_buffer_[0].mode_ = Mode::REST;
-    rxdata_buffer_[0].mode_state_ = _REST_MODE;
-    rxdata_buffer_[0].position_ = 0;
-    rxdata_buffer_[0].torque_ = 0;
-    rxdata_buffer_[0].velocity_ = 0;
-    rxdata_buffer_[0].calibrate_finish_ = 0;
-    rxdata_buffer_[0].CAN_id_ = 0;
-    rxdata_buffer_[0].version_ = 0;
+    rxcmd_buffer_[0].mode_ = Mode::REST;
+    rxcmd_buffer_[0].mode_state_ = _REST_MODE;
+    rxcmd_buffer_[0].position_ = 0;
+    rxcmd_buffer_[0].torque_ = 0;
+    rxcmd_buffer_[0].velocity_ = 0;
+    rxcmd_buffer_[0].calibrate_finish_ = 0;
+    rxcmd_buffer_[0].CAN_id_ = 0;
+    rxcmd_buffer_[0].version_ = 0;
 
-    rxdata_buffer_[1].mode_ = Mode::REST;
-    rxdata_buffer_[1].mode_state_ = _REST_MODE;
-    rxdata_buffer_[1].position_ = 0;
-    rxdata_buffer_[1].torque_ = 0;
-    rxdata_buffer_[1].velocity_ = 0;
-    rxdata_buffer_[1].calibrate_finish_ = 0;
-    rxdata_buffer_[1].CAN_id_ = 0;
-    rxdata_buffer_[1].version_ = 0;
+    rxcmd_buffer_[1].mode_ = Mode::REST;
+    rxcmd_buffer_[1].mode_state_ = _REST_MODE;
+    rxcmd_buffer_[1].position_ = 0;
+    rxcmd_buffer_[1].torque_ = 0;
+    rxcmd_buffer_[1].velocity_ = 0;
+    rxcmd_buffer_[1].calibrate_finish_ = 0;
+    rxcmd_buffer_[1].CAN_id_ = 0;
+    rxcmd_buffer_[1].version_ = 0;
 
     io_ = ModuleIO(_status, _fpga_session, CAN_port_, &motors_list_);
     CAN_first_transmit_ = true;
