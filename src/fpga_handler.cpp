@@ -340,8 +340,12 @@ void ModuleIO::CAN_config_encode(uint8_t (&txmsg)[8], CAN_txconfig txconfig)
     // [2]: Target address
     txmsg[2] = static_cast<uint8_t>(txconfig.target_addr_);
     
-    // [3-6]: Data value (float, 4 bytes, works only for config_type_ = WRITE)
-    memcpy(&txmsg[3], &txconfig.data_value_, sizeof(float));
+    // [3-6]: Data value (4 bytes, works only for config_type_ = WRITE)
+    if (txconfig.data_type_ == Data_type::FLOAT) {
+        memcpy(&txmsg[3], &txconfig.data_value_.f, sizeof(float));
+    } else {
+        memcpy(&txmsg[3], &txconfig.data_value_.i, sizeof(int));
+    }
     
     // [7]: Reserved
     txmsg[7] = 0x00;
