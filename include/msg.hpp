@@ -6,6 +6,27 @@
 #include <math.h>
 #include <string>
 
+enum class Data_type
+{
+    FLOAT,
+    INT
+};
+
+enum class Config_type
+{
+    READ,
+    WRITE
+};
+
+enum class Config_state
+{
+    CONFIG_SUCCESS,
+    INVALID_VALUE,
+    READ_ONLY,
+    INVALID_ADDR,
+    INVALID_CMD
+};
+
 typedef struct Motor
 {
     int CAN_ID_;
@@ -64,27 +85,6 @@ class Module
 {
 public:
     std::vector<CAN_txcmd> txdata_;
-};
-
-enum class Data_type
-{
-    FLOAT,
-    INT
-};
-
-enum class Config_type
-{
-    READ,
-    WRITE
-};
-
-enum class Config_state
-{
-    CONFIG_SUCCESS,
-    INVALID_VALUE,
-    READ_ONLY,
-    INVALID_ADDR,
-    INVALID_CMD
 };
 
 #endif

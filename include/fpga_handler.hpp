@@ -81,13 +81,14 @@ public:
   void CAN_setup(int timeout_us);
   void CAN_set_mode(Mode mode);
   void CAN_send_command(CAN_txcmd txdata_id1, CAN_txcmd txdata_id2);
+  void CAN_send_config(CAN_txconfig txconfig_id1, CAN_txconfig txconfig_id2);
   void CAN_recieve_feedback(CAN_rxcmd *rxdata_id1, CAN_rxcmd *rxdata_id2);
 
   void CAN_cmd_encode(uint8_t (&txmsg)[8], CAN_txcmd txdata);
   void CAN_cmd_decode(uint8_t (&rxmsg)[8], CAN_rxcmd *rxdata);
 
-  void CAN_config_encode(uint8_t (&txmsg)[8], CAN_config txconfig);
-  void CAN_config_decode(uint8_t (&rxmsg)[8], CAN_config *rxconfig);
+  void CAN_config_encode(uint8_t (&txmsg)[8], CAN_txconfig txconfig);
+  void CAN_config_decode(uint8_t (&rxmsg)[8], CAN_rxconfig *rxconfig);
 
   double motorR_bias;
   double motorL_bias;

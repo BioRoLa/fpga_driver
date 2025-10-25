@@ -260,14 +260,12 @@ void ModuleIO::CAN_send_command(CAN_txcmd txdata_id1, CAN_txcmd txdata_id2)
     write_CAN_transmit_(1);
 }
 
-void ModuleIO::CAN_send_config(CAN_config txconfig_id1, CAN_config txconfig_id2)
+void ModuleIO::CAN_send_config(CAN_txconfig txconfig_id1, CAN_txconfig txconfig_id2)
 {
     uint8_t txmsg_id1[8];
     uint8_t txmsg_id2[8];
 
-    CAN_config_encode(txmsg_id1, txconfig_id1);
-
-
+    // CAN_config_encode(txmsg_id1, txconfig_id1);
     write_tx_data_(txmsg_id1, txmsg_id2);
     usleep(100);
     write_CAN_transmit_(1);
