@@ -18,6 +18,7 @@
 #include <iostream>
 #include <bitset>
 #include <string>
+#include <cstring>
 #undef OK
 
 class ModuleIO
