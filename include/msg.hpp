@@ -27,6 +27,11 @@ enum class Config_state
     INVALID_CMD
 };
 
+typedef union Config_data {
+    int i;
+    float f;
+};
+
 typedef struct Motor
 {
     int CAN_ID_;
@@ -67,7 +72,7 @@ typedef struct CAN_txconfig
     Config_type config_type_;
     Data_type data_type_;
     int target_addr_;
-    float data_value_;
+    Config_data data_value_;
 } CAN_txconfig;
 
 typedef struct CAN_rxconfig
@@ -76,7 +81,7 @@ typedef struct CAN_rxconfig
     Config_state config_state_;
     Config_type config_type_;
     int target_addr_;
-    float data_value_;
+    Config_data data_value_;
     int mode_state_;
 } CAN_rxconfig;
 
