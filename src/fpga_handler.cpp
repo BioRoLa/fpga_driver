@@ -260,11 +260,22 @@ void ModuleIO::CAN_send_command(CAN_txcmd txdata_id1, CAN_txcmd txdata_id2)
     write_CAN_transmit_(1);
 }
 
+void ModuleIO::CAN_send_config(CAN_config txconfig_id1, CAN_config txconfig_id2)
+{
+    uint8_t txmsg_id1[8];
+    uint8_t txmsg_id2[8];
+    //TODO: encode config data
+    write_tx_data_(txmsg_id1, txmsg_id2);
+    usleep(100);
+    write_CAN_transmit_(1);
+}
+
 void ModuleIO::CAN_recieve_feedback(CAN_rxcmd *rxdata_id1, CAN_rxcmd *rxdata_id2)
 {
     uint8_t rxmsg_id1[8];
     uint8_t rxmsg_id2[8];
     read_rx_data_(rxmsg_id1, rxmsg_id2);
+    //TODO: decode feedback data, config/status
     CAN_decode(rxmsg_id1, rxdata_id1);
     CAN_decode(rxmsg_id2, rxdata_id2);
 

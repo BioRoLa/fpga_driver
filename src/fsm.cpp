@@ -350,7 +350,7 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
         break;
 
         case Mode::CONFIG: {
-            // for debug
+            // TODO: add function to handle config mode
         }
         break;
     }

@@ -392,7 +392,14 @@ void Corgi::canLoop_()
             else timeout_cnt_ = 0;
             if (timeout_cnt_ < max_timeout_cnt_)
             {
-                modules_list_[i].io_.CAN_send_command(modules_list_[i].txcmd_buffer_[0], modules_list_[i].txcmd_buffer_[1]);
+                if (fsm_.workingMode_ == Mode::CONFIG)
+                {
+                    modules_list_[i].io_.CAN_send_config(modules_list_[i].txconfig_buffer_[0], modules_list_[i].txconfig_buffer_[1]);
+                }
+                else
+                {
+                    modules_list_[i].io_.CAN_send_command(modules_list_[i].txcmd_buffer_[0], modules_list_[i].txcmd_buffer_[1]);
+                }
                 NO_CAN_TIMEDOUT_ERROR_ = true;
             }
             else NO_CAN_TIMEDOUT_ERROR_ = false;
