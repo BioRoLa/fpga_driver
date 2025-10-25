@@ -64,7 +64,6 @@ typedef struct CAN_rxcmd
 
 typedef struct CAN_txconfig
 {
-    int CAN_id_;
     Config_type config_type_;
     Data_type data_type_;
     int target_addr_;
