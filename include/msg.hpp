@@ -79,10 +79,11 @@ typedef struct CAN_rxconfig
 {
     int CAN_id_;
     Config_state config_state_;
-    Config_type config_type_;
+    Data_type data_type_;
     int target_addr_;
     Config_data data_value_;
-    int mode_state_;
+    int version_;
+    Mode mode_;
 } CAN_rxconfig;
 
 class Module
