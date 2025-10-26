@@ -85,6 +85,8 @@ public:
   void CAN_send_config(CAN_txconfig txconfig_id1, CAN_txconfig txconfig_id2);
   void CAN_recieve_feedback(CAN_rxcmd *rxdata_id1, CAN_rxcmd *rxdata_id2);
 
+  Mode decode_mode_from_raw(int mode_raw);
+
   void CAN_cmd_encode(uint8_t (&txmsg)[8], CAN_txcmd txdata);
   void CAN_cmd_decode(uint8_t (&rxmsg)[8], CAN_rxcmd *rxdata);
 
