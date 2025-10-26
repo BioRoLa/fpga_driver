@@ -100,4 +100,7 @@ class Corgi
     int32_t zero_offset;
     double steer_current_angle;
     bool steering_state;
+
+    int config_motor_index;
+    bool config_finished;
 };
