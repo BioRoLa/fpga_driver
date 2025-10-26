@@ -305,6 +305,15 @@ void ModuleIO::CAN_cmd_encode(uint8_t (&txmsg)[8], CAN_txcmd txdata)
     txmsg[7] = torque_int & 0xFF;
 }
 
+Mode ModuleIO::decode_mode_from_raw(int mode_raw)
+{
+    if (mode_raw == _SET_ZERO) return Mode::SET_ZERO;
+    else if (mode_raw == _MOTOR_MODE) return Mode::MOTOR;
+    else if (mode_raw == _HALL_CALIBRATE) return Mode::HALL_CALIBRATE;
+    else if (mode_raw == _REST_MODE) return Mode::REST;
+    return Mode::REST; // default case
+}
+
 void ModuleIO::CAN_cmd_decode(uint8_t (&rxmsg)[8], CAN_rxcmd *rxdata)
 {
     int pos_raw, vel_raw, torque_raw, cal_raw, ver_raw, mode_raw;
@@ -323,10 +332,7 @@ void ModuleIO::CAN_cmd_decode(uint8_t (&rxmsg)[8], CAN_rxcmd *rxdata)
     rxdata->calibrate_finish_ = cal_raw;
     rxdata->mode_state_ = mode_raw;
 
-    if (mode_raw == _SET_ZERO)rxdata->mode_ = Mode::SET_ZERO;
-    else if (mode_raw == _MOTOR_MODE)rxdata->mode_ = Mode::MOTOR;
-    else if (mode_raw == _HALL_CALIBRATE)rxdata->mode_ = Mode::HALL_CALIBRATE;
-    else if (mode_raw == _REST_MODE)rxdata->mode_ = Mode::REST;
+    rxdata->mode_ = decode_mode_from_raw(mode_raw);
 }
 
 void ModuleIO::CAN_config_encode(uint8_t (&txmsg)[8], CAN_txconfig txconfig)
@@ -345,6 +351,28 @@ void ModuleIO::CAN_config_encode(uint8_t (&txmsg)[8], CAN_txconfig txconfig)
     
     // [7]: Reserved
     txmsg[7] = 0x00;
+}
+
+void ModuleIO::CAN_config_decode(uint8_t (&rxmsg)[8], CAN_rxconfig *rxconfig)
+{
+    // [0]: config_state_
+    rxconfig->config_state_ = static_cast<Config_state>(rxmsg[0]);
+    
+    // [1]: Data type (INT/FLOAT)
+    rxconfig->data_type_ =  static_cast<Data_type>(rxmsg[1]);
+    
+    // [2]: Target address
+    rxconfig->target_addr_ = static_cast<int>(rxmsg[2]);
+    
+    // [3-6]: Data value (4 bytes, works only for config_type_ = WRITE)
+    memcpy(&rxconfig->data_value_, &rxmsg[3], sizeof(float));
+    
+    // [7]: Version and FSM State
+    rxconfig->version_ = ((int)(rxmsg[7] >> 4));
+
+    int mode_raw;
+    mode_raw = ((int)(rxmsg[7]& 0x0F));
+    rxconfig->mode_ = decode_mode_from_raw(mode_raw);
 }
 
 int ModuleIO::float_to_uint(float x, float x_min, float x_max, int bits)
