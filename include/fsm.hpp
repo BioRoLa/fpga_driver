@@ -12,7 +12,6 @@
 
 #include "Motor.pb.h"
 #include "Power.pb.h"
-#include "Steering.pb.h"
 
 
 class ModeFsm

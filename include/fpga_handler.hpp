@@ -121,6 +121,7 @@ public:
   
   void write_vicon_trigger(bool trigger);
 
+  // *********************** Unused Functions ************************ //
   // steering
   NiFpga_FPGA_CANBus_4module_v3_steering_ControlBool enable_btn_;
   NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorBool hall;
@@ -130,10 +131,9 @@ public:
   void switch_steering(bool steering);
   NiFpga_Bool read_steer_hall();
   int32_t read_steer_encoder();
-  
-  
   void write_steer_vol(uint16_t vol);
   void switch_steer_dir(bool direction);
+  // **************************************************************** //
 
   void read_powerboard_data_();
 
