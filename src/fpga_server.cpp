@@ -86,10 +86,6 @@ void Corgi::load_config_()
 {
     yaml_node_ = YAML::LoadFile(CONFIG_PATH);
 
-    log_data = yaml_node_["log_data"].as<int>();
-    log_path = yaml_node_["log_path"].as<std::string>();
-    logger_init();
-
     fsm_.dt_ = yaml_node_["MainLoop_period_us"].as<int>() * 0.000001;
     fsm_.measure_offset = yaml_node_["Measure_offset"].as<int>();
     fsm_.cal_vel_ = yaml_node_["Hall_calibration_vel"].as<double>();
@@ -375,7 +371,6 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
     state_pub_.publish(motor_fb_msg);
     state_pb_pub_.publish(power_fb_msg);
     steer_pub_.publish(steer_fb_msg);
-    logger(seq);
     seq++;
 }
 
@@ -475,98 +470,6 @@ void Corgi::steeringPack(steering_msg::SteeringStateStamped &steer_fb_msg)
     steer_fb_msg.set_cmd_finish(steering_state_complete);
 
     mutex_.unlock();
-}
-
-
-void Corgi::logger_init()
-{
-    if (log_data)
-    {
-        log_stream.open(log_path);
-        log_stream << "seq,vicon_trigger,";
-        log_stream << "AR_cmd_pos,AR_cmd_torq,AR_cmd_kp,AR_cmd_kd,AR_rpy_pos,AR_rpy_torq,";
-        log_stream << "AL_cmd_pos,AL_cmd_torq,AL_cmd_kp,AL_cmd_kd,AL_rpy_pos,AL_rpy_torq,";
-        log_stream << "A_cmd_x,A_cmd_y,A_cmp_x,A_cmp_y,A_rpy_x,A_rpy_y,A_ft_kp,A_ft_ki,A_ft_kd,A_F_"
-                      "d_x,A_F_d_y,A_"
-                      "Fe_g2l_x,A_Fe_g2l_y,A_"
-                      "kft_x,A_kft_y,";
-
-        log_stream << "BR_cmd_pos,BR_cmd_torq,BR_cmd_kp,BR_cmd_kd,BR_rpy_pos,BR_rpy_torq,";
-        log_stream << "BL_cmd_pos,BL_cmd_torq,BL_cmd_kp,BL_cmd_kd,BL_rpy_pos,BL_rpy_torq,";
-        log_stream << "B_cmd_x,B_cmd_y,B_cmp_x,B_cmp_y,B_rpy_x,B_rpy_y,B_ft_kp,B_ft_ki,B_ft_kd,B_F_"
-                      "d_x,B_F_d_y,B_"
-                      "Fe_g2l_x,B_Fe_g2l_y,B_"
-                      "kft_x,B_kft_y,";
-
-        log_stream << "CR_cmd_pos,CR_cmd_torq,CR_cmd_kp,CR_cmd_kd,CR_rpy_pos,CR_rpy_torq,";
-        log_stream << "CL_cmd_pos,CL_cmd_torq,CL_cmd_kp,CL_cmd_kd,CL_rpy_pos,CL_rpy_torq,";
-        log_stream << "C_cmd_x,C_cmd_y,C_cmp_x,C_cmp_y,C_rpy_x,C_rpy_y,C_ft_kp,C_ft_ki,C_ft_kd,C_F_"
-                      "d_x,C_F_d_y,C_"
-                      "Fe_g2l_x,C_Fe_g2l_y,C_"
-                      "kft_x,C_kft_y,";
-
-        log_stream << "DR_cmd_pos,DR_cmd_torq,DR_cmd_kp,DR_cmd_kd,DR_rpy_pos,DR_rpy_torq,";
-        log_stream << "DL_cmd_pos,DL_cmd_torq,DL_cmd_kp,DL_cmd_kd,DL_rpy_pos,DL_rpy_torq,";
-        log_stream << "D_cmd_x,D_cmd_y,D_cmp_x,D_cmp_y,D_rpy_x,D_rpy_y,D_ft_kp,D_ft_ki,D_ft_kd,D_F_"
-                      "d_x,D_F_d_y,D_"
-                      "Fe_g2l_x,D_Fe_g2l_y,D_"
-                      "kft_x,D_kft_y,";
-
-        log_stream << "Powerboard_0_V,Powerboard_0_I,";
-        log_stream << "Powerboard_1_V,Powerboard_1_I,";
-        log_stream << "Powerboard_2_V,Powerboard_2_I,";
-        log_stream << "Powerboard_3_V,Powerboard_3_I,";
-        log_stream << "Powerboard_4_V,Powerboard_4_I,";
-        log_stream << "Powerboard_5_V,Powerboard_5_I,";
-        log_stream << "Powerboard_6_V,Powerboard_6_I,";
-        log_stream << "Powerboard_7_V,Powerboard_7_I,";
-        log_stream << "Powerboard_8_V,Powerboard_8_I,";
-        log_stream << "Powerboard_9_V,Powerboard_9_I,";
-        log_stream << "Powerboard_10_V,Powerboard_10_I,";
-        log_stream << "Powerboard_11_V,Powerboard_11_I\n";
-    }
-}
-
-void Corgi::logger(int seq)
-{
-    if (log_data && vicon_trigger_)
-    {
-        // log data
-        log_stream << seq << ",";
-        log_stream << vicon_trigger_ << ",";
-        for (int i = 0; i < 4; i++)
-        {
-            // Log Position Control Data
-            log_stream << std::setprecision(5);
-            log_stream << modules_list_.at(i).txdata_buffer_[0].position_ << ",";
-            log_stream << modules_list_.at(i).txdata_buffer_[0].torque_ << ",";
-            log_stream << modules_list_.at(i).txdata_buffer_[0].KP_ << ",";
-            log_stream << modules_list_.at(i).txdata_buffer_[0].KD_ << ",";
-            log_stream << modules_list_.at(i).rxdata_buffer_[0].position_ << ",";
-            log_stream << modules_list_.at(i).rxdata_buffer_[0].torque_ << ",";
-
-            log_stream << modules_list_.at(i).txdata_buffer_[1].position_ << ",";
-            log_stream << modules_list_.at(i).txdata_buffer_[1].torque_ << ",";
-            log_stream << modules_list_.at(i).txdata_buffer_[1].KP_ << ",";
-            log_stream << modules_list_.at(i).txdata_buffer_[1].KD_ << ",";
-            log_stream << modules_list_.at(i).rxdata_buffer_[1].position_ << ",";
-            log_stream << modules_list_.at(i).rxdata_buffer_[1].torque_ << ",";
-        }
-        // Log Powerboard data
-        log_stream << fpga_.powerboard_V_list_[0] << "," << fpga_.powerboard_I_list_[0] << ",";
-        log_stream << fpga_.powerboard_V_list_[1] << "," << fpga_.powerboard_I_list_[1] << ",";
-        log_stream << fpga_.powerboard_V_list_[2] << "," << fpga_.powerboard_I_list_[2] << ",";
-        log_stream << fpga_.powerboard_V_list_[3] << "," << fpga_.powerboard_I_list_[3] << ",";
-        log_stream << fpga_.powerboard_V_list_[4] << "," << fpga_.powerboard_I_list_[4] << ",";
-        log_stream << fpga_.powerboard_V_list_[5] << "," << fpga_.powerboard_I_list_[5] << ",";
-        log_stream << fpga_.powerboard_V_list_[6] << "," << fpga_.powerboard_I_list_[6] << ",";
-        log_stream << fpga_.powerboard_V_list_[7] << "," << fpga_.powerboard_I_list_[7] << ",";
-        log_stream << fpga_.powerboard_V_list_[8] << "," << fpga_.powerboard_I_list_[8] << ",";
-        log_stream << fpga_.powerboard_V_list_[9] << "," << fpga_.powerboard_I_list_[9] << ",";
-        log_stream << fpga_.powerboard_V_list_[10] << "," << fpga_.powerboard_I_list_[10] << ",";
-        log_stream << fpga_.powerboard_V_list_[11] << "," << fpga_.powerboard_I_list_[11] << "\n";
-    }
-    if (seq % 100 == 0) log_stream << std::flush;
 }
 
 int main(int argc, char* argv[])

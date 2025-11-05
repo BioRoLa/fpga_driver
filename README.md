@@ -36,8 +36,7 @@ Install gRPC: https://grpc.io/docs/languages/cpp/quickstart/
 
 ## change address
 1. /fpga_server.hpp (CONFIG_PATH and FPGA_PATH)
-2. /config.yaml (log_path)
-3. /NiFpga_FPGA_CANBus_4module_v3_steering.h (NiFpga_FPGA_CANBus_4module_v3_steering_Bitfile)
+2. /NiFpga_FPGA_CANBus_4module_v3_steering.h (NiFpga_FPGA_CANBus_4module_v3_steering_Bitfile)
 
 ## compiler
 ```bash

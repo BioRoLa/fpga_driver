@@ -79,14 +79,7 @@ class Corgi
                    core::Publisher<steering_msg::SteeringStateStamped>& steer_pub);
 
     void canLoop_();
-    void logger_init();
-    void logger(int seq);
-    double logbuf[100][134];
     void steering_calibration();
-
-    int log_data;
-    std::string log_path;
-    std::ofstream log_stream;
   
     int32_t steering_cali_state;
     int32_t steering_state_complete;
