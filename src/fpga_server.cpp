@@ -381,8 +381,10 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
 
 void Corgi::canLoop_()
 {
-    for (int i = 0; i < 4; i++)
+    if (fsm_.workingMode_ == Mode::CONFIG)
     {
+        int i;
+        i = config_motor_index;
         if (modules_list_[i].enable_ && powerboard_state_.at(2) == true)
         {
             modules_list_[i].io_.CAN_recieve_feedback(&modules_list_[i].rxcmd_buffer_[0], &modules_list_[i].rxcmd_buffer_[1]);
@@ -392,17 +394,33 @@ void Corgi::canLoop_()
             else timeout_cnt_ = 0;
             if (timeout_cnt_ < max_timeout_cnt_)
             {
-                if (fsm_.workingMode_ == Mode::CONFIG)
+                if (!config_finished)
                 {
                     modules_list_[i].io_.CAN_send_config(modules_list_[i].txconfig_buffer_[0], modules_list_[i].txconfig_buffer_[1]);
-                }
-                else
-                {
-                    modules_list_[i].io_.CAN_send_command(modules_list_[i].txcmd_buffer_[0], modules_list_[i].txcmd_buffer_[1]);
                 }
                 NO_CAN_TIMEDOUT_ERROR_ = true;
             }
             else NO_CAN_TIMEDOUT_ERROR_ = false;
+        }
+    }
+    else
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            if (modules_list_[i].enable_ && powerboard_state_.at(2) == true)
+            {
+                modules_list_[i].io_.CAN_recieve_feedback(&modules_list_[i].rxcmd_buffer_[0], &modules_list_[i].rxcmd_buffer_[1]);
+                modules_list_[i].CAN_timeoutCheck();
+
+                if (modules_list_[i].CAN_module_timedout)timeout_cnt_++;
+                else timeout_cnt_ = 0;
+                if (timeout_cnt_ < max_timeout_cnt_)
+                {
+                    modules_list_[i].io_.CAN_send_command(modules_list_[i].txcmd_buffer_[0], modules_list_[i].txcmd_buffer_[1]);
+                    NO_CAN_TIMEDOUT_ERROR_ = true;
+                }
+                else NO_CAN_TIMEDOUT_ERROR_ = false;
+            }
         }
     }
 }
