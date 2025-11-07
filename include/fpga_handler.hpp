@@ -113,12 +113,8 @@ public:
   NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorArrayU16 r_powerboard_data_;
   NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorArrayU16Size size_powerboard_data_;
 
-  NiFpga_FPGA_CANBus_4module_v3_steering_ControlBool w_orin_trigger;
-
   void setIrqPeriod(int main_loop_period, int can_loop_period);
   void write_powerboard_(std::vector<bool> *powerboard_state_);
-  
-  void write_vicon_trigger(bool trigger);
 
   // *********************** Unused Functions ************************ //
   // steering

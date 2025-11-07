@@ -60,7 +60,6 @@ Corgi::Corgi()
     console_.init(&fpga_, &modules_list_, &powerboard_state_, &fsm_, &main_mtx_);
 
     fpga_.setIrqPeriod(main_irq_period_us_, can_irq_period_us_);
-    fpga_.write_vicon_trigger(false);
 }
 
 void Corgi::load_config_()
@@ -202,8 +201,6 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
             powerboard_state_.at(0) = power_cmd_data.digital();
             powerboard_state_.at(1) = power_cmd_data.signal();
             powerboard_state_.at(2) = power_cmd_data.power();
-
-            fpga_.write_vicon_trigger(power_cmd_data.trigger());
 
             if (power_cmd_data.robot_mode() == (int)Mode::MOTOR && fsm_.workingMode_ != Mode::MOTOR)fsm_.switchMode(Mode::MOTOR);
             else if (power_cmd_data.robot_mode() == (int)Mode::HALL_CALIBRATE && fsm_.workingMode_ != Mode::HALL_CALIBRATE && fsm_.workingMode_ != Mode::MOTOR)fsm_.switchMode(Mode::HALL_CALIBRATE);

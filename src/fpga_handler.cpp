@@ -397,11 +397,6 @@ void FpgaHandler::write_powerboard_(std::vector<bool> *powerboard_state_)
     NiFpga_MergeStatus(&status_, NiFpga_WriteBool(session_, w_pb_power_, powerboard_state_->at(2)));
 }
 
-void FpgaHandler::write_vicon_trigger(bool trigger)
-{
-    NiFpga_MergeStatus(&status_, NiFpga_WriteBool(session_, w_vicon_trigger, trigger));
-}
-
 void FpgaHandler::read_powerboard_data_()
 {
     uint16_t rx_arr[24];
