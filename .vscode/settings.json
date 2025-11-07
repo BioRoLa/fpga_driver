@@ -82,7 +82,8 @@
         "regex": "cpp",
         "rope": "cpp",
         "slist": "cpp",
-        "scoped_allocator": "cpp"
+        "scoped_allocator": "cpp",
+        "core": "cpp"
     },
     "python.autoComplete.extraPaths": [
         "/opt/ros/noetic/lib/python3/dist-packages"
