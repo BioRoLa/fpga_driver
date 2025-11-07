@@ -37,8 +37,6 @@ class Corgi
     std::vector<bool> powerboard_state_;
     std::mutex main_mtx_;
 
-    std::ofstream MSG_Stream;
-
     // header msg
     struct timeval t_stamp;
     int seq;
@@ -56,8 +54,6 @@ class Corgi
     bool digital_switch_;
     bool signal_switch_;
     bool power_switch_;
-    bool stop_;
-    bool vicon_trigger_;
 
     void interruptHandler(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
                           core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,

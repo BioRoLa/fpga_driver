@@ -27,7 +27,6 @@ void power_data_cb(power_msg::PowerCmdStamped power_msg)
 
 Corgi::Corgi()
 {
-   stop_ = false;
     /* default value of interrupt*/
     main_irq_period_us_ = 500;
     can_irq_period_us_ = 800;
@@ -37,7 +36,6 @@ Corgi::Corgi()
     digital_switch_ = false;
     signal_switch_ = false;
     power_switch_ = false;
-    vicon_trigger_ = false;
     NO_CAN_TIMEDOUT_ERROR_ = true;
     NO_SWITCH_TIMEDOUT_ERROR_ = true;
     HALL_CALIBRATED_ = false;
@@ -111,7 +109,7 @@ void Corgi::interruptHandler(core::Subscriber<power_msg::PowerCmdStamped>& cmd_p
 
                                                        
 {
-    while (NiFpga_IsNotError(fpga_.status_) && !stop_ && !sys_stop)
+    while (NiFpga_IsNotError(fpga_.status_) && !sys_stop)
     {
         uint32_t irqsAsserted;
         uint32_t irqTimeout = 10;  // ms
@@ -206,7 +204,6 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
             powerboard_state_.at(2) = power_cmd_data.power();
 
             fpga_.write_vicon_trigger(power_cmd_data.trigger());
-            vicon_trigger_ = power_cmd_data.trigger();
 
             if (power_cmd_data.robot_mode() == (int)Mode::MOTOR && fsm_.workingMode_ != Mode::MOTOR)fsm_.switchMode(Mode::MOTOR);
             else if (power_cmd_data.robot_mode() == (int)Mode::HALL_CALIBRATE && fsm_.workingMode_ != Mode::HALL_CALIBRATE && fsm_.workingMode_ != Mode::MOTOR)fsm_.switchMode(Mode::HALL_CALIBRATE);
