@@ -8,6 +8,7 @@
 
 enum class Mode
 {
+    // TODO: recontruct modes
     REST,
     CONFIG,
     SET_ZERO,
