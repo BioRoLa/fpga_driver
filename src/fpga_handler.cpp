@@ -351,8 +351,6 @@ FpgaHandler::FpgaHandler()
     r_powerboard_data_ = NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorArrayU16_Data;
     size_powerboard_data_ = NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorArrayU16Size_Data;
 
-    w_vicon_trigger = NiFpga_FPGA_CANBus_4module_v3_steering_ControlBool_Conn9_2w;
-
     enable_btn_ =  NiFpga_FPGA_CANBus_4module_v3_steering_ControlBool_EN;
     hall = NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorBool_Hall_effect;
    
