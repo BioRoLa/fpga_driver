@@ -51,7 +51,6 @@ LegModule::LegModule(std::string _label, YAML::Node _config, NiFpga_Status _stat
     rxdata_buffer_[1].version_ = 0;
 
     io_ = ModuleIO(_status, _fpga_session, CAN_port_, &motors_list_);
-    CAN_first_transmit_ = true;
 
     /* setup motors' CAN ID, port selection and timeout_us */
     io_.CAN_setup(CAN_timeout_us);

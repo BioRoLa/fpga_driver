@@ -68,7 +68,6 @@ public:
   void reset_input_window(WINDOW *win);
   void commandDecode(std::string buf);
   vector<string> tokenizer(std::string s);
-  auto getValue(string str);
 
   WINDOW *win_;
   std::mutex mutex_;

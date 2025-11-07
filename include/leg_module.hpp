@@ -29,7 +29,6 @@ public:
   std::string CAN_port_;
   bool enable_;
   int CAN_timeout_us;
-  bool CAN_first_transmit_;
 
   bool CAN_tx_timedout_[2];
   bool CAN_rx_timedout_[2];
