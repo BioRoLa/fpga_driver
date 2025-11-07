@@ -161,23 +161,3 @@ Eigen::Vector2d phi2tb(const Eigen::Vector2d &phi)
 
     return tb;
 }
-// Eigen::Vector2d phi2tb(const Eigen::Vector2d &phi)
-// {
-//     Eigen::Vector2d tb;
-//     /* Eigen::Matrix2d t;
-//     Eigen::Vector2d b;
-//     t << 1, -1, 1, 1;
-//     b << deg2rad(17), 0;
-//     tb = 1 / 2 * t * phi + b; */
-
-//     std::complex<double> r_cpx(0, phi[0] + deg2rad(17));
-//     std::complex<double> l_cpx(0, phi[1] - deg2rad(17));
-//     std::complex<double> drl = std::exp(r_cpx) / std::exp(l_cpx);
-//     double theta = std::arg(drl);
-//     if (theta < 0)
-//         theta += 2 * M_PI;
-//     theta *= 0.5;
-//     double beta = std::arg(std::exp(l_cpx)) + theta;
-//     tb << theta, beta;
-//     return tb;
-// }
