@@ -410,7 +410,7 @@ void FpgaHandler::read_powerboard_data_()
     }
 }
 
-// steering functions
+/////////////////////////////////////// Steering FPGA functions ///////////////////////////////////////
 void FpgaHandler::switch_steering(bool steering)
 {
     NiFpga_MergeStatus(&status_, NiFpga_WriteBool(session_, enable_btn_, steering));
