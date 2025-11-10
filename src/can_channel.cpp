@@ -154,13 +154,13 @@ CANMotor* CANChannel::getMotor(size_t index)
 
 void CANChannel::setup(uint32_t timeout_us)
 {
-    // 設定 CAN IDs
+    // setup CAN IDs
     for (size_t i = 0; i < motors_.size(); ++i) {
         NiFpga_MergeStatus(&status_, 
             NiFpga_WriteU32(session_, can_ids_[i], motors_[i]->getCANID()));
     }
     
-    // 設定 port select
+    // setup port select
     NiFpga_Bool port_select[2] = {
         motors_.size() > 0,
         motors_.size() > 1
@@ -168,7 +168,7 @@ void CANChannel::setup(uint32_t timeout_us)
     NiFpga_MergeStatus(&status_, 
         NiFpga_WriteArrayBool(session_, port_select_, port_select, port_select_size_));
     
-    // 設定 timeout
+    // setup timeout
     NiFpga_MergeStatus(&status_, 
         NiFpga_WriteU32(session_, timeout_us_, timeout_us));
 }
@@ -193,7 +193,7 @@ void CANChannel::sendCommands()
             NiFpga_WriteArrayU8(session_, tx_buffers_[i], tx_buffer, tx_buf_size_));
     }
     
-    // 觸發傳輸
+    // transmit trigger
     NiFpga_MergeStatus(&status_, NiFpga_WriteBool(session_, transmit_, true));
 }
 
