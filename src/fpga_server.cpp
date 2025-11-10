@@ -77,6 +77,7 @@ void Corgi::load_config_()
     main_irq_period_us_ = yaml_node_["MainLoop_period_us"].as<int>();
     can_irq_period_us_ = yaml_node_["CANLoop_period_us"].as<int>();
 
+    int modules_num_;
     /* initialize leg modules */
     modules_num_ = yaml_node_["Number_of_modules"].as<int>();
 
@@ -223,14 +224,13 @@ void Corgi::canLoop_()
     {
         if (modules_list_[i].enable_ && powerboard_state_.at(2) == true)
         {
-            modules_list_[i].io_.CAN_recieve_feedback(&modules_list_[i].rxdata_buffer_[0], &modules_list_[i].rxdata_buffer_[1]);
-            modules_list_[i].CAN_timeoutCheck();
+            modules_list_[i].receiveFeedback();
 
-            if (modules_list_[i].CAN_module_timedout)timeout_cnt_++;
+            if (modules_list_[i].hasTimeout())timeout_cnt_++;
             else timeout_cnt_ = 0;
             if (timeout_cnt_ < max_timeout_cnt_)
             {
-                modules_list_[i].io_.CAN_send_command(modules_list_[i].txdata_buffer_[0], modules_list_[i].txdata_buffer_[1]);
+                modules_list_[i].sendCommands();
                 NO_CAN_TIMEDOUT_ERROR_ = true;
             }
             else NO_CAN_TIMEDOUT_ERROR_ = false;

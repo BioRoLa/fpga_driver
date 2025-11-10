@@ -25,7 +25,6 @@ class Corgi
     void load_config_();
 
     YAML::Node yaml_node_;
-    int modules_num_;
 
     FpgaHandler fpga_;
     Console console_;
