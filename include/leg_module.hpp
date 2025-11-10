@@ -7,6 +7,7 @@
 #include <yaml-cpp/yaml.h>
 #include <eigen3/Eigen/Dense>
 #include <iomanip>
+#include "can_channel.hpp"
 
 #include "msg.hpp"
 #include "fpga_handler.hpp"
@@ -14,38 +15,39 @@
 class LegModule
 {
 public:
-  LegModule(std::string _label, YAML::Node _config, NiFpga_Status _status, NiFpga_Session _fpga_session);
-  LegModule()
-  {
-  }
+  LegModule(const std::string& label, const YAML::Node& config,
+                     NiFpga_Status& status, NiFpga_Session session);
 
   // ID of Module (LF, LH, RF, RH)
   std::string label_;
-  YAML::Node config_;
-  std::vector<Motor> motors_list_;
-
-  // hardware configuration
-  ModuleIO io_;
-  std::string CAN_port_;
   bool enable_;
+
+  // CAN Channel
+  CANChannel* channel_;
+
+  double linkR_bias;
+  double linkL_bias;
+
+  void sendCommands();
+  void receiveFeedback();
+  void setMode(Mode mode);
+  bool hasTimeout() const;
+
+  CANMotor* getMotor(size_t index);
+  size_t getMotorCount() const;
+
   int CAN_timeout_us;
 
-  bool CAN_tx_timedout_[2];
-  bool CAN_rx_timedout_[2];
-  bool CAN_mtr_timedout[2];
-  bool CAN_module_timedout;
+  ~LegModule();
 
-  CAN_txdata txdata_buffer_[2];
-  CAN_rxdata rxdata_buffer_[2];
+private:
+  NiFpga_Status& status_;
+  NiFpga_Session session_;  
+  YAML::Node config_;
 
-  double linkR_bias = 0;
-  double linkL_bias = 0;
+  std::string CAN_port_;
 
-  // ModuleIO
   void load_config();
-  void CAN_timeoutCheck();
-
-
 };
 
 double deg2rad(double deg);
