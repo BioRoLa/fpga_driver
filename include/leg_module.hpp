@@ -16,7 +16,7 @@ class LegModule
 {
 public:
   LegModule(const std::string& label, const YAML::Node& config,
-                     NiFpga_Status& status, NiFpga_Session session);
+                     NiFpga_Status& status, NiFpga_Session& session);
 
   // ID of Module (LF, LH, RF, RH)
   std::string label_;

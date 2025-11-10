@@ -10,7 +10,7 @@
 
 class CANChannel {
 public:
-    CANChannel(NiFpga_Status& status, NiFpga_Session session, 
+    CANChannel(NiFpga_Status& status, NiFpga_Session& session, 
                const std::string& channel_name);
     
     // Motor management

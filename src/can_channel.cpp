@@ -2,7 +2,7 @@
 #include "color.hpp"
 #include <iostream>
 
-CANChannel::CANChannel(NiFpga_Status& status, NiFpga_Session session, 
+CANChannel::CANChannel(NiFpga_Status& status, NiFpga_Session& session, 
                        const std::string& channel_name)
     : status_(status)
     , session_(session)

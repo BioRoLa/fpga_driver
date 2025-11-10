@@ -1,7 +1,7 @@
 #include <leg_module.hpp>
 
 LegModule::LegModule(const std::string& label, const YAML::Node& config,
-                     NiFpga_Status& status, NiFpga_Session session)
+                     NiFpga_Status& status, NiFpga_Session& session)
     : label_(label)
     , config_(config)
     , status_(status)
