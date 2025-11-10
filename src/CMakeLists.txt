@@ -9,6 +9,8 @@ add_executable(fpga_driver  color.cpp
                             fpga_server.cpp
                             fsm.cpp
                             leg_module.cpp
+                            can_motor.cpp
+                            can_channel.cpp
                             NiFpga_FPGA_CANBus_4module_v3_steering.c
                             NiFpga.c                       
 )
