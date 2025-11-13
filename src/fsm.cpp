@@ -377,68 +377,95 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
 
 bool ModeFsm::switchMode(Mode next_mode)
 {
-    // int mode_switched_cnt = 0;
-    // int module_enabled = 0;
-    // bool success = false;
-    // Mode next_mode_switch = next_mode;
+    int mode_switched_cnt = 0;
+    int module_enabled = 0;
+    bool success = false;
+    Mode next_mode_switch = next_mode;
 
-    // for (int i = 0; i < 4; i++)
-    // {
-    //     if (modules_list_->at(i).enable_) module_enabled++;
-    // }
-    
+    for (auto& mod : *modules_list_)
+    {
+        if (mod.enable_) module_enabled++;
+    }
 
-    // double time_elapsed = 0;
-    // while (1)
-    // {
-    //     if (mode_switched_cnt == module_enabled)
-    //     {
-    //         prev_workingMode_ = workingMode_;
-    //         workingMode_ = next_mode_switch;
-    //         success = true;
-    //         break;
-    //     }
-    //     else if (time_elapsed > 3)
-    //     {
-    //         /* Timeout */
-    //         success = false;
-    //         break;
-    //     }
-    //     else  mode_switched_cnt = 0;
+    double time_elapsed = 0;
+    while (1)
+    {
+        if (mode_switched_cnt == module_enabled)
+        {
+            prev_workingMode_ = workingMode_;
+            workingMode_ = next_mode_switch;
+            success = true;
+            break;
+        }
+        else if (time_elapsed > 3)
+        {
+            /* Timeout */
+            success = false;
+            break;
+        }
+        else mode_switched_cnt = 0;
 
-    //     for (int i = 0; i < 4; i++)
-    //     {
-    //         if (modules_list_->at(i).enable_)
-    //         {
-    //             modules_list_->at(i).io_.write_CAN_id_fc_((int)next_mode_switch, (int)next_mode_switch);
-    //             modules_list_->at(i).io_.write_CAN_transmit_(1);
-    //             modules_list_->at(i).io_.CAN_recieve_feedback(&modules_list_->at(i).rxdata_buffer_[0],
-    //                                                           &modules_list_->at(i).rxdata_buffer_[1]);
-    //             if ((next_mode_switch == Mode::SET_ZERO
-    //                 && (int)modules_list_->at(i).rxdata_buffer_[0].position_ <= 0.01
-    //                 && (int)modules_list_->at(i).rxdata_buffer_[0].position_ >= -0.01)
-    //                 || 
-    //                 ((int)modules_list_->at(i).rxdata_buffer_[0].mode_ == (int)next_mode_switch
-    //                 && (int)modules_list_->at(i).rxdata_buffer_[1].mode_ == (int)next_mode_switch))
-    //             {
-    //                 mode_switched_cnt++;
-    //             }
-    //         }
-    //     }
+        for (auto& mod : *modules_list_)
+        {
+            if (mod.enable_)
+            {
+                mod.setMode(next_mode_switch);
+                
+                mod.receiveFeedback();
+                
+                bool all_motors_switched = true;
+                for (size_t i = 0; i < mod.getMotorCount(); i++)
+                {
+                    CANMotor* motor = mod.getMotor(i);
+                    if (!motor) {
+                        all_motors_switched = false;
+                        break;
+                    }
+                    
+                    motor->decodeFeedback();
+                    
+                    // SET_ZERO mode special processing
+                    if (next_mode_switch == Mode::SET_ZERO)
+                    {
+                        float pos = motor->getPosition();
+                        if (fabs(pos) > 0.01) {
+                            all_motors_switched = false;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        if (motor->getModeState() != (uint8_t)next_mode_switch) {
+                            all_motors_switched = false;
+                            break;
+                        }
+                    }
+                }
+                
+                if (all_motors_switched) {
+                    mode_switched_cnt++;
+                }
+            }
+        }
         
-    //     time_elapsed += 0.01;
-    //     usleep(1e4);
-    // }
+        time_elapsed += 0.01;
+        usleep(1e4);
+    }
 
-    // for (int i = 0; i < 4; i++)
-    // {
-    //     if (modules_list_->at(i).enable_){
-    //         if (workingMode_ == Mode::MOTOR) modules_list_->at(i).io_.write_CAN_id_fc_((int)Mode::CONTROL, (int)Mode::CONTROL);
-    //         else modules_list_->at(i).io_.write_CAN_id_fc_((int)Mode::CONFIG, (int)Mode::CONFIG);
-    //     }
-    // }
+    for (auto& mod : *modules_list_)
+    {
+        if (mod.enable_)
+        {
+            if (workingMode_ == Mode::MOTOR) {
+                mod.setMode(Mode::CONTROL);
+            }
+            else {
+                mod.setMode(Mode::CONFIG);
+            }
+        }
+    }
 
-    // return success;
+    return success;
 }
 
 void ModeFsm::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
