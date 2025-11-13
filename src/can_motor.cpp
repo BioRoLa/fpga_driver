@@ -30,6 +30,8 @@ void CANMotor::setCommand(float position, float torque, float kp, float ki, floa
     control_data_.kp = kp;
     control_data_.ki = ki;
     control_data_.kd = kd;
+
+    encodeControl();
 }
 
 void CANMotor::encodeControl()
