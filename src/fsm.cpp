@@ -82,7 +82,7 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
             int module_enabled = 0;
             int total_motors = 0;
             
-            // 初始化：設定所有馬達為零命令
+            // Set all motor command to zero initially
             for (auto& mod : *modules_list_)
             {
                 if (mod.enable_)
@@ -107,7 +107,7 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                 break;
             
                 case 0:{
-                    // 檢查所有馬達的校準狀態
+                    // check calibration finished
                     int cal_cnt = 0;
                     for (auto& mod : *modules_list_)
                     {
@@ -137,7 +137,7 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                 break;
 
                 case 1:{
-                    // 設定校準初始位置
+                    // set initial calibration command
                     int mod_index = 0;
                     for (auto& mod : *modules_list_)
                     {
@@ -169,7 +169,7 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                 break;
 
                 case 2:{
-                    // 校準過程：逐步移動到目標位置
+                    // move to calibration position
                     int finish_cnt = 0;
                     int mod_index = 0;
                     
