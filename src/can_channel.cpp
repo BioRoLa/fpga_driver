@@ -187,10 +187,8 @@ void CANChannel::setMode(Mode mode)
 void CANChannel::sendCommands()
 {
     for (size_t i = 0; i < motors_.size(); ++i) {
-        uint8_t tx_buffer[8] = {0};
-        motors_[i]->encodeCommand(tx_buffer);
         NiFpga_MergeStatus(&status_, 
-            NiFpga_WriteArrayU8(session_, tx_buffers_[i], tx_buffer, tx_buf_size_));
+            NiFpga_WriteArrayU8(session_, tx_buffers_[i], motors_[i]->getCommandRaw(), tx_buf_size_));
     }
     
     // transmit trigger
