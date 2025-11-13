@@ -52,39 +52,37 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
         }
         break;
 
-    //     case Mode::SET_ZERO: {
-    //         if (pb_state_->at(2) == true)
-    //         {
-    //             for (int i = 0; i < 4; i++)
-    //             {
-    //                 if (modules_list_->at(i).enable_)
-    //                 {
-    //                     modules_list_->at(i).io_.motorR_bias = 0;
-    //                     modules_list_->at(i).io_.motorL_bias = 0;
-    //                 }
-    //             }
-
-    //             publishMsg(motor_fb_msg);
-    //             for (auto& mod : *modules_list_)
-    //             {
-    //                 if (mod.enable_)
-    //                 {
-    //                     mod.txdata_buffer_[0].position_ = P_CMD_MAX;
-    //                     mod.txdata_buffer_[0].torque_ = 0;
-    //                     mod.txdata_buffer_[0].KP_ = 0;
-    //                     mod.txdata_buffer_[0].KI_ = 0;
-    //                     mod.txdata_buffer_[0].KD_ = 0;
+        case Mode::SET_ZERO: {
+            if (pb_state_->at(2) == true)
+            {
+                publishMsg(motor_fb_msg);
+                
+                for (auto& mod : *modules_list_)
+                {
+                    if (mod.enable_)
+                    {
+                        // 重置馬達 bias 並設定命令
+                        CANMotor* motorR = mod.getMotor(0);
+                        CANMotor* motorL = mod.getMotor(1);
                         
-    //                     mod.txdata_buffer_[1].position_ = P_CMD_MAX;
-    //                     mod.txdata_buffer_[1].torque_ = 0;
-    //                     mod.txdata_buffer_[1].KP_ = 0;
-    //                     mod.txdata_buffer_[1].KI_ = 0;
-    //                     mod.txdata_buffer_[1].KD_ = 0;
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     break;
+                        if (motorR) {
+                            motorR->setPositionBias(0);
+                            motorR->setCommand(P_CMD_MAX, 0, 0, 0, 0);
+                            motorR->encodeControl();
+                        }
+                        
+                        if (motorL) {
+                            motorL->setPositionBias(0);
+                            motorL->setCommand(P_CMD_MAX, 0, 0, 0, 0);
+                            motorL->encodeControl();
+                        }
+                        
+                        mod.sendCommands();
+                    }
+                }
+            }
+        }
+        break;
 
     //     case Mode::HALL_CALIBRATE: {
     //         int module_enabled = 0;
