@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <memory>
 #include <math.h>
 #include <yaml-cpp/yaml.h>
 #include <eigen3/Eigen/Dense>
@@ -22,8 +23,8 @@ public:
   std::string label_;
   bool enable_;
 
-  // CAN Channel
-  CANChannel* channel_;
+  // CAN Channel - using unique_ptr for automatic memory management
+  std::unique_ptr<CANChannel> channel_;
 
   double linkR_bias;
   double linkL_bias;
@@ -37,8 +38,6 @@ public:
   size_t getMotorCount() const;
 
   int CAN_timeout_us;
-
-  ~LegModule();
 
 private:
   NiFpga_Status& status_;

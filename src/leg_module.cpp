@@ -30,8 +30,8 @@ void LegModule::load_config()
         return;
     }
 
-    // CAN Channel setup
-    channel_ = new CANChannel(status_, session_, CAN_port_);
+    // CAN Channel setup - using make_unique
+    channel_ = std::make_unique<CANChannel>(status_, session_, CAN_port_);
 
     // Motor R setup
     Motor motor_r;
@@ -154,11 +154,4 @@ Eigen::Vector2d phi2tb(const Eigen::Vector2d &phi)
     tb = t.inverse() * (phi - b);
 
     return tb;
-}
-
-LegModule::~LegModule() {
-    if (channel_) {
-        delete channel_;
-        channel_ = nullptr;
-    }
 }

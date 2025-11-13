@@ -84,8 +84,8 @@ void Corgi::load_config_()
     for (int i = 0; i < modules_num_; i++)
     {
         std::string label = yaml_node_["Modules_list"][i].as<std::string>();
-        LegModule module(label, yaml_node_, fpga_.status_, fpga_.session_);
-        modules_list_.push_back(module);
+        // Use emplace_back to construct in-place, avoiding copy
+        modules_list_.emplace_back(label, yaml_node_, fpga_.status_, fpga_.session_);
     }
 
     YAML::Node Factors_node_ = yaml_node_["Powerboard_Scaling_Factor"];
