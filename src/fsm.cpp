@@ -223,150 +223,120 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
         }
         break;
 
-    //     case Mode::MOTOR: {
-    //         /* Pubish feedback data from Motors */
-    //         publishMsg(motor_fb_msg);
-    //         int index = 0;
-    //         for (auto& mod : *modules_list_)
-    //         {
-    //             if (mod.enable_)
-    //             {
-    //                 /* Subscribe command from other nodes */
-    //                 // initialize message
-    //                 // update
-    //                 if (*NO_CAN_TIMEDOUT_ERROR_ && *NO_SWITCH_TIMEDOUT_ERROR_ )
-    //                 {
-    //                     switch (index)
-    //                     {
-    //                         case 0:
-    //                         {
-    //                             Eigen::Vector2d tb_cmd;
-    //                             if(motor_cmd_msg.module_a().theta()<17*PI/180){
-    //                                 tb_cmd<< 17*PI/180, motor_cmd_msg.module_a().beta();
-    //                             }
-    //                             else if(motor_cmd_msg.module_a().theta()>160*PI/180){
-    //                                 tb_cmd<< 160*PI/180, motor_cmd_msg.module_a().beta();
-    //                             }
-    //                             else{
-    //                                 tb_cmd<< motor_cmd_msg.module_a().theta(), motor_cmd_msg.module_a().beta();                            
-    //                             }
-    //                             Eigen::Vector2d phi_cmd = tb2phi(tb_cmd);
-
-    //                             // test data
-    //                             // Eigen::Vector2d phi_cmd(1, 1);
-    //                             // mod.txdata_buffer_[0].KP_ = 5;
-    //                             // mod.txdata_buffer_[0].KI_ = 0;
-    //                             // mod.txdata_buffer_[0].KD_ = 1;
-    //                             // mod.txdata_buffer_[1].KP_ = 5;
-    //                             // mod.txdata_buffer_[1].KI_ = 0;
-    //                             // mod.txdata_buffer_[1].KD_ = 1;
+        case Mode::MOTOR: {
+            /* Publish feedback data from Motors */
+            publishMsg(motor_fb_msg);
+            
+            if (*NO_CAN_TIMEDOUT_ERROR_ && *NO_SWITCH_TIMEDOUT_ERROR_)
+            {
+                int index = 0;
+                for (auto& mod : *modules_list_)
+                {
+                    if (mod.enable_)
+                    {
+                        // Get theta-beta command based on module index
+                        Eigen::Vector2d tb_cmd;
+                        float torque_r, torque_l, kp_r, kp_l, ki_r, ki_l, kd_r, kd_l;
+                        
+                        switch (index)
+                        {
+                            case 0: // module_a
+                            {
+                                double theta = motor_cmd_msg.module_a().theta();
+                                theta = std::max(17.0*PI/180.0, std::min(160.0*PI/180.0, theta));
+                                tb_cmd << theta, motor_cmd_msg.module_a().beta();
                                 
-    //                             mod.txdata_buffer_[0].position_ = phi_cmd[0];
-    //                             mod.txdata_buffer_[0].torque_ = motor_cmd_msg.module_a().torque_r()/mod.txdata_buffer_[0].KT_;
-    //                             mod.txdata_buffer_[0].KP_ = motor_cmd_msg.module_a().kp_r();
-    //                             mod.txdata_buffer_[0].KI_ = motor_cmd_msg.module_a().ki_r();
-    //                             mod.txdata_buffer_[0].KD_ = motor_cmd_msg.module_a().kd_r();
+                                torque_r = motor_cmd_msg.module_a().torque_r();
+                                torque_l = motor_cmd_msg.module_a().torque_l();
+                                kp_r = motor_cmd_msg.module_a().kp_r();
+                                kp_l = motor_cmd_msg.module_a().kp_l();
+                                ki_r = motor_cmd_msg.module_a().ki_r();
+                                ki_l = motor_cmd_msg.module_a().ki_l();
+                                kd_r = motor_cmd_msg.module_a().kd_r();
+                                kd_l = motor_cmd_msg.module_a().kd_l();
+                            }
+                            break;
+                            
+                            case 1: // module_b
+                            {
+                                double theta = motor_cmd_msg.module_b().theta();
+                                theta = std::max(17.0*PI/180.0, std::min(160.0*PI/180.0, theta));
+                                tb_cmd << theta, motor_cmd_msg.module_b().beta();
+                                
+                                torque_r = motor_cmd_msg.module_b().torque_r();
+                                torque_l = motor_cmd_msg.module_b().torque_l();
+                                kp_r = motor_cmd_msg.module_b().kp_r();
+                                kp_l = motor_cmd_msg.module_b().kp_l();
+                                ki_r = motor_cmd_msg.module_b().ki_r();
+                                ki_l = motor_cmd_msg.module_b().ki_l();
+                                kd_r = motor_cmd_msg.module_b().kd_r();
+                                kd_l = motor_cmd_msg.module_b().kd_l();
+                            }
+                            break;
+                            
+                            case 2: // module_c
+                            {
+                                double theta = motor_cmd_msg.module_c().theta();
+                                theta = std::max(17.0*PI/180.0, std::min(160.0*PI/180.0, theta));
+                                tb_cmd << theta, motor_cmd_msg.module_c().beta();
+                                
+                                torque_r = motor_cmd_msg.module_c().torque_r();
+                                torque_l = motor_cmd_msg.module_c().torque_l();
+                                kp_r = motor_cmd_msg.module_c().kp_r();
+                                kp_l = motor_cmd_msg.module_c().kp_l();
+                                ki_r = motor_cmd_msg.module_c().ki_r();
+                                ki_l = motor_cmd_msg.module_c().ki_l();
+                                kd_r = motor_cmd_msg.module_c().kd_r();
+                                kd_l = motor_cmd_msg.module_c().kd_l();
+                            }
+                            break;
+                            
+                            case 3: // module_d
+                            {
+                                double theta = motor_cmd_msg.module_d().theta();
+                                theta = std::max(17.0*PI/180.0, std::min(160.0*PI/180.0, theta));
+                                tb_cmd << theta, motor_cmd_msg.module_d().beta();
+                                
+                                torque_r = motor_cmd_msg.module_d().torque_r();
+                                torque_l = motor_cmd_msg.module_d().torque_l();
+                                kp_r = motor_cmd_msg.module_d().kp_r();
+                                kp_l = motor_cmd_msg.module_d().kp_l();
+                                ki_r = motor_cmd_msg.module_d().ki_r();
+                                ki_l = motor_cmd_msg.module_d().ki_l();
+                                kd_r = motor_cmd_msg.module_d().kd_r();
+                                kd_l = motor_cmd_msg.module_d().kd_l();
+                            }
+                            break;
+                            
+                            default:
+                                index++;
+                                continue;
+                        }
+                        
+                        // Convert theta-beta to phi coordinates
+                        Eigen::Vector2d phi_cmd = tb2phi(tb_cmd);
+                        
+                        // Get motors and set commands
+                        CANMotor* motorR = mod.getMotor(0);
+                        CANMotor* motorL = mod.getMotor(1);
+                        
+                        if (motorR && motorL)
+                        {
+                            // Convert torque using kt (torque constant)
+                            float torque_r_motor = torque_r / motorR->getConfig().kt_;
+                            float torque_l_motor = torque_l / motorL->getConfig().kt_;
+                            
+                            // Set commands (setCommand internally calls encodeControl)
+                            motorR->setCommand(phi_cmd[0], torque_r_motor, kp_r, ki_r, kd_r);
+                            motorL->setCommand(phi_cmd[1], torque_l_motor, kp_l, ki_l, kd_l);
+                        }
 
-    //                             mod.txdata_buffer_[1].position_ = phi_cmd[1];
-    //                             mod.txdata_buffer_[1].torque_ = motor_cmd_msg.module_a().torque_l()/mod.txdata_buffer_[1].KT_;
-    //                             mod.txdata_buffer_[1].KP_ = motor_cmd_msg.module_a().kp_l();
-    //                             mod.txdata_buffer_[1].KI_ = motor_cmd_msg.module_a().ki_l();
-    //                             mod.txdata_buffer_[1].KD_ = motor_cmd_msg.module_a().kd_l();
-    //                         }
-    //                         break;
-
-    //                         case 1:
-    //                         {
-    //                             Eigen::Vector2d tb_cmd;
-
-    //                             if(motor_cmd_msg.module_b().theta()<17*PI/180){
-    //                                 tb_cmd<< 17*PI/180, motor_cmd_msg.module_b().beta();
-    //                             }
-    //                             else if(motor_cmd_msg.module_b().theta()>160*PI/180){
-    //                                 tb_cmd<< 160*PI/180, motor_cmd_msg.module_b().beta();
-    //                             }
-    //                             else{
-    //                                 tb_cmd<< motor_cmd_msg.module_b().theta(), motor_cmd_msg.module_b().beta();                         
-    //                             }
-
-    //                             Eigen::Vector2d phi_cmd = tb2phi(tb_cmd);
-    //                             mod.txdata_buffer_[0].position_ = phi_cmd[0];
-    //                             mod.txdata_buffer_[0].torque_ = motor_cmd_msg.module_b().torque_r()/mod.txdata_buffer_[0].KT_;
-    //                             mod.txdata_buffer_[0].KP_ = motor_cmd_msg.module_b().kp_r();
-    //                             mod.txdata_buffer_[0].KI_ = motor_cmd_msg.module_b().ki_r();
-    //                             mod.txdata_buffer_[0].KD_ = motor_cmd_msg.module_b().kd_r();
-
-    //                             mod.txdata_buffer_[1].position_ = phi_cmd[1];
-    //                             mod.txdata_buffer_[1].torque_ = motor_cmd_msg.module_b().torque_l()/mod.txdata_buffer_[1].KT_;
-    //                             mod.txdata_buffer_[1].KP_ = motor_cmd_msg.module_b().kp_l();
-    //                             mod.txdata_buffer_[1].KI_ = motor_cmd_msg.module_b().ki_l();
-    //                             mod.txdata_buffer_[1].KD_ = motor_cmd_msg.module_b().kd_l();
-    //                         }
-    //                         break;
-
-    //                         case 2:
-    //                         {
-    //                             Eigen::Vector2d tb_cmd;
-    //                             if(motor_cmd_msg.module_c().theta()<17*PI/180){
-    //                                 tb_cmd<< 17*PI/180, motor_cmd_msg.module_c().beta();
-    //                             }
-    //                             else if(motor_cmd_msg.module_c().theta()>160*PI/180){
-    //                                 tb_cmd<< 160*PI/180, motor_cmd_msg.module_c().beta();
-    //                             }
-    //                             else{
-    //                                 tb_cmd<< motor_cmd_msg.module_c().theta(), motor_cmd_msg.module_c().beta();                         
-    //                             }                           
-    //                             Eigen::Vector2d phi_cmd = tb2phi(tb_cmd);
-    //                             mod.txdata_buffer_[0].position_ = phi_cmd[0];
-    //                             mod.txdata_buffer_[0].torque_ = motor_cmd_msg.module_c().torque_r()/mod.txdata_buffer_[0].KT_;
-    //                             mod.txdata_buffer_[0].KP_ = motor_cmd_msg.module_c().kp_r();
-    //                             mod.txdata_buffer_[0].KI_ = motor_cmd_msg.module_c().ki_r();
-    //                             mod.txdata_buffer_[0].KD_ = motor_cmd_msg.module_c().kd_r();
-
-    //                             mod.txdata_buffer_[1].position_ = phi_cmd[1];
-    //                             mod.txdata_buffer_[1].torque_ = motor_cmd_msg.module_c().torque_l()/mod.txdata_buffer_[1].KT_;
-    //                             mod.txdata_buffer_[1].KP_ = motor_cmd_msg.module_c().kp_l();
-    //                             mod.txdata_buffer_[1].KI_ = motor_cmd_msg.module_c().ki_l();
-    //                             mod.txdata_buffer_[1].KD_ = motor_cmd_msg.module_c().kd_l();
-    //                         }
-    //                         break;
-
-    //                         case 3:
-    //                         {
-    //                             Eigen::Vector2d tb_cmd;
-
-    //                             if(motor_cmd_msg.module_d().theta()<17*PI/180){
-    //                                 tb_cmd<< 17*PI/180, motor_cmd_msg.module_d().beta();
-    //                             }
-    //                             else if(motor_cmd_msg.module_d().theta()>160*PI/180){
-    //                                 tb_cmd<< 160*PI/180, motor_cmd_msg.module_d().beta();
-    //                             }
-    //                             else{
-    //                                 tb_cmd<< motor_cmd_msg.module_d().theta(), motor_cmd_msg.module_d().beta();                         
-    //                             }
-                         
-    //                             Eigen::Vector2d phi_cmd = tb2phi(tb_cmd);
-    //                             mod.txdata_buffer_[0].position_ = phi_cmd[0];
-    //                             mod.txdata_buffer_[0].torque_ = motor_cmd_msg.module_d().torque_r()/mod.txdata_buffer_[0].KT_;
-    //                             mod.txdata_buffer_[0].KP_ = motor_cmd_msg.module_d().kp_r();
-    //                             mod.txdata_buffer_[0].KI_ = motor_cmd_msg.module_d().ki_r();
-    //                             mod.txdata_buffer_[0].KD_ = motor_cmd_msg.module_d().kd_r();
-
-    //                             mod.txdata_buffer_[1].position_ = phi_cmd[1];
-    //                             mod.txdata_buffer_[1].torque_ = motor_cmd_msg.module_d().torque_l()/mod.txdata_buffer_[1].KT_;
-    //                             mod.txdata_buffer_[1].KP_ = motor_cmd_msg.module_d().kp_l();
-    //                             mod.txdata_buffer_[1].KI_ = motor_cmd_msg.module_d().ki_l();
-    //                             mod.txdata_buffer_[1].KD_ = motor_cmd_msg.module_d().kd_l();
-    //                         }
-    //                         break;
-    //                     }
-    //                 }
-    //             }
-    //             index++;
-    //         }
-
-    //     }
-    //     break;
+                    }
+                    index++;
+                }
+            }
+        }
+        break;
 
         case Mode::CONFIG: {
             // for debug
