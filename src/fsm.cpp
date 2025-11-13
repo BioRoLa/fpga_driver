@@ -49,8 +49,6 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                                 motor->setCommand(0, 0, 0, 0, 0);  // position, torque, kp, ki, kd
                             }
                         }
-                        
-                        mod.sendCommands();
                     }
                 }
             }
@@ -74,8 +72,6 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                                 motor->setCommand(P_CMD_MAX, 0, 0, 0, 0);
                             }
                         }
-                        
-                        mod.sendCommands();
                     }
                 }
             }
@@ -99,7 +95,6 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                             total_motors++;
                         }
                     }
-                    mod.sendCommands();
                     module_enabled++;
                 }
             }
@@ -166,7 +161,6 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                                 cal_dir_[mod_index][1] = -1;
                             }
                             
-                            mod.sendCommands();
                         }
                         mod_index++;
                     }
@@ -205,7 +199,6 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                                 }
                             }
                             
-                            mod.sendCommands();
                         }
                         mod_index++;
                     }
@@ -380,6 +373,7 @@ bool ModeFsm::switchMode(Mode next_mode)
             if (mod.enable_)
             {
                 mod.setMode(next_mode_switch);
+                mod.sendCommands();
                 
                 mod.receiveFeedback();
                 
