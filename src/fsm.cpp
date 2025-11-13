@@ -66,7 +66,6 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                 {
                     if (mod.enable_)
                     {
-                        // 重置所有馬達的 bias 並設定命令
                         for (size_t i = 0; i < mod.getMotorCount(); i++)
                         {
                             CANMotor* motor = mod.getMotor(i);
@@ -83,116 +82,146 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
         }
         break;
 
-    //     case Mode::HALL_CALIBRATE: {
-    //         int module_enabled = 0;
-    //         for (int i = 0; i < 4; i++)
-    //         {
-    //             if (modules_list_->at(i).enable_)
-    //             {
-    //                 modules_list_->at(i).txdata_buffer_[0].position_ = 0;
-    //                 modules_list_->at(i).txdata_buffer_[0].torque_ = 0;
-    //                 modules_list_->at(i).txdata_buffer_[0].KP_ = 0;
-    //                 modules_list_->at(i).txdata_buffer_[0].KI_ = 0;
-    //                 modules_list_->at(i).txdata_buffer_[0].KD_ = 0;
-
-    //                 modules_list_->at(i).txdata_buffer_[1].position_ = 0;
-    //                 modules_list_->at(i).txdata_buffer_[1].torque_ = 0;
-    //                 modules_list_->at(i).txdata_buffer_[1].KP_ = 0;
-    //                 modules_list_->at(i).txdata_buffer_[1].KI_ = 0;
-    //                 modules_list_->at(i).txdata_buffer_[1].KD_ = 0;
-    //                 module_enabled++;
-    //             }
-    //         }
-
-    //         switch (hall_calibrate_status)
-    //         {
-    //             case -1:{
-    //                 switchMode(Mode::REST);
-    //             }
-    //             break;
+        case Mode::HALL_CALIBRATE: {
+            int module_enabled = 0;
+            int total_motors = 0;
             
-    //             case 0:{
-    //                 int cal_cnt = 0;
-    //                 for (int i = 0; i < 4; i++)
-    //                 {
-    //                     if (modules_list_->at(i).enable_ && modules_list_->at(i).rxdata_buffer_[0].calibrate_finish_ == 2 && modules_list_->at(i).rxdata_buffer_[1].calibrate_finish_ == 2) cal_cnt++;
-    //                 }
-    //                 if (cal_cnt == module_enabled && measure_offset == 0) hall_calibrate_status++;
-    //                 else if (cal_cnt == module_enabled && measure_offset == 1) hall_calibrate_status = -1;
-    //             }
-    //             break;
+            // 初始化：設定所有馬達為零命令
+            for (auto& mod : *modules_list_)
+            {
+                if (mod.enable_)
+                {
+                    for (size_t j = 0; j < mod.getMotorCount(); j++)
+                    {
+                        CANMotor* motor = mod.getMotor(j);
+                        if (motor) {
+                            motor->setCommand(0, 0, 0, 0, 0);
+                            total_motors++;
+                        }
+                    }
+                    mod.sendCommands();
+                    module_enabled++;
+                }
+            }
 
-    //             case 1:{
-    //                 for (int i = 0; i < 4; i++)
-    //                 {
-    //                     if (modules_list_->at(i).enable_)
-    //                     {
-    //                         modules_list_->at(i).CAN_rx_timedout_[0] = false;
-    //                         modules_list_->at(i).CAN_rx_timedout_[1] = false;
-    //                         modules_list_->at(i).CAN_tx_timedout_[0] = false;
-    //                         modules_list_->at(i).CAN_tx_timedout_[1] = false;
+            switch (hall_calibrate_status)
+            {
+                case -1:{
+                    switchMode(Mode::REST);
+                }
+                break;
+            
+                case 0:{
+                    // 檢查所有馬達的校準狀態
+                    int cal_cnt = 0;
+                    for (auto& mod : *modules_list_)
+                    {
+                        if (mod.enable_) {
+                            mod.receiveFeedback();
+                            
+                            bool all_calibrated = true;
+                            for (size_t j = 0; j < mod.getMotorCount(); j++)
+                            {
+                                CANMotor* motor = mod.getMotor(j);
+                                if (motor) {
+                                    motor->decodeFeedback();
+                                    if (motor->getCalibrateFinish() != 2) {
+                                        all_calibrated = false;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            if (all_calibrated) cal_cnt++;
+                        }
+                    }
+                    
+                    if (cal_cnt == module_enabled && measure_offset == 0) hall_calibrate_status++;
+                    else if (cal_cnt == module_enabled && measure_offset == 1) hall_calibrate_status = -1;
+                }
+                break;
 
-    //                         modules_list_->at(i).io_.motorR_bias = modules_list_->at(i).linkR_bias;
-    //                         modules_list_->at(i).io_.motorL_bias = modules_list_->at(i).linkL_bias;
+                case 1:{
+                    // 設定校準初始位置
+                    int mod_index = 0;
+                    for (auto& mod : *modules_list_)
+                    {
+                        if (mod.enable_)
+                        {
+                            // 假設每個 module 有 2 個馬達 (R 和 L)
+                            CANMotor* motorR = mod.getMotor(0);
+                            CANMotor* motorL = mod.getMotor(1);
+                            
+                            if (motorR) {
+                                motorR->setPositionBias(mod.linkR_bias);
+                                cal_command[mod_index][0] = -mod.linkR_bias;
+                                motorR->setCommand(cal_command[mod_index][0], 0, 0, 0, 0);
+                                cal_dir_[mod_index][0] = 1;
+                            }
+                            
+                            if (motorL) {
+                                motorL->setPositionBias(mod.linkL_bias);
+                                cal_command[mod_index][1] = -mod.linkL_bias;
+                                motorL->setCommand(cal_command[mod_index][1], 0, 0, 0, 0);
+                                cal_dir_[mod_index][1] = -1;
+                            }
+                            
+                            mod.sendCommands();
+                        }
+                        mod_index++;
+                    }
+                    hall_calibrate_status++;
+                }
+                break;
 
-    //                         cal_command[i][0] = - modules_list_->at(i).linkR_bias;
-    //                         modules_list_->at(i).txdata_buffer_[0].position_ = - modules_list_->at(i).linkR_bias;
-    //                         cal_dir_[i][0] = 1;
+                case 2:{
+                    // 校準過程：逐步移動到目標位置
+                    int finish_cnt = 0;
+                    int mod_index = 0;
+                    
+                    for (auto& mod : *modules_list_)
+                    {
+                        if (mod.enable_){
+                            mod.receiveFeedback();
+                            
+                            for (size_t j = 0; j < mod.getMotorCount() && j < 2; j++)
+                            {
+                                CANMotor* motor = mod.getMotor(j);
+                                if (!motor) continue;
+                                
+                                motor->decodeFeedback();
+                                double errj = theta_error(cal_command[mod_index][j], 0);
 
-    //                         cal_command[i][1] = - modules_list_->at(i).linkL_bias;
-    //                         modules_list_->at(i).txdata_buffer_[1].position_ = - modules_list_->at(i).linkL_bias;
-    //                         cal_dir_[i][1] = -1;
-    //                     }
-    //                 }
-    //                 hall_calibrate_status++;
-    //             }
-    //             break;
+                                if (fabs(errj) < cal_tol_)
+                                {
+                                    motor->setCommand(0, 0, 0, 0, 0);
+                                    finish_cnt++;
+                                }
+                                else
+                                {
+                                    mod.setMode(Mode::MOTOR);
+                                    cal_command[mod_index][j] += cal_dir_[mod_index][j] * cal_vel_ * dt_;
+                                    motor->setCommand(cal_command[mod_index][j], 0, 50, 0, 1.5);
+                                }
+                            }
+                            
+                            mod.sendCommands();
+                        }
+                        mod_index++;
+                    }
+                    if (finish_cnt == total_motors) hall_calibrate_status++;
+                }
+                break;
 
-    //             case 2:{
-    //                 int finish_cnt = 0;
-    //                 for (int i = 0; i < 4; i++)
-    //                 {
-    //                     if (modules_list_->at(i).enable_){
-    //                         for (int j = 0; j < 2; j++)
-    //                         {
-    //                             double errj = 0;
-    //                             errj = theta_error(cal_command[i][j], 0);
-
-    //                             if (fabs(errj) < cal_tol_)
-    //                             {
-    //                                 modules_list_->at(i).txdata_buffer_[j].position_ = 0;
-    //                                 modules_list_->at(i).txdata_buffer_[j].torque_ = 0;
-    //                                 modules_list_->at(i).txdata_buffer_[j].KP_ = 0;
-    //                                 modules_list_->at(i).txdata_buffer_[j].KI_ = 0;
-    //                                 modules_list_->at(i).txdata_buffer_[j].KD_ = 0;
-    //                                 finish_cnt++;
-    //                             }
-    //                             else
-    //                             {
-    //                                 modules_list_->at(i).io_.write_CAN_id_fc_((int)Mode::CONTROL, (int)Mode::CONTROL);
-    //                                 cal_command[i][j] += cal_dir_[i][j] * cal_vel_ * dt_;
-    //                                 modules_list_->at(i).txdata_buffer_[j].position_ = cal_command[i][j];
-    //                                 modules_list_->at(i).txdata_buffer_[j].torque_ = 0;
-    //                                 modules_list_->at(i).txdata_buffer_[j].KP_ = 50;
-    //                                 modules_list_->at(i).txdata_buffer_[j].KI_ = 0;
-    //                                 modules_list_->at(i).txdata_buffer_[j].KD_ = 1.5;
-    //                             }
-    //                         }
-    //                     }
-    //                 }
-    //                 if (finish_cnt == 2 * module_enabled) hall_calibrate_status++;
-    //             }
-    //             break;
-
-    //             case 3:{
-    //                 hall_calibrated = true;
-    //                 hall_calibrate_status = 0;
-    //                 switchMode(Mode::MOTOR);
-    //             }
-    //             break;
-    //         }
-    //     }
-    //     break;
+                case 3:{
+                    hall_calibrated = true;
+                    hall_calibrate_status = 0;
+                    switchMode(Mode::MOTOR);
+                }
+                break;
+            }
+        }
+        break;
 
     //     case Mode::MOTOR: {
     //         /* Pubish feedback data from Motors */
@@ -422,6 +451,12 @@ void ModeFsm::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
             // 取得馬達指標
             CANMotor* motorR = mod.getMotor(0);
             CANMotor* motorL = mod.getMotor(1);
+            
+            // 檢查空指標
+            if (!motorR || !motorL) {
+                index++;
+                continue;
+            }
             
             // 取得馬達數據
             float pos_r = motorR->getPosition();
