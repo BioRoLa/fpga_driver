@@ -36,7 +36,7 @@ void CANMotor::setCommand(float position, float torque, float kp, float ki, floa
 
 void CANMotor::encodeControl()
 {
-    int pos_int = float_to_uint(-control_data_.position - position_bias_, P_CMD_MIN, P_CMD_MAX, 16);
+    int pos_int = float_to_uint(-control_data_.position + position_bias_, P_CMD_MIN, P_CMD_MAX, 16);
     int kp_int = float_to_uint(control_data_.kp, KP_MIN, KP_MAX, 12);
     int ki_int = float_to_uint(control_data_.ki, KI_MIN, KI_MAX, 12);
     int kd_int = float_to_uint(control_data_.kd, KD_MIN, KD_MAX, 12);
