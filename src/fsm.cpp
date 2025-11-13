@@ -36,16 +36,21 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
         case Mode::REST: {
             if (pb_state_->at(2) == true)
             {
-                // publishMsg(motor_fb_msg);
+                publishMsg(motor_fb_msg);
+                
                 for (auto& mod : *modules_list_)
                 {
-                    int index = 0;
                     if (mod.enable_)
                     {
-                        for (int i = 0; i < mod.getMotorCount(); i++)
+                        for (size_t i = 0; i < mod.getMotorCount(); i++)
                         {
-                            mod.getMotor(i)->setCommand(0, 0, 0, 0, 0);  // position, torque, kp, ki, kd
+                            CANMotor* motor = mod.getMotor(i);
+                            if (motor) {
+                                motor->setCommand(0, 0, 0, 0, 0);  // position, torque, kp, ki, kd
+                            }
                         }
+                        
+                        mod.sendCommands();
                     }
                 }
             }
@@ -61,20 +66,14 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                 {
                     if (mod.enable_)
                     {
-                        // 重置馬達 bias 並設定命令
-                        CANMotor* motorR = mod.getMotor(0);
-                        CANMotor* motorL = mod.getMotor(1);
-                        
-                        if (motorR) {
-                            motorR->setPositionBias(0);
-                            motorR->setCommand(P_CMD_MAX, 0, 0, 0, 0);
-                            motorR->encodeControl();
-                        }
-                        
-                        if (motorL) {
-                            motorL->setPositionBias(0);
-                            motorL->setCommand(P_CMD_MAX, 0, 0, 0, 0);
-                            motorL->encodeControl();
+                        // 重置所有馬達的 bias 並設定命令
+                        for (size_t i = 0; i < mod.getMotorCount(); i++)
+                        {
+                            CANMotor* motor = mod.getMotor(i);
+                            if (motor) {
+                                motor->setPositionBias(0);
+                                motor->setCommand(P_CMD_MAX, 0, 0, 0, 0);
+                            }
                         }
                         
                         mod.sendCommands();
