@@ -5,7 +5,7 @@ set(CMAKE_CXX_COMPILER "/usr/bin/g++")
 
 project(fpga_driver C CXX)
 set (CMAKE_EXE_LINKER_FLAGS)
-set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w")
 set(CMAKE_BUILD_TYPE Release)
