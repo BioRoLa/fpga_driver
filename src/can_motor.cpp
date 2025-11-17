@@ -71,6 +71,17 @@ void CANMotor::decodeFeedback()
     feedback_data_.mode_state = feedback_data_raw[7] & 0x0F;
 }
 
+void CANMotor::decodeBasedOnMode()
+{
+    if (current_mode_ == Mode::CONFIG) {
+        // In CONFIG mode, save raw data to config_fb_data_
+        std::memcpy(config_fb_data_.raw_data, feedback_data_raw, 8);
+    } else {
+        // In normal modes (MOTOR, REST, SET_ZERO, HALL_CALIBRATE), decode as motor feedback
+        decodeFeedback();
+    }
+}
+
 int CANMotor::float_to_uint(float x, float x_min, float x_max, int bits)
 {
     float span = x_max - x_min;

@@ -224,7 +224,19 @@ void Corgi::canLoop_()
     {
         if (modules_list_[i].enable_ && powerboard_state_.at(2) == true)
         {
+            // Receive feedback from FPGA (stores to feedback_data_raw)
             modules_list_[i].receiveFeedback();
+            
+            // Decode based on motor mode:
+            // - CONFIG mode: save to config_fb_data_.raw_data
+            // - Other modes: decode to feedback_data_
+            for (size_t j = 0; j < modules_list_[i].getMotorCount(); j++)
+            {
+                CANMotor* motor = modules_list_[i].getMotor(j);
+                if (motor) {
+                    motor->decodeBasedOnMode();
+                }
+            }
 
             if (modules_list_[i].hasTimeout())timeout_cnt_++;
             else timeout_cnt_ = 0;

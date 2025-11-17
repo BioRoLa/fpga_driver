@@ -77,7 +77,8 @@ public:
     
     // Feedback data
     void parseFeedback(const uint8_t* msg_in);          // msg_in -> feedback_data_raw (單純儲存)
-    void decodeFeedback();                              // feedback_data_raw -> feedback_data_ (解碼)
+    void decodeFeedback();                              // feedback_data_raw -> feedback_data_ (normal mode)
+    void decodeBasedOnMode();                           // based on current_mode_
     const uint8_t* getFeedbackRaw() const { return feedback_data_raw; }
     float getPosition() const { return feedback_data_.position - position_bias_; }
     float getVelocity() const { return feedback_data_.velocity; }
@@ -85,6 +86,9 @@ public:
     uint8_t getVersion() const { return feedback_data_.version; }
     uint8_t getCalibrateFinish() const { return feedback_data_.calibrate_finish; }
     uint8_t getModeState() const { return feedback_data_.mode_state; }
+    
+    // Config feedback access
+    const CONFIGData& getConfigFeedback() const { return config_fb_data_; }
     
     // Bias management
     void setPositionBias(float bias) { position_bias_ = bias; }
