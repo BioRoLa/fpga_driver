@@ -74,12 +74,84 @@ void CANMotor::decodeFeedback()
 void CANMotor::decodeBasedOnMode()
 {
     if (current_mode_ == Mode::CONFIG) {
-        // In CONFIG mode, save raw data to config_fb_data_
-        std::memcpy(config_fb_data_.raw_data, feedback_data_raw, 8);
+        // In CONFIG mode, decode as config feedback
+        decodeConfig();
     } else {
         // In normal modes (MOTOR, REST, SET_ZERO, HALL_CALIBRATE), decode as motor feedback
         decodeFeedback();
     }
+}
+
+void CANMotor::setConfigRead(ConfigType type, uint8_t target_addr)
+{
+    config_cmd_data_.config_cmd.mode = ConfigMode::READ;
+    config_cmd_data_.config_cmd.type = type;
+    config_cmd_data_.config_cmd.target_addr = target_addr;
+    config_cmd_data_.config_cmd.value.i = 0; 
+
+    encodeConfig();
+}
+
+void CANMotor::setConfigWriteInt(uint8_t target_addr, int value)
+{
+    config_cmd_data_.config_cmd.mode = ConfigMode::WRITE;
+    config_cmd_data_.config_cmd.type = ConfigType::INT;
+    config_cmd_data_.config_cmd.target_addr = target_addr;
+    config_cmd_data_.config_cmd.value.i = value;
+
+    encodeConfig();
+}
+
+void CANMotor::setConfigWriteFloat(uint8_t target_addr, float value)
+{
+    config_cmd_data_.config_cmd.mode = ConfigMode::WRITE;
+    config_cmd_data_.config_cmd.type = ConfigType::FLOAT;
+    config_cmd_data_.config_cmd.target_addr = target_addr;
+    config_cmd_data_.config_cmd.value.f = value;
+
+    encodeConfig();
+}
+
+void CANMotor::encodeConfig()
+{
+    command_data_raw[0] = config_cmd_data_.config_cmd.mode;
+    command_data_raw[1] = config_cmd_data_.config_cmd.type;
+    command_data_raw[2] = config_cmd_data_.config_cmd.target_addr;
+
+    // TODO: Verify if the motor receives the correct float value.
+    // If the value is wrong (e.g., extremely large or small), implement Byte-Swapping since the motor expects Big-Endian format.
+
+    if(config_cmd_data_.config_cmd.mode == ConfigMode::WRITE) {
+        if(config_cmd_data_.config_cmd.type = ConfigType::INT){
+            std::memcpy(&command_data_raw[3], &config_cmd_data_.config_cmd.value.i, 4);
+        }
+        else{
+            std::memcpy(&command_data_raw[3], &config_cmd_data_.config_cmd.value.f, 4);
+        }
+    }
+    else{
+        std::memset(&command_data_raw[3], 0, 4);
+    }
+    command_data_raw[7] = 0; 
+}
+
+void CANMotor::decodeConfig()
+{
+    config_fb_data_.config_fb.state = feedback_data_raw[0];
+    config_fb_data_.config_fb.type = feedback_data_raw[1];
+    config_fb_data_.config_fb.target_addr = feedback_data_raw[2];
+
+    if(config_fb_data_.config_fb.type == ConfigType::INT){
+        std::memcpy(&config_fb_data_.config_fb.value.i, &feedback_data_raw[3], 4);
+    }
+    else{
+        std::memcpy(&config_fb_data_.config_fb.value.f, &feedback_data_raw[3], 4);
+    }
+
+    feedback_data_.version = feedback_data_raw[7] >> 4;
+    feedback_data_.mode_state = feedback_data_raw[7] & 0x0F;
+
+    std::memcpy(config_fb_data_.raw_data, feedback_data_raw, 8);
 }
 
 int CANMotor::float_to_uint(float x, float x_min, float x_max, int bits)

@@ -87,6 +87,13 @@ public:
     uint8_t getCalibrateFinish() const { return feedback_data_.calibrate_finish; }
     uint8_t getModeState() const { return feedback_data_.mode_state; }
     
+    // Command data (for CONFIG mode)
+    void setConfigRead(ConfigType type, uint8_t target_addr);
+    void setConfigWriteInt(uint8_t target_addr, int value);
+    void setConfigWriteFloat(uint8_t target_addr, float value);
+    void encodeConfig();                               // config_cmd_data_ -> command_data_raw
+    void decodeConfig();                               // feedback_data_raw -> config_fb_data_
+    
     // Config feedback access
     const CONFIGData& getConfigFeedback() const { return config_fb_data_; }
     
