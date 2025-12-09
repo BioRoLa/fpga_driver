@@ -373,6 +373,20 @@ bool ModeFsm::switchMode(Mode next_mode)
             if (mod.enable_)
             {
                 mod.setMode(next_mode_switch);
+                
+                // For SET_ZERO mode, prepare the motors before sending
+                if (next_mode_switch == Mode::SET_ZERO)
+                {
+                    for (size_t i = 0; i < mod.getMotorCount(); i++)
+                    {
+                        CANMotor* motor = mod.getMotor(i);
+                        if (motor) {
+                            motor->setPositionBias(0);
+                            motor->setCommand(P_CMD_MAX, 0, 0, 0, 0);
+                        }
+                    }
+                }
+                
                 mod.sendCommands();
                 
                 mod.receiveFeedback();
@@ -391,8 +405,9 @@ bool ModeFsm::switchMode(Mode next_mode)
                     // SET_ZERO mode special processing
                     if (next_mode_switch == Mode::SET_ZERO)
                     {
-                        float pos = motor->getPosition();
-                        if (fabs(pos) > 0.01) {
+                        // Check raw position (motor should report near-zero after SET_ZERO)
+                        float raw_pos = motor->getRawPosition();
+                        if (fabs(raw_pos) > 0.01) {
                             all_motors_switched = false;
                             break;
                         }
