@@ -25,6 +25,14 @@ void power_data_cb(power_msg::PowerCmdStamped power_msg)
     mutex_.unlock();
 }
 
+config_msg::ConfigStamped config_data_shared;
+void config_data_cb(config_msg::ConfigStamped config_msg)
+{
+    mutex_.lock();
+    config_data_shared = config_msg;
+    mutex_.unlock();
+}
+
 Corgi::Corgi()
 {
     /* default value of interrupt*/
@@ -176,7 +184,7 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
     power_msg::PowerStateStamped power_fb_msg;
     motor_msg::MotorStateStamped motor_fb_msg;
 
-    fsm_.runFsm(motor_fb_msg, motor_cmd_data);
+    fsm_.runFsm(motor_fb_msg, motor_cmd_data, config_data_shared);
     motor_message_updated = 0;    
     HALL_CALIBRATED_ = fsm_.hall_calibrated;
 
@@ -270,6 +278,7 @@ void Corgi::powerboardPack(power_msg::PowerStateStamped&power_dashboard_reply)
     else if (fsm_.workingMode_ == Mode::HALL_CALIBRATE) power_dashboard_reply.set_robot_mode(power_msg::HALL_CALIBRATE);
     else if (fsm_.workingMode_ == Mode::MOTOR) power_dashboard_reply.set_robot_mode(power_msg::MOTOR_MODE);
     else if (fsm_.workingMode_ == Mode::SET_ZERO) power_dashboard_reply.set_robot_mode(power_msg::SET_ZERO);
+    else if (fsm_.workingMode_ == Mode::CONFIG) power_dashboard_reply.set_robot_mode(power_msg::CONFIG_MODE);
 
     power_dashboard_reply.set_v_0(fpga_.powerboard_V_list_[0]);
     power_dashboard_reply.set_i_0(fpga_.powerboard_I_list_[0]);

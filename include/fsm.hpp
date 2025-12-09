@@ -6,13 +6,14 @@
 #include <fstream>
 #include <unistd.h>
 #include <Eigen/Dense>
+#include <deque>
 
 #include "leg_module.hpp"
 #include "case_enum.hpp"
 
 #include "Motor.pb.h"
 #include "Power.pb.h"
-
+#include "Config.pb.h"
 
 class ModeFsm
 {
@@ -43,9 +44,15 @@ public:
   bool *NO_SWITCH_TIMEDOUT_ERROR_;
   double *powerboard_voltage;
 
-  void runFsm(motor_msg::MotorStateStamped &motor_fb_msg, const motor_msg::MotorCmdStamped &motor_cmd_msg);
+  int last_process_seq = -1;
+
+  void runFsm(motor_msg::MotorStateStamped &motor_fb_msg, 
+              const motor_msg::MotorCmdStamped &motor_cmd_msg,
+              config_msg::ConfigStamped &config_msg);
   bool switchMode(Mode next_mode);
   void publishMsg(motor_msg::MotorStateStamped &motor_fb_msg);
+  void executeConfig(config_msg::ConfigStamped &config_data);
+  void publishConfigMsg(config_msg::ConfigStamped &config_data);
 };
 double theta_error(double start_theta, double goal_theta);
 

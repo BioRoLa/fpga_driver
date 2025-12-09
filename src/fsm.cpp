@@ -28,7 +28,7 @@ double theta_error(double start_theta, double goal_theta)
 }
 
 
-void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg::MotorCmdStamped& motor_cmd_msg)
+void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg::MotorCmdStamped& motor_cmd_msg, config_msg::ConfigStamped &config_msg)
 {
     // position = P_CMD_MAX is to make sure the data received from CONFIG function code is the default one
     switch (workingMode_)
@@ -332,7 +332,18 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
         break;
 
         case Mode::CONFIG: {
-            // for debug
+            publishMsg(motor_fb_msg);
+
+            if(config_msg.transmit() == true && config_msg.header().seq() != last_process_seq)
+            {
+                executeConfig(config_msg);
+                last_process_seq = config_msg.header().seq();
+            }
+            else
+            {
+                config_msg.set_transmit(false);
+            }
+            publishConfigMsg(config_msg);
         }
         break;
     }
@@ -563,5 +574,75 @@ void ModeFsm::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
         }
         index++;
     }
-
+    
 }
+
+void ModeFsm::executeConfig(config_msg::ConfigStamped &config_data)
+{
+    int mod_index = (int)config_data.module_index();
+    int motor_index = (int)config_data.motor_index();
+
+    if (mod_index < 0 || mod_index >= modules_list_->size())
+    {
+        config_data.set_error_code(5); // Invalid module index
+        config_data.set_transmit(false);
+        return;
+    }
+
+    LegModule* mod = &modules_list_->at(mod_index);
+    CANMotor* motor = mod.getMotor(motor_index);
+
+    if(!motor) 
+    {
+        config_data.set_error_code(6); // Invalid motor index
+        config_data.set_transmit(false);
+        return;
+    }
+
+    motor->setMode(Mode::CONFIG);
+    
+    uint8_t addr = (uint8_t)config_data.target_address()
+
+    if(confgi_data.mode() == config_msg::Config::READ) 
+    {
+        motor->setConfigRead((ConfigType)config_data.config_type(), addr);
+    }
+    else
+    {
+        if(config_data.config_type() == config_msg::Config::INT) 
+        {
+            motor->setConfigWriteInt(addr, config_data.value_i());
+        }
+        else if(config_data.config_type() == config_msg::Config::FLOAT) 
+        {
+            motor->setConfigWriteFloat(addr, config_data.value_f());
+        }
+    }
+
+    config_data.set_transmit(false);
+}
+
+void ModeFsm::publishConfigMsg(config_msg::ConfigStamped &config_data)
+{
+    int mod_idx = (int)config_data.module(); 
+    int motor_idx = (int)config_data.motor();
+
+    if (mod_idx < 0 || mod_idx >= modules_list_->size()) return;   
+    LegModule* mod = &modules_list_->at(mod_index);
+    CANMotor* motor = mod.getMotor(motor_index);
+    
+    if(!motor) return;
+    const auto& motor_fb = motor->getConfigFeedback().config_fb;
+
+    config_data.set_type(motor_fb.type);
+    config_data.set_error_code(motor_fb.state);
+    config_data.set_address((config_msg::Config::ConfigType)motor_fb.target_addr);
+    if(motor_fb.type == ConfigType::INT) 
+    {
+        config_data.set_value_i(motor_fb.value_i);
+    }
+    else
+    {
+        config_data.set_value_f(motor_fb.value_f);
+    }
+}   
