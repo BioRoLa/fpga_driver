@@ -112,14 +112,12 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                     for (auto& mod : *modules_list_)
                     {
                         if (mod.enable_) {
-                            mod.receiveFeedback();
-                            
                             bool all_calibrated = true;
                             for (size_t j = 0; j < mod.getMotorCount(); j++)
                             {
                                 CANMotor* motor = mod.getMotor(j);
                                 if (motor) {
-                                    motor->decodeFeedback();
+                                    // Check calibrate_finish status
                                     if (motor->getCalibrateFinish() != 2) {
                                         all_calibrated = false;
                                         break;
@@ -143,7 +141,6 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                     {
                         if (mod.enable_)
                         {
-                            // 假設每個 module 有 2 個馬達 (R 和 L)
                             CANMotor* motorR = mod.getMotor(0);
                             CANMotor* motorL = mod.getMotor(1);
                             
@@ -176,14 +173,11 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                     for (auto& mod : *modules_list_)
                     {
                         if (mod.enable_){
-                            mod.receiveFeedback();
-                            
                             for (size_t j = 0; j < mod.getMotorCount() && j < 2; j++)
                             {
                                 CANMotor* motor = mod.getMotor(j);
                                 if (!motor) continue;
                                 
-                                motor->decodeFeedback();
                                 double errj = theta_error(cal_command[mod_index][j], 0);
 
                                 if (fabs(errj) < cal_tol_)
