@@ -80,7 +80,7 @@ public:
     void decodeFeedback();                              // feedback_data_raw -> feedback_data_ (normal mode)
     void decodeBasedOnMode();                           // based on current_mode_
     const uint8_t* getFeedbackRaw() const { return feedback_data_raw; }
-    float getPosition() const { return feedback_data_.position + position_bias_; }
+    float getPosition() const { return feedback_data_.position - position_bias_; }  // Match main branch logic: decoded - bias
     float getRawPosition() const { return feedback_data_.position; }  // Get raw position without bias
     float getVelocity() const { return feedback_data_.velocity; }
     float getTorque() const { return feedback_data_.torque; }
