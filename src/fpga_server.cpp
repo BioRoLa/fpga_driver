@@ -3,6 +3,7 @@
 /* TCP node connection setup*/
 volatile int motor_message_updated = 0;
 volatile int fpga_message_updated = 0; //power
+volatile int config_message_updated = 0;
 
 std::ofstream term;
 std::mutex mutex_;
@@ -29,6 +30,7 @@ config_msg::ConfigStamped config_data_shared;
 void config_data_cb(config_msg::ConfigStamped config_msg)
 {
     mutex_.lock();
+    config_message_updated = 1;
     config_data_shared = config_msg;
     mutex_.unlock();
 }
@@ -113,7 +115,9 @@ void Corgi::load_config_()
 void Corgi::interruptHandler(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
                              core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
                              core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
-                             core::Publisher<motor_msg::MotorStateStamped>& state_pub_)   
+                             core::Publisher<motor_msg::MotorStateStamped>& state_pub_
+                             core::Subscriber<config_msg::ConfigStamped>& config_sub_, 
+                             core::Publisher<config_msg::ConfigStamped>& config_pub_)   
 
                                                        
 {
@@ -153,7 +157,7 @@ void Corgi::interruptHandler(core::Subscriber<power_msg::PowerCmdStamped>& cmd_p
         {
             if (irqsAsserted & NiFpga_Irq_0)
             {
-                mainLoop_(cmd_pb_sub_, state_pb_pub_, cmd_sub_, state_pub_);
+                mainLoop_(cmd_pb_sub_, state_pb_pub_, cmd_sub_, state_pub_, config_sub_, config_pub_);
                 // Acknowledge IRQ to begin DMA acquisition
                 NiFpga_MergeStatus(&fpga_.status_, NiFpga_AcknowledgeIrqs(fpga_.session_, irqsAsserted));
             }
@@ -174,7 +178,9 @@ void Corgi::interruptHandler(core::Subscriber<power_msg::PowerCmdStamped>& cmd_p
 void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
                       core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
                       core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
-                      core::Publisher<motor_msg::MotorStateStamped>& state_pub_)
+                      core::Publisher<motor_msg::MotorStateStamped>& state_pub_
+                      core::Subscriber<config_msg::ConfigStamped>& config_sub_,
+                      core::Publisher<config_msg::ConfigStamped>& config_pub_)
 {
     fpga_.write_powerboard_(&powerboard_state_);
     fpga_.read_powerboard_data_();
@@ -186,6 +192,7 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
 
     fsm_.runFsm(motor_fb_msg, motor_cmd_data, config_data_shared);
     motor_message_updated = 0;    
+    config_message_updated = 0;
     HALL_CALIBRATED_ = fsm_.hall_calibrated;
 
     mutex_.unlock();
@@ -220,9 +227,16 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
         }
     }
     motor_fb_msg.mutable_header()->set_seq(seq);
+    gettimeofday(&t_stamp, NULL);
+    config_data_shared.mutable_header()->mutable_stamp()->set_sec(t_stamp.tv_sec);
+    config_data_shared.mutable_header()->mutable_stamp()->set_usec(t_stamp.tv_usec);
     mutex_.unlock();
+
     state_pub_.publish(motor_fb_msg);
     state_pb_pub_.publish(power_fb_msg);
+    if (fsm_.workingMode_ == Mode::CONFIG) {
+        config_pub_.publish(config_data_shared);
+    }
     seq++;
 }
 
@@ -344,7 +358,12 @@ int main(int argc, char* argv[])
     core::Publisher<motor_msg::MotorStateStamped>& motor_pub = nh.advertise<motor_msg::MotorStateStamped>("motor/state");
     core::Subscriber<motor_msg::MotorCmdStamped>& motor_sub = nh.subscribe<motor_msg::MotorCmdStamped>("motor/command", 1000, motor_data_cb);
     
-    corgi.interruptHandler(power_sub, power_pub, motor_sub, motor_pub);
+    std::string config_topic = "config/bus"; 
+    
+    core::Publisher<config_msg::ConfigStamped>& config_pub = nh.advertise<config_msg::ConfigStamped>(config_topic);
+    core::Subscriber<config_msg::ConfigStamped>& config_sub = nh.subscribe<config_msg::ConfigStamped>(config_topic, 1000, config_data_cb);
+
+    corgi.interruptHandler(power_sub, power_pub, motor_sub, motor_pub, config_sub, config_pub);
 
     if (NiFpga_IsError(corgi.fpga_.status_)) std::cout << red << "[FPGA Server] Error! Exiting program. LabVIEW error code: " << corgi.fpga_.status_ << reset << std::endl;
     else
