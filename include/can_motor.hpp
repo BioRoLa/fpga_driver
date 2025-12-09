@@ -85,7 +85,7 @@ public:
     float getVelocity() const { return feedback_data_.velocity; }
     float getTorque() const { return feedback_data_.torque; }
     uint8_t getVersion() const { return feedback_data_.version; }
-    uint8_t getCalibrateFinish() const { return feedback_data_.calibrate_finish; }
+    uint8_t getCalibrateFinish() const { return feedback_data_.hall_cal_state; }
     uint8_t getModeState() const { return feedback_data_.mode_state; }
     
     // Config feedback access
@@ -125,7 +125,7 @@ private:
         float velocity;
         float torque;
         uint8_t version;
-        uint8_t calibrate_finish;
+        uint8_t hall_cal_state;
         uint8_t mode_state;
     } feedback_data_;
 

@@ -19,7 +19,7 @@ CANMotor::CANMotor(uint32_t can_id, const Motor& motor_config)
     feedback_data_.velocity = 0.0f;
     feedback_data_.torque = 0.0f;
     feedback_data_.version = 0;
-    feedback_data_.calibrate_finish = 0;
+    feedback_data_.hall_cal_state = 0;
     feedback_data_.mode_state = _REST_MODE;
 }
 
@@ -67,7 +67,7 @@ void CANMotor::decodeFeedback()
     feedback_data_.velocity = uint_to_float(vel_raw, V_MIN, V_MAX, 16);
     feedback_data_.torque = uint_to_float(torque_raw, T_MIN, T_MAX, 16);
     feedback_data_.version = feedback_data_raw[7] >> 4;
-    feedback_data_.calibrate_finish = feedback_data_raw[6] & 0x0F;
+    feedback_data_.hall_cal_state = feedback_data_raw[6] & 0x0F;
     feedback_data_.mode_state = feedback_data_raw[7] & 0x0F;
 }
 
