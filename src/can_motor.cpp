@@ -4,7 +4,7 @@ CANMotor::CANMotor(uint32_t can_id, const Motor& motor_config)
     : can_id_(can_id)
     , config_(motor_config)
     , position_bias_(motor_config.calibration_bias)
-    , current_mode_(Mode::REST)
+    , current_mode_(FunctionMode::REST)
 {
     // Initialize command data with config defaults
     control_data_.kp = config_.kp_;
@@ -20,7 +20,7 @@ CANMotor::CANMotor(uint32_t can_id, const Motor& motor_config)
     feedback_data_.torque = 0.0f;
     feedback_data_.version = 0;
     feedback_data_.hall_cal_state = 0;
-    feedback_data_.mode_state = _REST_MODE;
+    feedback_data_.motor_state = FunctionMode::REST;
 }
 
 void CANMotor::setCommand(float position, float torque, float kp, float ki, float kd)
@@ -69,18 +69,14 @@ void CANMotor::decodeFeedback()
     feedback_data_.version = feedback_data_raw[7] >> 4;
     feedback_data_.hall_cal_state = feedback_data_raw[6] & 0x0F;
 
-    //FIXME: FSM state & fc have diff definition
-    int mode_raw;
-    mode_raw = feedback_data_raw[7] & 0x0F;
-    if (mode_raw == _SET_ZERO)feedback_data_.mode_state  = (uint8_t) Mode::SET_ZERO;
-    else if (mode_raw == _MOTOR_MODE)feedback_data_.mode_state  = (uint8_t) Mode::MOTOR;
-    else if (mode_raw == _HALL_CALIBRATE)feedback_data_.mode_state  = (uint8_t) Mode::HALL_CALIBRATE;
-    else if (mode_raw == _REST_MODE)feedback_data_.mode_state  = (uint8_t) Mode::REST;
+    // Map raw motor state to corresponding FunctionMode
+    uint8_t mode_raw = feedback_data_raw[7] & 0x0F;
+    feedback_data_.motor_state = mapMotorStateToFunctionMode(mode_raw);
 }
 
 void CANMotor::decodeBasedOnMode()
 {
-    if (current_mode_ == Mode::CONFIG) {
+    if (current_mode_ == FunctionMode::CONFIG) {
         // In CONFIG mode, save raw data to config_fb_data_
         std::memcpy(config_fb_data_.raw_data, feedback_data_raw, 8);
     } else {

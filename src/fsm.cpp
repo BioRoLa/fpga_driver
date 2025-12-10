@@ -2,8 +2,8 @@
 
 ModeFsm::ModeFsm(std::vector<LegModule>* _modules, std::vector<bool>* _pb_state, double* pb_v)
 {
-    workingMode_ = Mode::REST;
-    prev_workingMode_ = Mode::REST;
+    workingMode_ = FunctionMode::REST;
+    prev_workingMode_ = FunctionMode::REST;
 
     modules_list_ = _modules;
     pb_state_ = _pb_state;
@@ -33,7 +33,7 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
     // position = P_CMD_MAX is to make sure the data received from CONFIG function code is the default one
     switch (workingMode_)
     {
-        case Mode::REST: {
+        case FunctionMode::REST: {
             if (pb_state_->at(2) == true)
             {
                 publishMsg(motor_fb_msg);
@@ -55,7 +55,7 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
         }
         break;
 
-        case Mode::SET_ZERO: {
+        case FunctionMode::SET_ZERO: {
             if (pb_state_->at(2) == true)
             {
                 publishMsg(motor_fb_msg);
@@ -78,7 +78,7 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
         }
         break;
 
-        case Mode::HALL_CALIBRATE: {
+        case FunctionMode::HALL_CALIBRATE: {
             int module_enabled = 0;
             int total_motors = 0;
             
@@ -102,7 +102,7 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
             switch (hall_calibrate_status)
             {
                 case -1:{
-                    switchMode(Mode::REST);
+                    switchMode(FunctionMode::REST);
                 }
                 break;
             
@@ -187,7 +187,7 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                                 }
                                 else
                                 {
-                                    mod.setMode(Mode::CONTROL);
+                                    mod.setMode(FunctionMode::CONTROL);
                                     cal_command[mod_index][j] += cal_dir_[mod_index][j] * cal_vel_ * dt_;
                                     motor->setCommand(cal_command[mod_index][j], 0, 50, 0, 1.5);
                                 }
@@ -203,14 +203,14 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                 case 3:{
                     hall_calibrated = true;
                     hall_calibrate_status = 0;
-                    switchMode(Mode::MOTOR);
+                    switchMode(FunctionMode::MOTOR);
                 }
                 break;
             }
         }
         break;
 
-        case Mode::MOTOR: {
+        case FunctionMode::MOTOR: {
             /* Publish feedback data from Motors */
             publishMsg(motor_fb_msg);
             
@@ -325,19 +325,19 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
         }
         break;
 
-        case Mode::CONFIG: {
+        case FunctionMode::CONFIG: {
             // for debug
         }
         break;
     }
 }
 
-bool ModeFsm::switchMode(Mode next_mode)
+bool ModeFsm::switchMode(FunctionMode next_mode)
 {
     int mode_switched_cnt = 0;
     int module_enabled = 0;
     bool success = false;
-    Mode next_mode_switch = next_mode;
+    FunctionMode next_mode_switch = next_mode;
 
     for (auto& mod : *modules_list_)
     {
@@ -369,7 +369,7 @@ bool ModeFsm::switchMode(Mode next_mode)
                 mod.setMode(next_mode_switch);
                 
                 // For SET_ZERO mode, prepare the motors before sending
-                if (next_mode_switch == Mode::SET_ZERO)
+                if (next_mode_switch == FunctionMode::SET_ZERO)
                 {
                     for (size_t i = 0; i < mod.getMotorCount(); i++)
                     {
@@ -397,7 +397,7 @@ bool ModeFsm::switchMode(Mode next_mode)
                     motor->decodeFeedback();
                     
                     // SET_ZERO mode special processing
-                    if (next_mode_switch == Mode::SET_ZERO)
+                    if (next_mode_switch == FunctionMode::SET_ZERO)
                     {
                         // Check raw position (motor should report near-zero after SET_ZERO)
                         float raw_pos = motor->getRawPosition();
@@ -429,11 +429,11 @@ bool ModeFsm::switchMode(Mode next_mode)
     {
         if (mod.enable_)
         {
-            if (workingMode_ == Mode::MOTOR) {
-                mod.setMode(Mode::CONTROL);
+            if (workingMode_ == FunctionMode::MOTOR) {
+                mod.setMode(FunctionMode::CONTROL);
             }
             else {
-                mod.setMode(Mode::CONFIG);
+                mod.setMode(FunctionMode::CONFIG);
             }
         }
     }

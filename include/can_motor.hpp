@@ -69,7 +69,7 @@ public:
     
     // Getters
     uint32_t getCANID() const { return can_id_; }
-    Mode getMode() const { return current_mode_; }
+    FunctionMode getFunctionMode() const { return current_mode_; }
     const Motor& getConfig() const { return config_; }
     
     // Command data (for MOTOR mode)
@@ -88,7 +88,8 @@ public:
     float getTorque() const { return feedback_data_.torque; }
     uint8_t getVersion() const { return feedback_data_.version; }
     uint8_t getHallCalibrateState() const { return feedback_data_.hall_cal_state; }
-    uint8_t getModeState() const { return feedback_data_.mode_state; }
+    FunctionMode getMotorState() const { return feedback_data_.motor_state; }
+    uint8_t getModeState() const { return static_cast<uint8_t>(feedback_data_.motor_state); }  // Legacy compatibility
     
     // Config feedback access
     const CONFIGData& getConfigFeedback() const { return config_fb_data_; }
@@ -97,14 +98,14 @@ public:
     void setPositionBias(float bias) { position_bias_ = bias; }
     float getPositionBias() const { return position_bias_; }
     
-    // Mode management
-    void setMode(Mode mode) { current_mode_ = mode; }
+    // FunctionMode management
+    void setMode(FunctionMode mode) { current_mode_ = mode; }
     
 private:
     uint32_t can_id_;
     Motor config_;
     float position_bias_;
-    Mode current_mode_;
+    FunctionMode current_mode_;
 
     struct 
     {
@@ -128,7 +129,7 @@ private:
         float torque;
         uint8_t version;
         uint8_t hall_cal_state;
-        uint8_t mode_state;
+        FunctionMode motor_state;
     } feedback_data_;
 
     CONFIGData config_fb_data_;

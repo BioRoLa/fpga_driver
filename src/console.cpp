@@ -100,7 +100,7 @@ void InputPanel::inputHandler(WINDOW *win_, std::mutex &input_mutex)
             if (ch == 'e')
             {
                 endwin();
-                std::cout << "Normal Mode" << std::endl;
+                std::cout << "Normal FunctionMode" << std::endl;
                 refresh_flag = 0;
             }
             if (ch == 'E')
@@ -263,19 +263,19 @@ void InputPanel::commandDecode(string buf)
             {
                 if (bufs[2] == "R")
                 {
-                    switchFSM_success = fsm_->switchMode(Mode::REST);
+                    switchFSM_success = fsm_->switchMode(FunctionMode::REST);
                 }
                 else if (bufs[2] == "M")
                 {
-                    switchFSM_success = fsm_->switchMode(Mode::MOTOR);
+                    switchFSM_success = fsm_->switchMode(FunctionMode::MOTOR);
                 }
                 else if (bufs[2] == "S")
                 {
-                    switchFSM_success = fsm_->switchMode(Mode::SET_ZERO);
+                    switchFSM_success = fsm_->switchMode(FunctionMode::SET_ZERO);
                 }
                 else if (bufs[2] == "H")
                 {
-                    switchFSM_success = fsm_->switchMode(Mode::HALL_CALIBRATE);
+                    switchFSM_success = fsm_->switchMode(FunctionMode::HALL_CALIBRATE);
                 }
                 else
                 {
@@ -304,7 +304,7 @@ void InputPanel::commandDecode(string buf)
     }
     else if (!switchFSM_success)
     {
-        mvwprintw(win_, 0, 1, "Switch Mode Timeout !");
+        mvwprintw(win_, 0, 1, "Switch FunctionMode Timeout !");
     }
     else
     {
@@ -389,7 +389,7 @@ void Panel::infoDisplay()
         // Feedback data
         mvwprintw(win_, 3, 30, "[rx] TIMEDOUT: %4d", md_ptr_->channel_->hasRxTimeout() ? 1 : 0);
         mvwprintw(win_, y_org + 2, 30, "[rx] Ver:   %7d", (int)motorR->getVersion());
-        mvwprintw(win_, y_org + 3, 30, "[rx] Mode:  %7d", (int)motorR->getModeState());
+        mvwprintw(win_, y_org + 3, 30, "[rx] FunctionMode:  %7d", (int)motorR->getModeState());
         mvwprintw(win_, y_org + 4, 30, "[rx] Pos:   %4.5f", motorR->getPosition());
         mvwprintw(win_, y_org + 5, 30, "[rx] Vel:   %4.5f", motorR->getVelocity());
         mvwprintw(win_, y_org + 6, 30, "[rx] Trq:   %4.5f", motorR->getTorque());
@@ -412,7 +412,7 @@ void Panel::infoDisplay()
         // Feedback data
         mvwprintw(win_, 12, 30, "[rx] TIMEDOUT: %4d", md_ptr_->channel_->hasRxTimeout() ? 1 : 0);
         mvwprintw(win_, y_org + 11, 30, "[rx] Ver:   %7d", (int)motorL->getVersion());
-        mvwprintw(win_, y_org + 12, 30, "[rx] Mode:  %7d", (int)motorL->getModeState());
+        mvwprintw(win_, y_org + 12, 30, "[rx] FunctionMode:  %7d", (int)motorL->getModeState());
         mvwprintw(win_, y_org + 13, 30, "[rx] Pos:   %4.5f", motorL->getPosition());
         mvwprintw(win_, y_org + 14, 30, "[rx] Vel:   %4.5f", motorL->getVelocity());
         mvwprintw(win_, y_org + 15, 30, "[rx] Trq:   %4.5f", motorL->getTorque());
@@ -446,7 +446,7 @@ void Panel::infoDisplay(FpgaHandler *fpga_, bool digital_switch, bool signal_swi
     wrefresh(win_);
 }
 
-void Panel::infoDisplay(Behavior bhv, Mode fsm_mode)
+void Panel::infoDisplay(Behavior bhv, FunctionMode fsm_mode)
 {
     if (bhv == Behavior::TCP_SLAVE)
         mvwprintw(win_, 2, 1, "Behavior: TCP_SLAVE");
@@ -459,14 +459,14 @@ void Panel::infoDisplay(Behavior bhv, Mode fsm_mode)
     else if (bhv == Behavior::CUSTOM_1)
         mvwprintw(win_, 2, 1, "Behavior: CUSTOM_3");
 
-    if (fsm_mode == Mode::REST)
-        mvwprintw(win_, 3, 1, "[M] FSM Mode:           REST");
-    else if (fsm_mode == Mode::SET_ZERO)
-        mvwprintw(win_, 3, 1, "[M] FSM Mode:       SET_ZERO");
-    else if (fsm_mode == Mode::HALL_CALIBRATE)
-        mvwprintw(win_, 3, 1, "[M] FSM Mode: HALL_CALIBRATE");
-    else if (fsm_mode == Mode::MOTOR)
-        mvwprintw(win_, 3, 1, "[M] FSM Mode:          MOTOR");
+    if (fsm_mode == FunctionMode::REST)
+        mvwprintw(win_, 3, 1, "[M] FSM FunctionMode:           REST");
+    else if (fsm_mode == FunctionMode::SET_ZERO)
+        mvwprintw(win_, 3, 1, "[M] FSM FunctionMode:       SET_ZERO");
+    else if (fsm_mode == FunctionMode::HALL_CALIBRATE)
+        mvwprintw(win_, 3, 1, "[M] FSM FunctionMode: HALL_CALIBRATE");
+    else if (fsm_mode == FunctionMode::MOTOR)
+        mvwprintw(win_, 3, 1, "[M] FSM FunctionMode:          MOTOR");
     mvwprintw(win_, 5, 1, "[R] REST  [S] SET_ZERO ");
     mvwprintw(win_, 6, 1, "[M] MOTOR [H] HALL_CALIBRATE");
 

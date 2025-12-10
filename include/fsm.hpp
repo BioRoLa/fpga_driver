@@ -20,8 +20,8 @@ public:
   /* pass modules vector by reference*/
   ModeFsm(std::vector<LegModule> *module_list_, std::vector<bool> *pb_state_, double *pb_v);
   ModeFsm() {}
-  Mode workingMode_;
-  Mode prev_workingMode_;
+  FunctionMode workingMode_;
+  FunctionMode prev_workingMode_;
 
   Scenario scenario_;
 
@@ -44,7 +44,7 @@ public:
   double *powerboard_voltage;
 
   void runFsm(motor_msg::MotorStateStamped &motor_fb_msg, const motor_msg::MotorCmdStamped &motor_cmd_msg);
-  bool switchMode(Mode next_mode);
+  bool switchMode(FunctionMode next_mode);
   void publishMsg(motor_msg::MotorStateStamped &motor_fb_msg);
 };
 double theta_error(double start_theta, double goal_theta);

@@ -174,7 +174,7 @@ void CANChannel::setup(uint32_t timeout_us)
         NiFpga_WriteU32(session_, timeout_us_, timeout_us));
 }
 
-void CANChannel::setMode(Mode mode)
+void CANChannel::setMode(FunctionMode mode)
 {
     uint32_t mode_val = static_cast<uint32_t>(mode);
     

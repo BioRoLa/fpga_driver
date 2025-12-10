@@ -151,7 +151,6 @@ void Corgi::interruptHandler(core::Subscriber<power_msg::PowerCmdStamped>& cmd_p
             }
             if (irqsAsserted & NiFpga_Irq_1)
             {
-                /* TODO: do something if IRQ1 */
                 /* Handling CAN-BUS communication */
                 canLoop_();
 
@@ -203,11 +202,11 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
             powerboard_state_.at(1) = power_cmd_data.signal();
             powerboard_state_.at(2) = power_cmd_data.power();
 
-            if (power_cmd_data.robot_mode() == (int)Mode::MOTOR && fsm_.workingMode_ != Mode::MOTOR)fsm_.switchMode(Mode::MOTOR);
-            else if (power_cmd_data.robot_mode() == (int)Mode::HALL_CALIBRATE && fsm_.workingMode_ != Mode::HALL_CALIBRATE && fsm_.workingMode_ != Mode::MOTOR)fsm_.switchMode(Mode::HALL_CALIBRATE);
-            else if (power_cmd_data.robot_mode() == (int)Mode::SET_ZERO && fsm_.workingMode_ != Mode::SET_ZERO)fsm_.switchMode(Mode::SET_ZERO);
-            else if (power_cmd_data.robot_mode() == (int)Mode::CONFIG && fsm_.workingMode_ != Mode::CONFIG)fsm_.switchMode(Mode::CONFIG);
-            else if (power_cmd_data.robot_mode() == (int)Mode::REST && fsm_.workingMode_ != Mode::REST)fsm_.switchMode(Mode::REST);
+            if (power_cmd_data.robot_mode() == (int)FunctionMode::MOTOR && fsm_.workingMode_ != FunctionMode::MOTOR)fsm_.switchMode(FunctionMode::MOTOR);
+            else if (power_cmd_data.robot_mode() == (int)FunctionMode::HALL_CALIBRATE && fsm_.workingMode_ != FunctionMode::HALL_CALIBRATE && fsm_.workingMode_ != FunctionMode::MOTOR)fsm_.switchMode(FunctionMode::HALL_CALIBRATE);
+            else if (power_cmd_data.robot_mode() == (int)FunctionMode::SET_ZERO && fsm_.workingMode_ != FunctionMode::SET_ZERO)fsm_.switchMode(FunctionMode::SET_ZERO);
+            else if (power_cmd_data.robot_mode() == (int)FunctionMode::CONFIG && fsm_.workingMode_ != FunctionMode::CONFIG)fsm_.switchMode(FunctionMode::CONFIG);
+            else if (power_cmd_data.robot_mode() == (int)FunctionMode::REST && fsm_.workingMode_ != FunctionMode::REST)fsm_.switchMode(FunctionMode::REST);
             fpga_message_updated = 0;
         }
     }
@@ -268,10 +267,10 @@ void Corgi::powerboardPack(power_msg::PowerStateStamped&power_dashboard_reply)
     if (fsm_.hall_calibrated == true && NO_SWITCH_TIMEDOUT_ERROR_==true && NO_CAN_TIMEDOUT_ERROR_==true) power_dashboard_reply.set_clean(true);
     else power_dashboard_reply.set_clean(false);
 
-    if (fsm_.workingMode_ == Mode::REST) power_dashboard_reply.set_robot_mode(power_msg::REST_MODE);
-    else if (fsm_.workingMode_ == Mode::HALL_CALIBRATE) power_dashboard_reply.set_robot_mode(power_msg::HALL_CALIBRATE);
-    else if (fsm_.workingMode_ == Mode::MOTOR) power_dashboard_reply.set_robot_mode(power_msg::MOTOR_MODE);
-    else if (fsm_.workingMode_ == Mode::SET_ZERO) power_dashboard_reply.set_robot_mode(power_msg::SET_ZERO);
+    if (fsm_.workingMode_ == FunctionMode::REST) power_dashboard_reply.set_robot_mode(power_msg::REST_MODE);
+    else if (fsm_.workingMode_ == FunctionMode::HALL_CALIBRATE) power_dashboard_reply.set_robot_mode(power_msg::HALL_CALIBRATE);
+    else if (fsm_.workingMode_ == FunctionMode::MOTOR) power_dashboard_reply.set_robot_mode(power_msg::MOTOR_MODE);
+    else if (fsm_.workingMode_ == FunctionMode::SET_ZERO) power_dashboard_reply.set_robot_mode(power_msg::SET_ZERO);
 
     power_dashboard_reply.set_v_0(fpga_.powerboard_V_list_[0]);
     power_dashboard_reply.set_i_0(fpga_.powerboard_I_list_[0]);

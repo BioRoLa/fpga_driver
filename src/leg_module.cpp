@@ -103,7 +103,7 @@ void LegModule::receiveFeedback()
     }
 }
 
-void LegModule::setMode(Mode mode)
+void LegModule::setMode(FunctionMode mode)
 {
     if (channel_) {
         channel_->setMode(mode);

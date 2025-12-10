@@ -20,7 +20,7 @@ public:
     
     // Setup and configuration
     void setup(uint32_t timeout_us);
-    void setMode(Mode mode);
+    void setMode(FunctionMode mode);
     
     // CAN communication
     void sendCommands();
