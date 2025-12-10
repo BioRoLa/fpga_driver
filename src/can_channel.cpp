@@ -1,6 +1,7 @@
 #include "can_channel.hpp"
 #include "color.hpp"
 #include <iostream>
+#include <cstring>
 
 CANChannel::CANChannel(NiFpga_Status& status, NiFpga_Session& session, 
                        const std::string& channel_name)
@@ -187,8 +188,19 @@ void CANChannel::setMode(Mode mode)
 void CANChannel::sendCommands()
 {
     for (size_t i = 0; i < motors_.size(); ++i) {
+        // Get command data from motor
+        uint8_t tx_buffer[8];
+        std::memcpy(tx_buffer, motors_[i]->getCommandRaw(), 8);
+        
+        // Read function code and override first byte if in CONFIG mode
+        uint32_t fc = 0;
+        NiFpga_MergeStatus(&status_, NiFpga_ReadU32(session_, can_id_fcs_[i], &fc));
+        if (fc == 1) {  // CONFIG mode (used by HALL_CALIBRATE, SET_ZERO, etc.)
+            tx_buffer[0] = 255;
+        }
+        
         NiFpga_MergeStatus(&status_, 
-            NiFpga_WriteArrayU8(session_, tx_buffers_[i], motors_[i]->getCommandRaw(), tx_buf_size_));
+            NiFpga_WriteArrayU8(session_, tx_buffers_[i], tx_buffer, tx_buf_size_));
     }
     
     // transmit trigger
