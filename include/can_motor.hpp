@@ -7,6 +7,8 @@
 #include <cstdint>
 #include <cstring>
 
+#define CAN_DATA_LEN 8
+
 enum ConfigMode
 {
     READ = 0,

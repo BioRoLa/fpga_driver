@@ -54,7 +54,7 @@ void CANMotor::encodeControl()
 
 void CANMotor::parseFeedback(const uint8_t* msg_in)
 {
-    std::memcpy(feedback_data_raw, msg_in, 8); //FIXME: substitute magic number
+    std::memcpy(feedback_data_raw, msg_in, CAN_DATA_LEN);
 }
 
 void CANMotor::decodeFeedback()
