@@ -49,13 +49,4 @@ enum class RobotMode : uint8_t
     //TODO: develop high level modes
 };
 
-enum class Behavior
-{
-    SET_THETA,
-    TCP_SLAVE,
-    CUSTOM_1,
-    CUSTOM_2,
-    CUSTOM_3
-};
-
 #endif

@@ -50,7 +50,7 @@ public:
   mutex mutex_;
   void infoDisplay();
   void infoDisplay(FpgaHandler *fpga, bool power_switch, bool signal_switch, bool digital_switch);
-  void infoDisplay(Behavior bhv, FunctionMode fsm_mode);
+  void infoDisplay(FunctionMode fsm_mode);
   void resetPanel();
   void panelTitle();
 };

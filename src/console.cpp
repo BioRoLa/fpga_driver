@@ -61,7 +61,7 @@ void Console::refreshWindow()
         cons_mtx_.lock();
 
         p_power_.infoDisplay(fpga_, powerboard_state_->at(0), powerboard_state_->at(1), powerboard_state_->at(2));
-        p_cmain_.infoDisplay(Behavior::TCP_SLAVE, fsm_->workingMode_);
+        p_cmain_.infoDisplay(fsm_->workingMode_);
         p_modA_.infoDisplay();
         p_modB_.infoDisplay();
         p_modC_.infoDisplay();
@@ -446,29 +446,18 @@ void Panel::infoDisplay(FpgaHandler *fpga_, bool digital_switch, bool signal_swi
     wrefresh(win_);
 }
 
-void Panel::infoDisplay(Behavior bhv, FunctionMode fsm_mode)
+void Panel::infoDisplay(FunctionMode fsm_mode)
 {
-    if (bhv == Behavior::TCP_SLAVE)
-        mvwprintw(win_, 2, 1, "Behavior: TCP_SLAVE");
-    else if (bhv == Behavior::SET_THETA)
-        mvwprintw(win_, 2, 1, "Behavior: SET_THETA");
-    else if (bhv == Behavior::CUSTOM_1)
-        mvwprintw(win_, 2, 1, "Behavior: CUSTOM_1");
-    else if (bhv == Behavior::CUSTOM_1)
-        mvwprintw(win_, 2, 1, "Behavior: CUSTOM_2");
-    else if (bhv == Behavior::CUSTOM_1)
-        mvwprintw(win_, 2, 1, "Behavior: CUSTOM_3");
-
     if (fsm_mode == FunctionMode::REST)
-        mvwprintw(win_, 3, 1, "[M] FSM FunctionMode:           REST");
+        mvwprintw(win_, 2, 1, "[M] FSM FunctionMode:           REST");
     else if (fsm_mode == FunctionMode::SET_ZERO)
-        mvwprintw(win_, 3, 1, "[M] FSM FunctionMode:       SET_ZERO");
+        mvwprintw(win_, 2, 1, "[M] FSM FunctionMode:       SET_ZERO");
     else if (fsm_mode == FunctionMode::HALL_CALIBRATE)
-        mvwprintw(win_, 3, 1, "[M] FSM FunctionMode: HALL_CALIBRATE");
+        mvwprintw(win_, 2, 1, "[M] FSM FunctionMode: HALL_CALIBRATE");
     else if (fsm_mode == FunctionMode::MOTOR)
-        mvwprintw(win_, 3, 1, "[M] FSM FunctionMode:          MOTOR");
-    mvwprintw(win_, 5, 1, "[R] REST  [S] SET_ZERO ");
-    mvwprintw(win_, 6, 1, "[M] MOTOR [H] HALL_CALIBRATE");
+        mvwprintw(win_, 2, 1, "[M] FSM FunctionMode:          MOTOR");
+    mvwprintw(win_, 4, 1, "[R] REST  [S] SET_ZERO ");
+    mvwprintw(win_, 5, 1, "[M] MOTOR [H] HALL_CALIBRATE");
 
     wrefresh(win_);
 }
