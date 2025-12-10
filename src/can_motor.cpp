@@ -68,7 +68,14 @@ void CANMotor::decodeFeedback()
     feedback_data_.torque = uint_to_float(torque_raw, T_MIN, T_MAX, 16);
     feedback_data_.version = feedback_data_raw[7] >> 4;
     feedback_data_.hall_cal_state = feedback_data_raw[6] & 0x0F;
-    feedback_data_.mode_state = feedback_data_raw[7] & 0x0F;
+
+    //FIXME: FSM state & fc have diff definition
+    int mode_raw;
+    mode_raw = feedback_data_raw[7] & 0x0F;
+    if (mode_raw == _SET_ZERO)feedback_data_.mode_state  = (uint8_t) Mode::SET_ZERO;
+    else if (mode_raw == _MOTOR_MODE)feedback_data_.mode_state  = (uint8_t) Mode::MOTOR;
+    else if (mode_raw == _HALL_CALIBRATE)feedback_data_.mode_state  = (uint8_t) Mode::HALL_CALIBRATE;
+    else if (mode_raw == _REST_MODE)feedback_data_.mode_state  = (uint8_t) Mode::REST;
 }
 
 void CANMotor::decodeBasedOnMode()
