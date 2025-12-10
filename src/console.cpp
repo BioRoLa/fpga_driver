@@ -393,7 +393,7 @@ void Panel::infoDisplay()
         mvwprintw(win_, y_org + 4, 30, "[rx] Pos:   %4.5f", motorR->getPosition());
         mvwprintw(win_, y_org + 5, 30, "[rx] Vel:   %4.5f", motorR->getVelocity());
         mvwprintw(win_, y_org + 6, 30, "[rx] Trq:   %4.5f", motorR->getTorque());
-        mvwprintw(win_, y_org + 7, 30, "[rx] Cal:   %7d", (int)motorR->getCalibrateFinish());
+        mvwprintw(win_, y_org + 7, 30, "[rx] Cal:   %7d", (int)motorR->getHallCalibrateState());
     }
 
     // Motor L
@@ -416,7 +416,7 @@ void Panel::infoDisplay()
         mvwprintw(win_, y_org + 13, 30, "[rx] Pos:   %4.5f", motorL->getPosition());
         mvwprintw(win_, y_org + 14, 30, "[rx] Vel:   %4.5f", motorL->getVelocity());
         mvwprintw(win_, y_org + 15, 30, "[rx] Trq:   %4.5f", motorL->getTorque());
-        mvwprintw(win_, y_org + 16, 30, "[rx] Cal:   %7d", (int)motorL->getCalibrateFinish());
+        mvwprintw(win_, y_org + 16, 30, "[rx] Cal:   %7d", (int)motorL->getHallCalibrateState());
     }
     
     wrefresh(win_);

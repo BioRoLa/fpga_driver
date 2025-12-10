@@ -118,7 +118,7 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                                 CANMotor* motor = mod.getMotor(j);
                                 if (motor) {
                                     // Check hall_cal_state status
-                                    if (motor->getCalibrateFinish() != 2) {
+                                    if (motor->getHallCalibrateState() != 2) {
                                         all_calibrated = false;
                                         break;
                                     }
