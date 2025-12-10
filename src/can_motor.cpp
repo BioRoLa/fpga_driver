@@ -36,7 +36,7 @@ void CANMotor::setCommand(float position, float torque, float kp, float ki, floa
 
 void CANMotor::encodeControl()
 {
-    int pos_int = float_to_uint(-(control_data_.position + position_bias_), P_CMD_MIN, P_CMD_MAX, 16);
+    int pos_int = float_to_uint(-(control_data_.position + position_bias_), P_CMD_MIN, P_CMD_MAX, 16); // Negate to match system coordinate convention
     int kp_int = float_to_uint(control_data_.kp, KP_MIN, KP_MAX, 12);
     int ki_int = float_to_uint(control_data_.ki, KI_MIN, KI_MAX, 12);
     int kd_int = float_to_uint(control_data_.kd, KD_MIN, KD_MAX, 12);
@@ -63,7 +63,7 @@ void CANMotor::decodeFeedback()
     int vel_raw = ((int)(feedback_data_raw[2]) << 8) | feedback_data_raw[3];
     int torque_raw = ((int)(feedback_data_raw[4]) << 8) | feedback_data_raw[5];
 
-    feedback_data_.position = -uint_to_float(pos_raw, P_FB_MIN, P_FB_MAX, 16);
+    feedback_data_.position = -uint_to_float(pos_raw, P_FB_MIN, P_FB_MAX, 16); // Negate to match system coordinate convention
     feedback_data_.velocity = uint_to_float(vel_raw, V_MIN, V_MAX, 16);
     feedback_data_.torque = uint_to_float(torque_raw, T_MIN, T_MAX, 16);
     feedback_data_.version = feedback_data_raw[7] >> 4;
