@@ -187,7 +187,7 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                                 }
                                 else
                                 {
-                                    mod.setMode(Mode::MOTOR);
+                                    mod.setMode(Mode::CONTROL);
                                     cal_command[mod_index][j] += cal_dir_[mod_index][j] * cal_vel_ * dt_;
                                     motor->setCommand(cal_command[mod_index][j], 0, 50, 0, 1.5);
                                 }
