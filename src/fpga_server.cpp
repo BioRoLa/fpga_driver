@@ -351,6 +351,7 @@ int main(int argc, char* argv[])
 /* CAPTURE SYS STOP SIGNAL TO KILL PROCESS*/
 void inthand(int signum)
 {
+    //TODO: add safe shutdown procedure(power off etc)
     sys_stop = 1;
 }
 
