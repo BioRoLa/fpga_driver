@@ -8,7 +8,6 @@
 #include <Eigen/Dense>
 
 #include "leg_module.hpp"
-#include "case_enum.hpp"
 
 #include "Motor.pb.h"
 #include "Power.pb.h"
@@ -21,16 +20,12 @@ public:
   ModeFsm(std::vector<LegModule> *module_list_, std::vector<bool> *pb_state_, double *pb_v);
   ModeFsm() {}
   FunctionMode workingMode_;
-  FunctionMode prev_workingMode_;
-
-  Scenario scenario_;
 
   std::vector<LegModule> *modules_list_;
   std::vector<bool> *pb_state_;
 
   bool hall_calibrated;
   int hall_calibrate_status;
-  int impedance_status;
 
   int measure_offset = 0;
   double dt_ = 0.001;     // second

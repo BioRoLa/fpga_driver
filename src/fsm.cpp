@@ -3,7 +3,6 @@
 ModeFsm::ModeFsm(std::vector<LegModule>* _modules, std::vector<bool>* _pb_state, double* pb_v)
 {
     workingMode_ = FunctionMode::REST;
-    prev_workingMode_ = FunctionMode::REST;
 
     modules_list_ = _modules;
     pb_state_ = _pb_state;
@@ -301,7 +300,7 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                         }
                         
                         // Convert theta-beta to phi coordinates
-                        Eigen::Vector2d phi_cmd = tb2phi(tb_cmd);
+                        Eigen::Vector2d phi_cmd = LegModule::tb2phi(tb_cmd);
                         
                         // Get motors and set commands
                         CANMotor* motorR = mod.getMotor(0);
@@ -349,7 +348,6 @@ bool ModeFsm::switchMode(FunctionMode next_mode)
     {
         if (mode_switched_cnt == module_enabled)
         {
-            prev_workingMode_ = workingMode_;
             workingMode_ = next_mode_switch;
             success = true;
             break;
@@ -468,7 +466,7 @@ void ModeFsm::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
             
             // 轉換 phi 到 theta-beta
             Eigen::Vector2d phi_(pos_r, pos_l);
-            Eigen::Vector2d tb_ = phi2tb(phi_);
+            Eigen::Vector2d tb_ = LegModule::phi2tb(phi_);
             
             switch (index)
             {

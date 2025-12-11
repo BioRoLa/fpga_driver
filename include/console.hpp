@@ -98,8 +98,6 @@ public:
 
   int term_max_x_;
   int term_max_y_;
-  int debug_cons_h = 27;
-  int power_cons_h = 27;
 
   FpgaHandler *fpga_;
 

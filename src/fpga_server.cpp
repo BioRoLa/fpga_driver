@@ -41,10 +41,6 @@ Corgi::Corgi()
     HALL_CALIBRATED_ = false;
 
     max_timeout_cnt_ = 100;
-    hall_complete = true;
-    r_hall = 0;
-    l_hall = 0;
-    zero_offset = 0;
 
     powerboard_state_.push_back(digital_switch_);
     powerboard_state_.push_back(signal_switch_);
@@ -70,9 +66,6 @@ void Corgi::load_config_()
     fsm_.measure_offset = yaml_node_["Measure_offset"].as<int>();
     fsm_.cal_vel_ = yaml_node_["Hall_calibration_vel"].as<double>();
     fsm_.cal_tol_ = yaml_node_["Hall_calibration_tol"].as<double>();
-
-    if (yaml_node_["Scenario"].as<std::string>().compare("SingleModule") == 0)fsm_.scenario_ = Scenario::SINGLE_MODULE;
-    else fsm_.scenario_ = Scenario::ROBOT;
 
     main_irq_period_us_ = yaml_node_["MainLoop_period_us"].as<int>();
     can_irq_period_us_ = yaml_node_["CANLoop_period_us"].as<int>();

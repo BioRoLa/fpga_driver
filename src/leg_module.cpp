@@ -125,12 +125,12 @@ size_t LegModule::getMotorCount() const
     return channel_ ? channel_->getMotorCount() : 0;
 }
 
-double deg2rad(double deg)
+double LegModule::deg2rad(double deg)
 {
     return deg * M_PI / 180.0;
 }
 
-Eigen::Vector2d tb2phi(const Eigen::Vector2d &tb)
+Eigen::Vector2d LegModule::tb2phi(const Eigen::Vector2d &tb)
 {
     Eigen::Vector2d phi;
     Eigen::Matrix2d t;
@@ -141,8 +141,7 @@ Eigen::Vector2d tb2phi(const Eigen::Vector2d &tb)
     return phi;
 }
 
-
-Eigen::Vector2d phi2tb(const Eigen::Vector2d &phi)
+Eigen::Vector2d LegModule::phi2tb(const Eigen::Vector2d &phi)
 {
     Eigen::Vector2d tb;
     Eigen::Matrix2d t;

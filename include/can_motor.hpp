@@ -9,19 +9,19 @@
 
 #define CAN_DATA_LEN 8
 
-enum ConfigMode
+enum ConfigMode : uint8_t
 {
     READ = 0,
     WRITE = 1
 };
 
-enum ConfigType
+enum ConfigType : uint8_t
 {
     INT = 0,
     FLOAT = 1
 };
 
-enum ConfigState
+enum ConfigState : uint8_t
 {
     CONFIG_SUCCESS = 0,
     INVALID_VALUE = 1,
@@ -34,8 +34,8 @@ union CONFIGData
 {
     struct 
     {
-        uint8_t mode;           // ConfigMode (1 byte)
-        uint8_t type;           // ConfigType (1 byte)
+        ConfigMode mode;        // 1 byte
+        ConfigType type;        // 1 byte
         uint8_t target_addr;    // 1 byte
         union 
         {
@@ -47,8 +47,8 @@ union CONFIGData
 
     struct
     {
-        uint8_t state;          // ConfigState (1 byte)
-        uint8_t type;           // ConfigType (1 byte)
+        ConfigState state;      // 1 byte
+        ConfigType type;        // 1 byte
         uint8_t target_addr;    // 1 byte
         union 
         {  

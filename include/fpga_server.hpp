@@ -29,8 +29,6 @@ class Corgi
     FpgaHandler fpga_;
     Console console_;
 
-    Scenario scenario_;
-
     ModeFsm fsm_;
     std::vector<LegModule> modules_list_;
     std::vector<bool> powerboard_state_;
@@ -66,10 +64,4 @@ class Corgi
                    core::Publisher<motor_msg::MotorStateStamped>& state_pub_);
 
     void canLoop_();
-
-    bool hall_complete;
-
-    int32_t r_hall;
-    int32_t l_hall;
-    int32_t zero_offset;
 };
