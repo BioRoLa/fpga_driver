@@ -392,7 +392,7 @@ bool ModeFsm::switchMode(FunctionMode next_mode)
                         break;
                     }
                     
-                    motor->decodeFeedback();
+                    motor->decodeBasedOnMode();
                     
                     // SET_ZERO mode special processing
                     if (next_mode_switch == FunctionMode::SET_ZERO)
@@ -432,6 +432,7 @@ bool ModeFsm::switchMode(FunctionMode next_mode)
             }
             else {
                 mod.setMode(FunctionMode::CONFIG);
+                mod.setConfigSubMode(ConfigSubMode::REQUEST_STATE);
             }
         }
     }

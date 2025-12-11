@@ -9,6 +9,13 @@
 
 #define CAN_DATA_LEN 8
 
+// Config mode sub-states for distinguishing different operations in CONFIG mode
+enum class ConfigSubMode : uint8_t
+{
+    REQUEST_STATE,      // Request motor state (decode as motor feedback)
+    CONFIG_OPERATION    // Config read/write operation (access via union)
+};
+
 enum ConfigMode : uint8_t
 {
     READ = 0,
@@ -74,7 +81,9 @@ public:
     
     // Command data (for MOTOR mode)
     void setCommand(float position, float torque, float kp, float ki, float kd);
-    void encodeControl();                               // control_data_ -> command_data_raw
+    void encodeMotorControl();                          // control_data_ -> command_data_raw (for motor control)
+    void encodeRequestState();                          // Encode request state command (first byte = 255)
+    void encodeConfigCommand();                         // Encode config command (config_cmd_data_ -> command_data_raw)
     const uint8_t* getCommandRaw() const { return command_data_raw; }
     
     // Command data getters
@@ -85,9 +94,8 @@ public:
     float getCommandKd() const { return control_data_.kd; }
     
     // Feedback data
-    void parseFeedback(const uint8_t* msg_in);          // msg_in -> feedback_data_raw (單純儲存)
-    void decodeFeedback();                              // feedback_data_raw -> feedback_data_ (normal mode)
-    void decodeBasedOnMode();                           // based on current_mode_
+    void parseFeedback(const uint8_t* msg_in);          // msg_in -> feedback_data_raw (store raw data)
+    void decodeBasedOnMode();                           // Decode based on current_mode_ and config_sub_mode_
     const uint8_t* getFeedbackRaw() const { return feedback_data_raw; }
     float getPosition() const { return feedback_data_.position - position_bias_; }  // Match main branch logic: decoded - bias
     float getRawPosition() const { return feedback_data_.position; }  // Get raw position without bias
@@ -108,11 +116,19 @@ public:
     // FunctionMode management
     void setMode(FunctionMode mode) { current_mode_ = mode; }
     
+    // Config sub-mode management (only used when current_mode_ == CONFIG)
+    void setConfigSubMode(ConfigSubMode sub_mode) { config_sub_mode_ = sub_mode; }
+    ConfigSubMode getConfigSubMode() const { return config_sub_mode_; }
+    
+    // Config command data access
+    CONFIGData& getConfigCommandData() { return config_cmd_data_; }
+    
 private:
     uint32_t can_id_;
     Motor config_;
     float position_bias_;
     FunctionMode current_mode_;
+    ConfigSubMode config_sub_mode_;  // Sub-state for CONFIG mode
 
     struct 
     {
@@ -146,6 +162,10 @@ private:
     // Encoding/Decoding helpers
     int float_to_uint(float x, float x_min, float x_max, int bits);
     float uint_to_float(int x_int, float x_min, float x_max, int bits);
+    
+    // Internal decode functions (use decodeBasedOnMode() instead)
+    void decodeMotorFeedback();                         // feedback_data_raw -> feedback_data_ (motor feedback)
+    void decodeConfigFeedback();                        // feedback_data_raw -> config_fb_data_ (config feedback)
 };
 
 #endif

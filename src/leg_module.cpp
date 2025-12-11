@@ -110,6 +110,13 @@ void LegModule::setMode(FunctionMode mode)
     }
 }
 
+void LegModule::setConfigSubMode(ConfigSubMode sub_mode)
+{
+    if (channel_) {
+        channel_->setConfigSubMode(sub_mode);
+    }
+}
+
 bool LegModule::hasTimeout() const
 {
     return channel_ ? channel_->hasTimeout() : false;

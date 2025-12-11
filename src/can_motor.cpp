@@ -5,6 +5,7 @@ CANMotor::CANMotor(uint32_t can_id, const Motor& motor_config)
     , config_(motor_config)
     , position_bias_(motor_config.calibration_bias)
     , current_mode_(FunctionMode::REST)
+    , config_sub_mode_(ConfigSubMode::REQUEST_STATE)
 {
     // Initialize command data with config defaults
     control_data_.kp = config_.kp_;
@@ -31,10 +32,10 @@ void CANMotor::setCommand(float position, float torque, float kp, float ki, floa
     control_data_.ki = ki;
     control_data_.kd = kd;
 
-    encodeControl();
+    encodeMotorControl();
 }
 
-void CANMotor::encodeControl()
+void CANMotor::encodeMotorControl()
 {
     int pos_int = float_to_uint(-(control_data_.position + position_bias_), P_CMD_MIN, P_CMD_MAX, 16); // Negate to match system coordinate convention
     int kp_int = float_to_uint(control_data_.kp, KP_MIN, KP_MAX, 12);
@@ -57,7 +58,7 @@ void CANMotor::parseFeedback(const uint8_t* msg_in)
     std::memcpy(feedback_data_raw, msg_in, CAN_DATA_LEN);
 }
 
-void CANMotor::decodeFeedback()
+void CANMotor::decodeMotorFeedback()
 {
     int pos_raw = ((int)(feedback_data_raw[0]) << 8) | feedback_data_raw[1];
     int vel_raw = ((int)(feedback_data_raw[2]) << 8) | feedback_data_raw[3];
@@ -77,12 +78,40 @@ void CANMotor::decodeFeedback()
 void CANMotor::decodeBasedOnMode()
 {
     if (current_mode_ == FunctionMode::CONFIG) {
-        // In CONFIG mode, save raw data to config_fb_data_
-        std::memcpy(config_fb_data_.raw_data, feedback_data_raw, 8);
+        if (config_sub_mode_ == ConfigSubMode::REQUEST_STATE) {
+            // Request state response: decode as motor feedback
+            decodeMotorFeedback();
+        } else {
+            // Config operation: decode as config data
+            decodeConfigFeedback();
+        }
     } else {
         // In normal modes (MOTOR, REST, SET_ZERO, HALL_CALIBRATE), decode as motor feedback
-        decodeFeedback();
+        decodeMotorFeedback();
     }
+}
+
+void CANMotor::encodeRequestState()
+{
+    // Request motor state: first byte = 255, others = 0
+    command_data_raw[0] = 255;
+    for (int i = 1; i < CAN_DATA_LEN; i++) {
+        command_data_raw[i] = 0;
+    }
+}
+
+void CANMotor::encodeConfigCommand()
+{
+    // Copy config_cmd_data_ to command_data_raw
+    // Caller should set config_cmd_data_.config_cmd fields before calling this
+    std::memcpy(command_data_raw, config_cmd_data_.raw_data, CAN_DATA_LEN);
+}
+
+void CANMotor::decodeConfigFeedback()
+{
+    // Copy feedback_data_raw to config_fb_data_
+    // Caller can access decoded data via config_fb_data_.config_fb
+    std::memcpy(config_fb_data_.raw_data, feedback_data_raw, CAN_DATA_LEN);
 }
 
 int CANMotor::float_to_uint(float x, float x_min, float x_max, int bits)

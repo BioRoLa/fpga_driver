@@ -185,6 +185,13 @@ void CANChannel::setMode(FunctionMode mode)
     }
 }
 
+void CANChannel::setConfigSubMode(ConfigSubMode sub_mode)
+{
+    for (size_t i = 0; i < motors_.size(); ++i) {
+        motors_[i]->setConfigSubMode(sub_mode);
+    }
+}
+
 void CANChannel::sendCommands()
 {
     for (size_t i = 0; i < motors_.size(); ++i) {

@@ -219,16 +219,11 @@ void Corgi::canLoop_()
             // Receive feedback from FPGA (stores to feedback_data_raw)
             modules_list_[i].receiveFeedback();
             
-            // Decode based on motor mode:
-            // - CONFIG mode: save to config_fb_data_.raw_data
-            // - Other modes: decode to feedback_data_
-            // FIXME: currently using config to request state
             for (size_t j = 0; j < modules_list_[i].getMotorCount(); j++)
             {
                 CANMotor* motor = modules_list_[i].getMotor(j);
                 if (motor) {
-                    // motor->decodeBasedOnMode();
-                    motor->decodeFeedback();
+                    motor->decodeBasedOnMode();
                 }
             }
 

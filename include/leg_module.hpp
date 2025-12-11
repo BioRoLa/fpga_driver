@@ -32,6 +32,7 @@ public:
   void sendCommands();
   void receiveFeedback();
   void setMode(FunctionMode mode);
+  void setConfigSubMode(ConfigSubMode sub_mode);
   bool hasTimeout() const;
 
   CANMotor* getMotor(size_t index);
