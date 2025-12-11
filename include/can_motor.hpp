@@ -77,6 +77,13 @@ public:
     void encodeControl();                               // control_data_ -> command_data_raw
     const uint8_t* getCommandRaw() const { return command_data_raw; }
     
+    // Command data getters
+    float getCommandPosition() const { return control_data_.position; }
+    float getCommandTorque() const { return control_data_.torque; }
+    float getCommandKp() const { return control_data_.kp; }
+    float getCommandKi() const { return control_data_.ki; }
+    float getCommandKd() const { return control_data_.kd; }
+    
     // Feedback data
     void parseFeedback(const uint8_t* msg_in);          // msg_in -> feedback_data_raw (單純儲存)
     void decodeFeedback();                              // feedback_data_raw -> feedback_data_ (normal mode)

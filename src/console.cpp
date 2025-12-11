@@ -379,12 +379,12 @@ void Panel::infoDisplay()
         mvwprintw(win_, 2, 1, "[C] [CAN] ID: %9d", motorR->getCANID());
         mvwprintw(win_, 3, 1, "    [tx] TIMEDOUT: %4d", md_ptr_->channel_->hasTxTimeout() ? 1 : 0);
         
-        // Command data //FIXME: Note: command data is internal, we show "N/A" or could decode from raw
-        mvwprintw(win_, y_org + 2, 1, "[A] [tx] Pos:  N/A");
-        mvwprintw(win_, y_org + 3, 1, "[T] [tx] Trq:  N/A");
-        mvwprintw(win_, y_org + 4, 1, "[P] [tx] KP:   N/A");
-        mvwprintw(win_, y_org + 5, 1, "[I] [tx] KI:   N/A");
-        mvwprintw(win_, y_org + 6, 1, "[D] [tx] KD:   N/A");
+        // Command data
+        mvwprintw(win_, y_org + 2, 1, "[A] [tx] Pos: %4.5f", motorR->getCommandPosition());
+        mvwprintw(win_, y_org + 3, 1, "[T] [tx] Trq: %4.5f", motorR->getCommandTorque());
+        mvwprintw(win_, y_org + 4, 1, "[P] [tx] KP:  %4.5f", motorR->getCommandKp());
+        mvwprintw(win_, y_org + 5, 1, "[I] [tx] KI:  %4.5f", motorR->getCommandKi());
+        mvwprintw(win_, y_org + 6, 1, "[D] [tx] KD:  %4.5f", motorR->getCommandKd());
         
         // Feedback data
         mvwprintw(win_, 3, 30, "[rx] TIMEDOUT: %4d", md_ptr_->channel_->hasRxTimeout() ? 1 : 0);
@@ -402,12 +402,12 @@ void Panel::infoDisplay()
         mvwprintw(win_, 11, 1, "[C] [CAN] ID: %9d", motorL->getCANID());
         mvwprintw(win_, 12, 1, "    [tx] TIMEDOUT: %4d", md_ptr_->channel_->hasTxTimeout() ? 1 : 0);
         
-        // Command data //FIXME: command data is internal, we show "N/A" or could decode from raw
-        mvwprintw(win_, y_org + 11, 1, "[A] [tx] Pos:  N/A");
-        mvwprintw(win_, y_org + 12, 1, "[T] [tx] Trq:  N/A");
-        mvwprintw(win_, y_org + 13, 1, "[P] [tx] KP:   N/A");
-        mvwprintw(win_, y_org + 14, 1, "[I] [tx] KI:   N/A");
-        mvwprintw(win_, y_org + 15, 1, "[D] [tx] KD:   N/A");
+        // Command data
+        mvwprintw(win_, y_org + 11, 1, "[A] [tx] Pos: %4.5f", motorL->getCommandPosition());
+        mvwprintw(win_, y_org + 12, 1, "[T] [tx] Trq: %4.5f", motorL->getCommandTorque());
+        mvwprintw(win_, y_org + 13, 1, "[P] [tx] KP:  %4.5f", motorL->getCommandKp());
+        mvwprintw(win_, y_org + 14, 1, "[I] [tx] KI:  %4.5f", motorL->getCommandKi());
+        mvwprintw(win_, y_org + 15, 1, "[D] [tx] KD:  %4.5f", motorL->getCommandKd());
         
         // Feedback data
         mvwprintw(win_, 12, 30, "[rx] TIMEDOUT: %4d", md_ptr_->channel_->hasRxTimeout() ? 1 : 0);
