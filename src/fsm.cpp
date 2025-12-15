@@ -27,14 +27,18 @@ double theta_error(double start_theta, double goal_theta)
 
 void MotorFSM::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg::MotorCmdStamped& motor_cmd_msg)
 {
+    // Publish feedback message at the beginning if not in HALL_CALIBRATE mode
+    if (current_mode_ != FunctionMode::HALL_CALIBRATE)
+    {
+        publishMsg(motor_fb_msg);
+    }
+    
     // position = P_CMD_MAX is to make sure the data received from CONFIG function code is the default one
     switch (current_mode_)
     {
         case FunctionMode::REST: {
             if (pb_state_.at(2) == true)
             {
-                publishMsg(motor_fb_msg);
-                
                 for (auto& mod : modules_list_)
                 {
                     if (mod.enable_)
@@ -55,8 +59,6 @@ void MotorFSM::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_ms
         case FunctionMode::SET_ZERO: {
             if (pb_state_.at(2) == true)
             {
-                publishMsg(motor_fb_msg);
-                
                 for (auto& mod : modules_list_)
                 {
                     if (mod.enable_)
@@ -208,9 +210,6 @@ void MotorFSM::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_ms
         break;
 
         case FunctionMode::MOTOR: {
-            /* Publish feedback data from Motors */
-            publishMsg(motor_fb_msg);
-            
             if (*NO_CAN_TIMEDOUT_ERROR_ && *NO_SWITCH_TIMEDOUT_ERROR_)
             {
                 int index = 0;
@@ -445,17 +444,14 @@ void MotorFSM::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
     {
         if (mod.enable_)
         {
-            // 取得馬達指標
             CANMotor* motorR = mod.getMotor(0);
             CANMotor* motorL = mod.getMotor(1);
             
-            // 檢查空指標
             if (!motorR || !motorL) {
                 index++;
                 continue;
             }
             
-            // 取得馬達數據
             float pos_r = motorR->getPosition();
             float pos_l = motorL->getPosition();
             float vel_r = motorR->getVelocity();
@@ -463,7 +459,6 @@ void MotorFSM::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
             float torque_r = motorR->getTorque() * motorR->getConfig().kt_;
             float torque_l = motorL->getTorque() * motorL->getConfig().kt_;
             
-            // 轉換 phi 到 theta-beta
             Eigen::Vector2d phi_(pos_r, pos_l);
             Eigen::Vector2d tb_ = LegModule::phi2tb(phi_);
             
