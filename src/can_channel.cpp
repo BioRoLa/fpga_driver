@@ -195,19 +195,22 @@ void CANChannel::setConfigSubMode(ConfigSubMode sub_mode)
 void CANChannel::sendCommands()
 {
     for (size_t i = 0; i < motors_.size(); ++i) {
-        // Get command data from motor
-        uint8_t tx_buffer[8];
-        std::memcpy(tx_buffer, motors_[i]->getCommandRaw(), 8);
+        const uint8_t* cmd_data = motors_[i]->getCommandRaw();
         
-        // Read function code and override first byte if in CONFIG mode
+        // Read function code and check if need to override first byte
         uint32_t fc = 0;
         NiFpga_MergeStatus(&status_, NiFpga_ReadU32(session_, can_id_fcs_[i], &fc));
-        if (fc == 1) {  // CONFIG mode (used by HALL_CALIBRATE, SET_ZERO, etc.)
-            tx_buffer[0] = 255;
-        }
         
-        NiFpga_MergeStatus(&status_, 
-            NiFpga_WriteArrayU8(session_, tx_buffers_[i], tx_buffer, tx_buf_size_));
+        if (fc == 1) {  // CONFIG mode - need to modify first byte
+            uint8_t tx_buffer[8];
+            std::memcpy(tx_buffer, cmd_data, 8);
+            tx_buffer[0] = 255;
+            NiFpga_MergeStatus(&status_, 
+                NiFpga_WriteArrayU8(session_, tx_buffers_[i], tx_buffer, tx_buf_size_));
+        } else {
+            NiFpga_MergeStatus(&status_, 
+                NiFpga_WriteArrayU8(session_, tx_buffers_[i], cmd_data, tx_buf_size_));
+        }
     }
     
     // transmit trigger
