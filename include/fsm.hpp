@@ -17,12 +17,13 @@ class ModeFsm
 {
 public:
   /* pass modules vector by reference*/
-  ModeFsm(std::vector<LegModule> *module_list_, std::vector<bool> *pb_state_, double *pb_v);
-  ModeFsm() {}
+  ModeFsm(std::vector<LegModule>& module_list, std::vector<bool>& pb_state, double* pb_v);
+  ModeFsm() = delete;
+  
   FunctionMode workingMode_;
 
-  std::vector<LegModule> *modules_list_;
-  std::vector<bool> *pb_state_;
+  std::vector<LegModule>& modules_list_;
+  std::vector<bool>& pb_state_;
 
   bool hall_calibrated;
   int hall_calibrate_status;
@@ -34,9 +35,9 @@ public:
   double cal_dir_[4][2];
   double cal_command[4][2];
 
-  bool *NO_CAN_TIMEDOUT_ERROR_;
-  bool *NO_SWITCH_TIMEDOUT_ERROR_;
-  double *powerboard_voltage;
+  bool* NO_CAN_TIMEDOUT_ERROR_;
+  bool* NO_SWITCH_TIMEDOUT_ERROR_;
+  double* powerboard_voltage;
 
   void runFsm(motor_msg::MotorStateStamped &motor_fb_msg, const motor_msg::MotorCmdStamped &motor_cmd_msg);
   bool switchMode(FunctionMode next_mode);

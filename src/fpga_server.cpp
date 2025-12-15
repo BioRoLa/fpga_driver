@@ -26,6 +26,7 @@ void power_data_cb(power_msg::PowerCmdStamped power_msg)
 }
 
 Corgi::Corgi()
+    : fsm_(modules_list_, powerboard_state_, fpga_.powerboard_V_list_)
 {
     /* default value of interrupt*/
     main_irq_period_us_ = 500;
@@ -46,8 +47,6 @@ Corgi::Corgi()
     powerboard_state_.push_back(signal_switch_);
     powerboard_state_.push_back(power_switch_);
 
-    ModeFsm fsm(&modules_list_, &powerboard_state_, fpga_.powerboard_V_list_);
-    fsm_ = fsm;
     fsm_.NO_CAN_TIMEDOUT_ERROR_ = &NO_CAN_TIMEDOUT_ERROR_;
     fsm_.NO_SWITCH_TIMEDOUT_ERROR_ = &NO_SWITCH_TIMEDOUT_ERROR_;
 

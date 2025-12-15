@@ -1,15 +1,13 @@
 #include <fsm.hpp>
 
-ModeFsm::ModeFsm(std::vector<LegModule>* _modules, std::vector<bool>* _pb_state, double* pb_v)
+ModeFsm::ModeFsm(std::vector<LegModule>& _modules, std::vector<bool>& _pb_state, double* pb_v)
+    : modules_list_(_modules)
+    , pb_state_(_pb_state)
+    , workingMode_(FunctionMode::REST)
+    , powerboard_voltage(pb_v)
+    , hall_calibrated(false)
+    , hall_calibrate_status(0)
 {
-    workingMode_ = FunctionMode::REST;
-
-    modules_list_ = _modules;
-    pb_state_ = _pb_state;
-    powerboard_voltage = pb_v;
-
-    hall_calibrated = false;
-    hall_calibrate_status = 0;
 }
 
 double theta_error(double start_theta, double goal_theta)
@@ -33,11 +31,11 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
     switch (workingMode_)
     {
         case FunctionMode::REST: {
-            if (pb_state_->at(2) == true)
+            if (pb_state_.at(2) == true)
             {
                 publishMsg(motor_fb_msg);
                 
-                for (auto& mod : *modules_list_)
+                for (auto& mod : modules_list_)
                 {
                     if (mod.enable_)
                     {
@@ -55,11 +53,11 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
         break;
 
         case FunctionMode::SET_ZERO: {
-            if (pb_state_->at(2) == true)
+            if (pb_state_.at(2) == true)
             {
                 publishMsg(motor_fb_msg);
                 
-                for (auto& mod : *modules_list_)
+                for (auto& mod : modules_list_)
                 {
                     if (mod.enable_)
                     {
@@ -82,7 +80,7 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
             int total_motors = 0;
             
             // Set all motor command to zero initially
-            for (auto& mod : *modules_list_)
+            for (auto& mod : modules_list_)
             {
                 if (mod.enable_)
                 {
@@ -108,7 +106,7 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                 case 0:{
                     // check calibration finished
                     int cal_cnt = 0;
-                    for (auto& mod : *modules_list_)
+                    for (auto& mod : modules_list_)
                     {
                         if (mod.enable_) {
                             bool all_calibrated = true;
@@ -136,7 +134,7 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                 case 1:{
                     // set initial calibration command
                     int mod_index = 0;
-                    for (auto& mod : *modules_list_)
+                    for (auto& mod : modules_list_)
                     {
                         if (mod.enable_)
                         {
@@ -169,7 +167,7 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                     int finish_cnt = 0;
                     int mod_index = 0;
                     
-                    for (auto& mod : *modules_list_)
+                    for (auto& mod : modules_list_)
                     {
                         if (mod.enable_){
                             for (size_t j = 0; j < mod.getMotorCount() && j < 2; j++)
@@ -216,7 +214,7 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
             if (*NO_CAN_TIMEDOUT_ERROR_ && *NO_SWITCH_TIMEDOUT_ERROR_)
             {
                 int index = 0;
-                for (auto& mod : *modules_list_)
+                for (auto& mod : modules_list_)
                 {
                     if (mod.enable_)
                     {
@@ -338,7 +336,7 @@ bool ModeFsm::switchMode(FunctionMode next_mode)
     bool success = false;
     FunctionMode next_mode_switch = next_mode;
 
-    for (auto& mod : *modules_list_)
+    for (auto& mod : modules_list_)
     {
         if (mod.enable_) module_enabled++;
     }
@@ -360,7 +358,7 @@ bool ModeFsm::switchMode(FunctionMode next_mode)
         }
         else mode_switched_cnt = 0;
 
-        for (auto& mod : *modules_list_)
+        for (auto& mod : modules_list_)
         {
             if (mod.enable_)
             {
@@ -423,7 +421,7 @@ bool ModeFsm::switchMode(FunctionMode next_mode)
         usleep(1e4);
     }
 
-    for (auto& mod : *modules_list_)
+    for (auto& mod : modules_list_)
     {
         if (mod.enable_)
         {
@@ -443,7 +441,7 @@ bool ModeFsm::switchMode(FunctionMode next_mode)
 void ModeFsm::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
 {
     int index = 0;
-    for (auto& mod : *modules_list_)
+    for (auto& mod : modules_list_)
     {
         if (mod.enable_)
         {
