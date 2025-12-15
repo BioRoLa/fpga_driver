@@ -7,7 +7,7 @@ using namespace std;
 mutex cons_mtx_;
 int refresh_flag;
 
-void Console::init(FpgaHandler *fpga, vector<LegModule> *mods_, std::vector<bool> *pb_state_ptr_, ModeFsm *fsm_ptr_, std::mutex *mtx_ptr_)
+void Console::init(FpgaHandler *fpga, vector<LegModule> *mods_, std::vector<bool> *pb_state_ptr_, MotorFSM *fsm_ptr_, std::mutex *mtx_ptr_)
 {
     fpga_ = fpga;
 
@@ -61,7 +61,7 @@ void Console::refreshWindow()
         cons_mtx_.lock();
 
         p_power_.infoDisplay(fpga_, powerboard_state_->at(0), powerboard_state_->at(1), powerboard_state_->at(2));
-        p_cmain_.infoDisplay(fsm_->workingMode_);
+        p_cmain_.infoDisplay(fsm_->getCurrentMode());
         p_modA_.infoDisplay();
         p_modB_.infoDisplay();
         p_modC_.infoDisplay();

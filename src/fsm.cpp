@@ -1,12 +1,12 @@
 #include <fsm.hpp>
 
-ModeFsm::ModeFsm(std::vector<LegModule>& _modules, std::vector<bool>& _pb_state, double* pb_v)
+MotorFSM::MotorFSM(std::vector<LegModule>& _modules, std::vector<bool>& _pb_state, double* pb_v)
     : modules_list_(_modules)
     , pb_state_(_pb_state)
-    , workingMode_(FunctionMode::REST)
+    , current_mode_(FunctionMode::REST)
     , powerboard_voltage(pb_v)
-    , hall_calibrated(false)
-    , hall_calibrate_status(0)
+    , hall_calibrated_(false)
+    , hall_calibrate_status_(0)
 {
 }
 
@@ -25,10 +25,10 @@ double theta_error(double start_theta, double goal_theta)
 }
 
 
-void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg::MotorCmdStamped& motor_cmd_msg)
+void MotorFSM::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg::MotorCmdStamped& motor_cmd_msg)
 {
     // position = P_CMD_MAX is to make sure the data received from CONFIG function code is the default one
-    switch (workingMode_)
+    switch (current_mode_)
     {
         case FunctionMode::REST: {
             if (pb_state_.at(2) == true)
@@ -96,7 +96,7 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                 }
             }
 
-            switch (hall_calibrate_status)
+            switch (hall_calibrate_status_)
             {
                 case -1:{
                     switchMode(FunctionMode::REST);
@@ -126,8 +126,8 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                         }
                     }
                     
-                    if (cal_cnt == module_enabled && measure_offset == 0) hall_calibrate_status++;
-                    else if (cal_cnt == module_enabled && measure_offset == 1) hall_calibrate_status = -1;
+                    if (cal_cnt == module_enabled && measure_offset_ == 0) hall_calibrate_status_++;
+                    else if (cal_cnt == module_enabled && measure_offset_ == 1) hall_calibrate_status_ = -1;
                 }
                 break;
 
@@ -158,7 +158,7 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                         }
                         mod_index++;
                     }
-                    hall_calibrate_status++;
+                    hall_calibrate_status_++;
                 }
                 break;
 
@@ -193,13 +193,13 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
                         }
                         mod_index++;
                     }
-                    if (finish_cnt == total_motors) hall_calibrate_status++;
+                    if (finish_cnt == total_motors) hall_calibrate_status_++;
                 }
                 break;
 
                 case 3:{
-                    hall_calibrated = true;
-                    hall_calibrate_status = 0;
+                    hall_calibrated_ = true;
+                    hall_calibrate_status_ = 0;
                     switchMode(FunctionMode::MOTOR);
                 }
                 break;
@@ -329,7 +329,7 @@ void ModeFsm::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg
     }
 }
 
-bool ModeFsm::switchMode(FunctionMode next_mode)
+bool MotorFSM::switchMode(FunctionMode next_mode)
 {
     int mode_switched_cnt = 0;
     int module_enabled = 0;
@@ -346,7 +346,7 @@ bool ModeFsm::switchMode(FunctionMode next_mode)
     {
         if (mode_switched_cnt == module_enabled)
         {
-            workingMode_ = next_mode_switch;
+            current_mode_ = next_mode_switch;
             success = true;
             break;
         }
@@ -425,7 +425,7 @@ bool ModeFsm::switchMode(FunctionMode next_mode)
     {
         if (mod.enable_)
         {
-            if (workingMode_ == FunctionMode::MOTOR) {
+            if (current_mode_ == FunctionMode::MOTOR) {
                 mod.setMode(FunctionMode::CONTROL);
             }
             else {
@@ -438,7 +438,7 @@ bool ModeFsm::switchMode(FunctionMode next_mode)
     return success;
 }
 
-void ModeFsm::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
+void MotorFSM::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
 {
     int index = 0;
     for (auto& mod : modules_list_)

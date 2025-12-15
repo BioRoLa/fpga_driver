@@ -29,7 +29,7 @@ class Corgi
     FpgaHandler fpga_;
     Console console_;
 
-    ModeFsm fsm_;
+    MotorFSM motor_fsm_;
     std::vector<LegModule> modules_list_;
     std::vector<bool> powerboard_state_;
     std::mutex main_mtx_;

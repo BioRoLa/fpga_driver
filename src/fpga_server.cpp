@@ -26,7 +26,7 @@ void power_data_cb(power_msg::PowerCmdStamped power_msg)
 }
 
 Corgi::Corgi()
-    : fsm_(modules_list_, powerboard_state_, fpga_.powerboard_V_list_)
+    : motor_fsm_(modules_list_, powerboard_state_, fpga_.powerboard_V_list_)
 {
     /* default value of interrupt*/
     main_irq_period_us_ = 500;
@@ -47,12 +47,11 @@ Corgi::Corgi()
     powerboard_state_.push_back(signal_switch_);
     powerboard_state_.push_back(power_switch_);
 
-    fsm_.NO_CAN_TIMEDOUT_ERROR_ = &NO_CAN_TIMEDOUT_ERROR_;
-    fsm_.NO_SWITCH_TIMEDOUT_ERROR_ = &NO_SWITCH_TIMEDOUT_ERROR_;
+    motor_fsm_.setTimeoutErrorFlags(&NO_CAN_TIMEDOUT_ERROR_, &NO_SWITCH_TIMEDOUT_ERROR_);
 
     load_config_();
 
-    console_.init(&fpga_, &modules_list_, &powerboard_state_, &fsm_, &main_mtx_);
+    console_.init(&fpga_, &modules_list_, &powerboard_state_, &motor_fsm_, &main_mtx_);
 
     fpga_.setIrqPeriod(main_irq_period_us_, can_irq_period_us_);
 }
@@ -61,10 +60,11 @@ void Corgi::load_config_()
 {
     yaml_node_ = YAML::LoadFile(CONFIG_PATH);
 
-    fsm_.dt_ = yaml_node_["MainLoop_period_us"].as<int>() * 0.000001;
-    fsm_.measure_offset = yaml_node_["Measure_offset"].as<int>();
-    fsm_.cal_vel_ = yaml_node_["Hall_calibration_vel"].as<double>();
-    fsm_.cal_tol_ = yaml_node_["Hall_calibration_tol"].as<double>();
+    // Configure motor FSM parameters
+    motor_fsm_.setControlPeriod(yaml_node_["MainLoop_period_us"].as<int>() * 0.000001);
+    motor_fsm_.setMeasureOffset(yaml_node_["Measure_offset"].as<int>());
+    motor_fsm_.setCalibrationVelocity(yaml_node_["Hall_calibration_vel"].as<double>());
+    motor_fsm_.setCalibrationTolerance(yaml_node_["Hall_calibration_tol"].as<double>());
 
     main_irq_period_us_ = yaml_node_["MainLoop_period_us"].as<int>();
     can_irq_period_us_ = yaml_node_["CANLoop_period_us"].as<int>();
@@ -167,9 +167,9 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
     power_msg::PowerStateStamped power_fb_msg;
     motor_msg::MotorStateStamped motor_fb_msg;
 
-    fsm_.runFsm(motor_fb_msg, motor_cmd_data);
+    motor_fsm_.runFsm(motor_fb_msg, motor_cmd_data);
     motor_message_updated = 0;    
-    HALL_CALIBRATED_ = fsm_.hall_calibrated;
+    HALL_CALIBRATED_ = motor_fsm_.isHallCalibrated();
 
     mutex_.unlock();
 
@@ -194,11 +194,17 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
             powerboard_state_.at(1) = power_cmd_data.signal();
             powerboard_state_.at(2) = power_cmd_data.power();
 
-            if (power_cmd_data.robot_mode() == (int)FunctionMode::MOTOR && fsm_.workingMode_ != FunctionMode::MOTOR)fsm_.switchMode(FunctionMode::MOTOR);
-            else if (power_cmd_data.robot_mode() == (int)FunctionMode::HALL_CALIBRATE && fsm_.workingMode_ != FunctionMode::HALL_CALIBRATE && fsm_.workingMode_ != FunctionMode::MOTOR)fsm_.switchMode(FunctionMode::HALL_CALIBRATE);
-            else if (power_cmd_data.robot_mode() == (int)FunctionMode::SET_ZERO && fsm_.workingMode_ != FunctionMode::SET_ZERO)fsm_.switchMode(FunctionMode::SET_ZERO);
-            else if (power_cmd_data.robot_mode() == (int)FunctionMode::CONFIG && fsm_.workingMode_ != FunctionMode::CONFIG)fsm_.switchMode(FunctionMode::CONFIG);
-            else if (power_cmd_data.robot_mode() == (int)FunctionMode::REST && fsm_.workingMode_ != FunctionMode::REST)fsm_.switchMode(FunctionMode::REST);
+            FunctionMode current = motor_fsm_.getCurrentMode();
+            if (power_cmd_data.robot_mode() == (int)FunctionMode::MOTOR && current != FunctionMode::MOTOR)
+                motor_fsm_.switchMode(FunctionMode::MOTOR);
+            else if (power_cmd_data.robot_mode() == (int)FunctionMode::HALL_CALIBRATE && current != FunctionMode::HALL_CALIBRATE && current != FunctionMode::MOTOR)
+                motor_fsm_.switchMode(FunctionMode::HALL_CALIBRATE);
+            else if (power_cmd_data.robot_mode() == (int)FunctionMode::SET_ZERO && current != FunctionMode::SET_ZERO)
+                motor_fsm_.switchMode(FunctionMode::SET_ZERO);
+            else if (power_cmd_data.robot_mode() == (int)FunctionMode::CONFIG && current != FunctionMode::CONFIG)
+                motor_fsm_.switchMode(FunctionMode::CONFIG);
+            else if (power_cmd_data.robot_mode() == (int)FunctionMode::REST && current != FunctionMode::REST)
+                motor_fsm_.switchMode(FunctionMode::REST);
             fpga_message_updated = 0;
         }
     }
@@ -251,13 +257,14 @@ void Corgi::powerboardPack(power_msg::PowerStateStamped&power_dashboard_reply)
     power_dashboard_reply.set_signal(powerboard_state_.at(1));
     power_dashboard_reply.set_power(powerboard_state_.at(2));
 
-    if (fsm_.hall_calibrated == true && NO_SWITCH_TIMEDOUT_ERROR_==true && NO_CAN_TIMEDOUT_ERROR_==true) power_dashboard_reply.set_clean(true);
+    if (motor_fsm_.isHallCalibrated() == true && NO_SWITCH_TIMEDOUT_ERROR_==true && NO_CAN_TIMEDOUT_ERROR_==true) power_dashboard_reply.set_clean(true);
     else power_dashboard_reply.set_clean(false);
 
-    if (fsm_.workingMode_ == FunctionMode::REST) power_dashboard_reply.set_robot_mode(power_msg::REST_MODE);
-    else if (fsm_.workingMode_ == FunctionMode::HALL_CALIBRATE) power_dashboard_reply.set_robot_mode(power_msg::HALL_CALIBRATE);
-    else if (fsm_.workingMode_ == FunctionMode::MOTOR) power_dashboard_reply.set_robot_mode(power_msg::MOTOR_MODE);
-    else if (fsm_.workingMode_ == FunctionMode::SET_ZERO) power_dashboard_reply.set_robot_mode(power_msg::SET_ZERO);
+    FunctionMode current_mode = motor_fsm_.getCurrentMode();
+    if (current_mode == FunctionMode::REST) power_dashboard_reply.set_robot_mode(power_msg::REST_MODE);
+    else if (current_mode == FunctionMode::HALL_CALIBRATE) power_dashboard_reply.set_robot_mode(power_msg::HALL_CALIBRATE);
+    else if (current_mode == FunctionMode::MOTOR) power_dashboard_reply.set_robot_mode(power_msg::MOTOR_MODE);
+    else if (current_mode == FunctionMode::SET_ZERO) power_dashboard_reply.set_robot_mode(power_msg::SET_ZERO);
 
     power_dashboard_reply.set_v_0(fpga_.powerboard_V_list_[0]);
     power_dashboard_reply.set_i_0(fpga_.powerboard_I_list_[0]);
