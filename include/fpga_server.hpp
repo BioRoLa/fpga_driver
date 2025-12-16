@@ -1,7 +1,7 @@
 #include "fpga_handler.hpp"
 #include "leg_module.hpp"
 #include "console.hpp"
-#include "fsm.hpp"
+#include "motor_fsm.hpp"
 
 #include <NodeHandler.h>
 #include <sys/time.h>

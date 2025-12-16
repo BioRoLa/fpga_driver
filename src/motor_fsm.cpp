@@ -1,4 +1,4 @@
-#include <fsm.hpp>
+#include <motor_fsm.hpp>
 
 MotorFSM::MotorFSM(std::vector<LegModule>& _modules, std::vector<bool>& _pb_state, double* pb_v)
     : modules_list_(_modules)
@@ -23,7 +23,6 @@ double theta_error(double start_theta, double goal_theta)
     theta_err = asin(y_frame1);
     return theta_err;
 }
-
 
 void MotorFSM::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg::MotorCmdStamped& motor_cmd_msg)
 {
@@ -68,7 +67,7 @@ void MotorFSM::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_ms
                             CANMotor* motor = mod.getMotor(i);
                             if (motor) {
                                 motor->setPositionBias(0);
-                                motor->setCommand(P_CMD_MAX, 0, 0, 0, 0);
+                                motor->setCommand(0, 0, 0, 0, 0);
                             }
                         }
                     }

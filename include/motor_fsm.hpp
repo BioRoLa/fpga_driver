@@ -1,5 +1,5 @@
-#ifndef __FSM_H
-#define __FSM_H
+#ifndef __MOTOR_FSM_H
+#define __MOTOR_FSM_H
 
 #include <math.h>
 #include <vector>

@@ -6,7 +6,7 @@
 #define NCURSES_NOMACROS
 
 #include "leg_module.hpp"
-#include "fsm.hpp"
+#include "motor_fsm.hpp"
 
 #include <iostream>
 #include <string>
