@@ -1,6 +1,6 @@
 #include <motor_fsm.hpp>
 
-MotorFSM::MotorFSM(std::vector<LegModule>& _modules, std::vector<bool>& _pb_state, double* pb_v)
+MotorFSM::MotorFSM(std::vector<LegModule>& _modules, bool& _pb_state, double* pb_v)
     : modules_list_(_modules)
     , pb_state_(_pb_state)
     , current_mode_(FunctionMode::REST)
@@ -36,7 +36,7 @@ void MotorFSM::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_ms
     switch (current_mode_)
     {
         case FunctionMode::REST: {
-            if (pb_state_.at(2) == true)
+            if (pb_state_ == true)
             {
                 for (auto& mod : modules_list_)
                 {
@@ -56,7 +56,7 @@ void MotorFSM::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_ms
         break;
 
         case FunctionMode::SET_ZERO: {
-            if (pb_state_.at(2) == true)
+            if (pb_state_ == true)
             {
                 for (auto& mod : modules_list_)
                 {

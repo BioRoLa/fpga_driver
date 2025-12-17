@@ -7,7 +7,7 @@ using namespace std;
 mutex cons_mtx_;
 int refresh_flag;
 
-void Console::init(FpgaHandler *fpga, vector<LegModule> *mods_, std::vector<bool> *pb_state_ptr_, MotorFSM *fsm_ptr_, std::mutex *mtx_ptr_)
+void Console::init(FpgaHandler *fpga, vector<LegModule> *mods_, bool *pb_state_ptr_, MotorFSM *fsm_ptr_, std::mutex *mtx_ptr_)
 {
     fpga_ = fpga;
 
@@ -60,7 +60,7 @@ void Console::refreshWindow()
     {
         cons_mtx_.lock();
 
-        p_power_.infoDisplay(fpga_, powerboard_state_->at(0), powerboard_state_->at(1), powerboard_state_->at(2));
+        p_power_.infoDisplay(fpga_, *powerboard_state_);
         p_cmain_.infoDisplay(fsm_->getCurrentMode());
         p_modA_.infoDisplay();
         p_modB_.infoDisplay();
@@ -216,35 +216,11 @@ void InputPanel::commandDecode(string buf)
 
         if (pb_selected)
         {
-            if (bufs[1] == "D")
+            if (bufs[1] == "P")  // Simplified: only one switch 'P' for power
             {
                 try
                 {
-                    powerboard_state_->at(0) = stoi(bufs[2]);
-                }
-                catch (exception &e)
-                {
-                    syntax_err = true;
-                    mvwprintw(win_, 2, 1, "err");
-                }
-            }
-            else if (bufs[1] == "S")
-            {
-                try
-                {
-                    powerboard_state_->at(1) = stoi(bufs[2]);
-                }
-                catch (exception &e)
-                {
-                    syntax_err = true;
-                    mvwprintw(win_, 2, 1, "err");
-                }
-            }
-            else if (bufs[1] == "P")
-            {
-                try
-                {
-                    powerboard_state_->at(2) = stoi(bufs[2]);
+                    *powerboard_state_ = stoi(bufs[2]);
                 }
                 catch (exception &e)
                 {
@@ -422,12 +398,10 @@ void Panel::infoDisplay()
     wrefresh(win_);
 }
 
-void Panel::infoDisplay(FpgaHandler *fpga_, bool digital_switch, bool signal_switch, bool power_switch)
+void Panel::infoDisplay(FpgaHandler *fpga_, bool powerboard_on)
 {
     mvwprintw(win_, 2, 1, "HARDWARE POWER SWITCH ----------------");
-    mvwprintw(win_, 3, 1, "[D] Digital:   %4d", digital_switch);
-    mvwprintw(win_, 4, 1, "[S] Signal:    %4d", signal_switch);
-    mvwprintw(win_, 5, 1, "[P] Power:     %4d", power_switch);
+    mvwprintw(win_, 3, 1, "[P] Power:     %4d (ON/OFF)", powerboard_on);
 
     mvwprintw(win_, 6, 1, "Voltage Current ADC ------------------");
     mvwprintw(win_, 7, 1, "Voltage: %5.5f, Current: %5.5f", fpga_->powerboard_V_list_[0], fpga_->powerboard_I_list_[0]);

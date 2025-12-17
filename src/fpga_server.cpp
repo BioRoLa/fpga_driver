@@ -24,18 +24,12 @@ Corgi::Corgi()
     seq = 0;
 
     /* initialize powerboard state */
-    digital_switch_ = false;
-    signal_switch_ = false;
-    power_switch_ = false;
+    powerboard_state_ = false;  // OFF by default
     NO_CAN_TIMEDOUT_ERROR_ = true;
     NO_SWITCH_TIMEDOUT_ERROR_ = true;
     HALL_CALIBRATED_ = false;
 
     max_timeout_cnt_ = 100;
-
-    powerboard_state_.push_back(digital_switch_);
-    powerboard_state_.push_back(signal_switch_);
-    powerboard_state_.push_back(power_switch_);
 
     motor_fsm_.setTimeoutErrorFlags(&NO_CAN_TIMEDOUT_ERROR_, &NO_SWITCH_TIMEDOUT_ERROR_);
 
@@ -147,7 +141,7 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
                       core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
                       core::Publisher<motor_msg::MotorStateStamped>& state_pub_)
 {
-    fpga_.write_powerboard_(&powerboard_state_);
+    fpga_.write_powerboard_(powerboard_state_);
     fpga_.read_powerboard_data_();
 
     core::spinOnce();
@@ -184,7 +178,7 @@ void Corgi::canLoop_()
     
     for (int i = 0; i < 4; i++)
     {
-        if (modules_list_[i].enable_ && powerboard_state_.at(2) == true)
+        if (modules_list_[i].enable_ && powerboard_state_ == true)
         {
             // Receive feedback from FPGA (stores to feedback_data_raw)
             modules_list_[i].receiveFeedback();
@@ -218,9 +212,10 @@ void Corgi::powerboardPack(power_msg::PowerStateStamped&power_dashboard_reply)
     power_dashboard_reply.mutable_header()->mutable_stamp()->set_sec(t_stamp.tv_sec);
     power_dashboard_reply.mutable_header()->mutable_stamp()->set_usec(t_stamp.tv_usec);
 
-    power_dashboard_reply.set_digital(powerboard_state_.at(0));
-    power_dashboard_reply.set_signal(powerboard_state_.at(1));
-    power_dashboard_reply.set_power(powerboard_state_.at(2));
+    // Simplified: all three switches controlled by single state
+    power_dashboard_reply.set_digital(powerboard_state_);
+    power_dashboard_reply.set_signal(powerboard_state_);
+    power_dashboard_reply.set_power(powerboard_state_);
 
     if (motor_fsm_.isHallCalibrated() == true && NO_SWITCH_TIMEDOUT_ERROR_==true && NO_CAN_TIMEDOUT_ERROR_==true) power_dashboard_reply.set_clean(true);
     else power_dashboard_reply.set_clean(false);

@@ -44,12 +44,12 @@ public:
 
   LegModule *md_ptr_;
   std::mutex *main_mtx_;
-  std::vector<bool> *powerboard_state_;
+  bool *powerboard_state_;
   MotorFSM *fsm_;
 
   mutex mutex_;
   void infoDisplay();
-  void infoDisplay(FpgaHandler *fpga, bool power_switch, bool signal_switch, bool digital_switch);
+  void infoDisplay(FpgaHandler *fpga, bool powerboard_on);
   void infoDisplay(FunctionMode fsm_mode);
   void resetPanel();
   void panelTitle();
@@ -79,7 +79,7 @@ public:
 
   bool *if_resetPanel;
   std::mutex *main_mtx_;
-  std::vector<bool> *powerboard_state_;
+  bool *powerboard_state_;
   MotorFSM *fsm_;
 
 private:
@@ -93,7 +93,7 @@ public:
   {
   }
 
-  void init(FpgaHandler *fpga_, vector<LegModule> *mods_, std::vector<bool> *pb_state_, MotorFSM *fsm_, std::mutex *mtx_);
+  void init(FpgaHandler *fpga_, vector<LegModule> *mods_, bool *pb_state_, MotorFSM *fsm_, std::mutex *mtx_);
   void refreshWindow();
 
   int term_max_x_;
@@ -116,7 +116,7 @@ public:
   LegModule *modD_ptr_;
 
   std::mutex *main_mtx_;
-  std::vector<bool> *powerboard_state_;
+  bool *powerboard_state_;
   MotorFSM *fsm_;
 
   mutex input_mutex_;

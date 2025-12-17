@@ -58,11 +58,12 @@ void FpgaHandler::setIrqPeriod(int main_loop_p, int can_loop_p)
         &status_, NiFpga_WriteU32(session_, NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_IRQ1_period_us, can_loop_p));
 }
 
-void FpgaHandler::write_powerboard_(std::vector<bool> *powerboard_state_)
+void FpgaHandler::write_powerboard_(bool powerboard_state)
 {
-    NiFpga_MergeStatus(&status_, NiFpga_WriteBool(session_, w_pb_digital_, powerboard_state_->at(0)));
-    NiFpga_MergeStatus(&status_, NiFpga_WriteBool(session_, w_pb_signal_, powerboard_state_->at(1)));
-    NiFpga_MergeStatus(&status_, NiFpga_WriteBool(session_, w_pb_power_, powerboard_state_->at(2)));
+    // Simplified: single state controls all three FPGA switches
+    NiFpga_MergeStatus(&status_, NiFpga_WriteBool(session_, w_pb_digital_, powerboard_state));
+    NiFpga_MergeStatus(&status_, NiFpga_WriteBool(session_, w_pb_signal_, powerboard_state));
+    NiFpga_MergeStatus(&status_, NiFpga_WriteBool(session_, w_pb_power_, powerboard_state));
 }
 
 void FpgaHandler::read_powerboard_data_()

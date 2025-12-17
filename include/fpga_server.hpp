@@ -31,7 +31,7 @@ class Corgi
 
     MotorFSM motor_fsm_;
     std::vector<LegModule> modules_list_;
-    std::vector<bool> powerboard_state_;
+    bool powerboard_state_;  // Simplified: true=ON, false=OFF
     std::mutex main_mtx_;
 
     // header msg
@@ -47,10 +47,6 @@ class Corgi
     bool NO_SWITCH_TIMEDOUT_ERROR_;
     bool NO_CAN_TIMEDOUT_ERROR_;
     bool HALL_CALIBRATED_;
-
-    bool digital_switch_;
-    bool signal_switch_;
-    bool power_switch_;
 
     void interruptHandler(core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
                           core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
