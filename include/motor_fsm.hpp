@@ -66,6 +66,13 @@ private:
   
   // Private helper methods
   void publishMsg(motor_msg::MotorStateStamped &motor_fb_msg);
+  
+  // Mode handlers
+  void handleRestMode();
+  void handleSetZeroMode();
+  void handleHallCalibrateMode();
+  void handleMotorMode(const motor_msg::MotorCmdStamped& motor_cmd_msg);
+  void handleConfigMode();
 };
 double theta_error(double start_theta, double goal_theta);
 

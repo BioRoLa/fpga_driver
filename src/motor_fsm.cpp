@@ -32,299 +32,319 @@ void MotorFSM::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_ms
         publishMsg(motor_fb_msg);
     }
     
-    // position = P_CMD_MAX is to make sure the data received from CONFIG function code is the default one
+    // Dispatch to appropriate mode handler
     switch (current_mode_)
     {
-        case FunctionMode::REST: {
-            if (pb_state_ == true)
+        case FunctionMode::REST:
+            handleRestMode();
+            break;
+
+        case FunctionMode::SET_ZERO:
+            handleSetZeroMode();
+            break;
+
+        case FunctionMode::HALL_CALIBRATE:
+            handleHallCalibrateMode();
+            break;
+
+        case FunctionMode::MOTOR:
+            handleMotorMode(motor_cmd_msg);
+            break;
+
+        case FunctionMode::CONFIG:
+            handleConfigMode();
+            break;
+    }
+}
+
+void MotorFSM::handleRestMode()
+{
+    if (pb_state_ == true)
+    {
+        for (auto& mod : modules_list_)
+        {
+            if (mod.enable_)
             {
-                for (auto& mod : modules_list_)
+                for (size_t i = 0; i < mod.getMotorCount(); i++)
                 {
-                    if (mod.enable_)
-                    {
-                        for (size_t i = 0; i < mod.getMotorCount(); i++)
-                        {
-                            CANMotor* motor = mod.getMotor(i);
-                            if (motor) {
-                                motor->setCommand(0, 0, 0, 0, 0);  // position, torque, kp, ki, kd
-                            }
-                        }
+                    CANMotor* motor = mod.getMotor(i);
+                    if (motor) {
+                        motor->setCommand(0, 0, 0, 0, 0);  // position, torque, kp, ki, kd
                     }
                 }
             }
         }
-        break;
+    }
+}
 
-        case FunctionMode::SET_ZERO: {
-            if (pb_state_ == true)
+void MotorFSM::handleSetZeroMode()
+{
+    if (pb_state_ == true)
+    {
+        for (auto& mod : modules_list_)
+        {
+            if (mod.enable_)
             {
-                for (auto& mod : modules_list_)
+                for (size_t i = 0; i < mod.getMotorCount(); i++)
                 {
-                    if (mod.enable_)
-                    {
-                        for (size_t i = 0; i < mod.getMotorCount(); i++)
-                        {
-                            CANMotor* motor = mod.getMotor(i);
-                            if (motor) {
-                                motor->setPositionBias(0);
-                                motor->setCommand(0, 0, 0, 0, 0);
-                            }
-                        }
+                    CANMotor* motor = mod.getMotor(i);
+                    if (motor) {
+                        motor->setPositionBias(0);
+                        motor->setCommand(0, 0, 0, 0, 0);
                     }
                 }
             }
         }
-        break;
+    }
+}
 
-        case FunctionMode::HALL_CALIBRATE: {
-            int module_enabled = 0;
-            int total_motors = 0;
-            
-            // Set all motor command to zero initially
+void MotorFSM::handleHallCalibrateMode()
+{
+    int module_enabled = 0;
+    int total_motors = 0;
+    
+    // Set all motor command to zero initially
+    for (auto& mod : modules_list_)
+    {
+        if (mod.enable_)
+        {
+            for (size_t j = 0; j < mod.getMotorCount(); j++)
+            {
+                CANMotor* motor = mod.getMotor(j);
+                if (motor) {
+                    motor->setCommand(0, 0, 0, 0, 0);
+                    total_motors++;
+                }
+            }
+            module_enabled++;
+        }
+    }
+
+    switch (hall_calibrate_status_)
+    {
+        case -1:{
+            switchMode(FunctionMode::REST);
+        }
+        break;
+    
+        case 0:{
+            // check calibration finished
+            int cal_cnt = 0;
             for (auto& mod : modules_list_)
             {
-                if (mod.enable_)
-                {
+                if (mod.enable_) {
+                    bool all_calibrated = true;
                     for (size_t j = 0; j < mod.getMotorCount(); j++)
                     {
                         CANMotor* motor = mod.getMotor(j);
                         if (motor) {
-                            motor->setCommand(0, 0, 0, 0, 0);
-                            total_motors++;
+                            // Check hall_cal_state status
+                            if (motor->getHallCalibrateState() != 2) {
+                                all_calibrated = false;
+                                break;
+                            }
                         }
                     }
-                    module_enabled++;
+                    
+                    if (all_calibrated) cal_cnt++;
                 }
             }
-
-            switch (hall_calibrate_status_)
-            {
-                case -1:{
-                    switchMode(FunctionMode::REST);
-                }
-                break;
             
-                case 0:{
-                    // check calibration finished
-                    int cal_cnt = 0;
-                    for (auto& mod : modules_list_)
-                    {
-                        if (mod.enable_) {
-                            bool all_calibrated = true;
-                            for (size_t j = 0; j < mod.getMotorCount(); j++)
-                            {
-                                CANMotor* motor = mod.getMotor(j);
-                                if (motor) {
-                                    // Check hall_cal_state status
-                                    if (motor->getHallCalibrateState() != 2) {
-                                        all_calibrated = false;
-                                        break;
-                                    }
-                                }
-                            }
-                            
-                            if (all_calibrated) cal_cnt++;
-                        }
-                    }
-                    
-                    if (cal_cnt == module_enabled && measure_offset_ == 0) hall_calibrate_status_++;
-                    else if (cal_cnt == module_enabled && measure_offset_ == 1) hall_calibrate_status_ = -1;
-                }
-                break;
-
-                case 1:{
-                    // set initial calibration command
-                    int mod_index = 0;
-                    for (auto& mod : modules_list_)
-                    {
-                        if (mod.enable_)
-                        {
-                            CANMotor* motorR = mod.getMotor(0);
-                            CANMotor* motorL = mod.getMotor(1);
-                            
-                            if (motorR) {
-                                motorR->setPositionBias(mod.linkR_bias);
-                                cal_command[mod_index][0] = -mod.linkR_bias;
-                                motorR->setCommand(cal_command[mod_index][0], 0, 0, 0, 0);
-                                cal_dir_[mod_index][0] = 1;
-                            }
-                            
-                            if (motorL) {
-                                motorL->setPositionBias(mod.linkL_bias);
-                                cal_command[mod_index][1] = -mod.linkL_bias;
-                                motorL->setCommand(cal_command[mod_index][1], 0, 0, 0, 0);
-                                cal_dir_[mod_index][1] = -1;
-                            }
-                            
-                        }
-                        mod_index++;
-                    }
-                    hall_calibrate_status_++;
-                }
-                break;
-
-                case 2:{
-                    // move to calibration position
-                    int finish_cnt = 0;
-                    int mod_index = 0;
-                    
-                    for (auto& mod : modules_list_)
-                    {
-                        if (mod.enable_){
-                            for (size_t j = 0; j < mod.getMotorCount() && j < 2; j++)
-                            {
-                                CANMotor* motor = mod.getMotor(j);
-                                if (!motor) continue;
-                                
-                                double errj = theta_error(cal_command[mod_index][j], 0);
-
-                                if (fabs(errj) < cal_tol_)
-                                {
-                                    motor->setCommand(0, 0, 0, 0, 0);
-                                    finish_cnt++;
-                                }
-                                else
-                                {
-                                    mod.setMode(FunctionMode::CONTROL);
-                                    cal_command[mod_index][j] += cal_dir_[mod_index][j] * cal_vel_ * dt_;
-                                    motor->setCommand(cal_command[mod_index][j], 0, 50, 0, 1.5);
-                                }
-                            }
-                            
-                        }
-                        mod_index++;
-                    }
-                    if (finish_cnt == total_motors) hall_calibrate_status_++;
-                }
-                break;
-
-                case 3:{
-                    hall_calibrated_ = true;
-                    hall_calibrate_status_ = 0;
-                    switchMode(FunctionMode::MOTOR);
-                }
-                break;
-            }
+            if (cal_cnt == module_enabled && measure_offset_ == 0) hall_calibrate_status_++;
+            else if (cal_cnt == module_enabled && measure_offset_ == 1) hall_calibrate_status_ = -1;
         }
         break;
 
-        case FunctionMode::MOTOR: {
-            if (*NO_CAN_TIMEDOUT_ERROR_ && *NO_SWITCH_TIMEDOUT_ERROR_)
+        case 1:{
+            // set initial calibration command
+            int mod_index = 0;
+            for (auto& mod : modules_list_)
             {
-                int index = 0;
-                for (auto& mod : modules_list_)
+                if (mod.enable_)
                 {
-                    if (mod.enable_)
-                    {
-                        // Get theta-beta command based on module index
-                        Eigen::Vector2d tb_cmd;
-                        float torque_r, torque_l, kp_r, kp_l, ki_r, ki_l, kd_r, kd_l;
-                        
-                        switch (index)
-                        {
-                            case 0: // module_a
-                            {
-                                double theta = motor_cmd_msg.module_a().theta();
-                                theta = std::max(17.0*PI/180.0, std::min(160.0*PI/180.0, theta));
-                                tb_cmd << theta, motor_cmd_msg.module_a().beta();
-                                
-                                torque_r = motor_cmd_msg.module_a().torque_r();
-                                torque_l = motor_cmd_msg.module_a().torque_l();
-                                kp_r = motor_cmd_msg.module_a().kp_r();
-                                kp_l = motor_cmd_msg.module_a().kp_l();
-                                ki_r = motor_cmd_msg.module_a().ki_r();
-                                ki_l = motor_cmd_msg.module_a().ki_l();
-                                kd_r = motor_cmd_msg.module_a().kd_r();
-                                kd_l = motor_cmd_msg.module_a().kd_l();
-                            }
-                            break;
-                            
-                            case 1: // module_b
-                            {
-                                double theta = motor_cmd_msg.module_b().theta();
-                                theta = std::max(17.0*PI/180.0, std::min(160.0*PI/180.0, theta));
-                                tb_cmd << theta, motor_cmd_msg.module_b().beta();
-                                
-                                torque_r = motor_cmd_msg.module_b().torque_r();
-                                torque_l = motor_cmd_msg.module_b().torque_l();
-                                kp_r = motor_cmd_msg.module_b().kp_r();
-                                kp_l = motor_cmd_msg.module_b().kp_l();
-                                ki_r = motor_cmd_msg.module_b().ki_r();
-                                ki_l = motor_cmd_msg.module_b().ki_l();
-                                kd_r = motor_cmd_msg.module_b().kd_r();
-                                kd_l = motor_cmd_msg.module_b().kd_l();
-                            }
-                            break;
-                            
-                            case 2: // module_c
-                            {
-                                double theta = motor_cmd_msg.module_c().theta();
-                                theta = std::max(17.0*PI/180.0, std::min(160.0*PI/180.0, theta));
-                                tb_cmd << theta, motor_cmd_msg.module_c().beta();
-                                
-                                torque_r = motor_cmd_msg.module_c().torque_r();
-                                torque_l = motor_cmd_msg.module_c().torque_l();
-                                kp_r = motor_cmd_msg.module_c().kp_r();
-                                kp_l = motor_cmd_msg.module_c().kp_l();
-                                ki_r = motor_cmd_msg.module_c().ki_r();
-                                ki_l = motor_cmd_msg.module_c().ki_l();
-                                kd_r = motor_cmd_msg.module_c().kd_r();
-                                kd_l = motor_cmd_msg.module_c().kd_l();
-                            }
-                            break;
-                            
-                            case 3: // module_d
-                            {
-                                double theta = motor_cmd_msg.module_d().theta();
-                                theta = std::max(17.0*PI/180.0, std::min(160.0*PI/180.0, theta));
-                                tb_cmd << theta, motor_cmd_msg.module_d().beta();
-                                
-                                torque_r = motor_cmd_msg.module_d().torque_r();
-                                torque_l = motor_cmd_msg.module_d().torque_l();
-                                kp_r = motor_cmd_msg.module_d().kp_r();
-                                kp_l = motor_cmd_msg.module_d().kp_l();
-                                ki_r = motor_cmd_msg.module_d().ki_r();
-                                ki_l = motor_cmd_msg.module_d().ki_l();
-                                kd_r = motor_cmd_msg.module_d().kd_r();
-                                kd_l = motor_cmd_msg.module_d().kd_l();
-                            }
-                            break;
-                            
-                            default:
-                                index++;
-                                continue;
-                        }
-                        
-                        // Convert theta-beta to phi coordinates
-                        Eigen::Vector2d phi_cmd = LegModule::tb2phi(tb_cmd);
-                        
-                        // Get motors and set commands
-                        CANMotor* motorR = mod.getMotor(0);
-                        CANMotor* motorL = mod.getMotor(1);
-                        
-                        if (motorR && motorL)
-                        {
-                            // Convert torque using kt (torque constant)
-                            float torque_r_motor = torque_r / motorR->getConfig().kt_;
-                            float torque_l_motor = torque_l / motorL->getConfig().kt_;
-                            
-                            // Set commands (setCommand internally calls encodeControl)
-                            motorR->setCommand(phi_cmd[0], torque_r_motor, kp_r, ki_r, kd_r);
-                            motorL->setCommand(phi_cmd[1], torque_l_motor, kp_l, ki_l, kd_l);
-                        }
-
+                    CANMotor* motorR = mod.getMotor(0);
+                    CANMotor* motorL = mod.getMotor(1);
+                    
+                    if (motorR) {
+                        motorR->setPositionBias(mod.linkR_bias);
+                        cal_command[mod_index][0] = -mod.linkR_bias;
+                        motorR->setCommand(cal_command[mod_index][0], 0, 0, 0, 0);
+                        cal_dir_[mod_index][0] = 1;
                     }
-                    index++;
+                    
+                    if (motorL) {
+                        motorL->setPositionBias(mod.linkL_bias);
+                        cal_command[mod_index][1] = -mod.linkL_bias;
+                        motorL->setCommand(cal_command[mod_index][1], 0, 0, 0, 0);
+                        cal_dir_[mod_index][1] = -1;
+                    }
+                    
                 }
+                mod_index++;
             }
+            hall_calibrate_status_++;
         }
         break;
 
-        case FunctionMode::CONFIG: {
-            // for debug
+        case 2:{
+            // move to calibration position
+            int finish_cnt = 0;
+            int mod_index = 0;
+            
+            for (auto& mod : modules_list_)
+            {
+                if (mod.enable_){
+                    for (size_t j = 0; j < mod.getMotorCount() && j < 2; j++)
+                    {
+                        CANMotor* motor = mod.getMotor(j);
+                        if (!motor) continue;
+                        
+                        double errj = theta_error(cal_command[mod_index][j], 0);
+
+                        if (fabs(errj) < cal_tol_)
+                        {
+                            motor->setCommand(0, 0, 0, 0, 0);
+                            finish_cnt++;
+                        }
+                        else
+                        {
+                            mod.setMode(FunctionMode::CONTROL);
+                            cal_command[mod_index][j] += cal_dir_[mod_index][j] * cal_vel_ * dt_;
+                            motor->setCommand(cal_command[mod_index][j], 0, 50, 0, 1.5);
+                        }
+                    }
+                    
+                }
+                mod_index++;
+            }
+            if (finish_cnt == total_motors) hall_calibrate_status_++;
+        }
+        break;
+
+        case 3:{
+            hall_calibrated_ = true;
+            hall_calibrate_status_ = 0;
+            switchMode(FunctionMode::MOTOR);
         }
         break;
     }
+}
+
+void MotorFSM::handleMotorMode(const motor_msg::MotorCmdStamped& motor_cmd_msg)
+{
+    if (*NO_CAN_TIMEDOUT_ERROR_ && *NO_SWITCH_TIMEDOUT_ERROR_)
+    {
+        int index = 0;
+        for (auto& mod : modules_list_)
+        {
+            if (mod.enable_)
+            {
+                // Get theta-beta command based on module index
+                Eigen::Vector2d tb_cmd;
+                float torque_r, torque_l, kp_r, kp_l, ki_r, ki_l, kd_r, kd_l;
+                
+                switch (index)
+                {
+                    case 0: // module_a
+                    {
+                        double theta = motor_cmd_msg.module_a().theta();
+                        theta = std::max(17.0*PI/180.0, std::min(160.0*PI/180.0, theta));
+                        tb_cmd << theta, motor_cmd_msg.module_a().beta();
+                        
+                        torque_r = motor_cmd_msg.module_a().torque_r();
+                        torque_l = motor_cmd_msg.module_a().torque_l();
+                        kp_r = motor_cmd_msg.module_a().kp_r();
+                        kp_l = motor_cmd_msg.module_a().kp_l();
+                        ki_r = motor_cmd_msg.module_a().ki_r();
+                        ki_l = motor_cmd_msg.module_a().ki_l();
+                        kd_r = motor_cmd_msg.module_a().kd_r();
+                        kd_l = motor_cmd_msg.module_a().kd_l();
+                    }
+                    break;
+                    
+                    case 1: // module_b
+                    {
+                        double theta = motor_cmd_msg.module_b().theta();
+                        theta = std::max(17.0*PI/180.0, std::min(160.0*PI/180.0, theta));
+                        tb_cmd << theta, motor_cmd_msg.module_b().beta();
+                        
+                        torque_r = motor_cmd_msg.module_b().torque_r();
+                        torque_l = motor_cmd_msg.module_b().torque_l();
+                        kp_r = motor_cmd_msg.module_b().kp_r();
+                        kp_l = motor_cmd_msg.module_b().kp_l();
+                        ki_r = motor_cmd_msg.module_b().ki_r();
+                        ki_l = motor_cmd_msg.module_b().ki_l();
+                        kd_r = motor_cmd_msg.module_b().kd_r();
+                        kd_l = motor_cmd_msg.module_b().kd_l();
+                    }
+                    break;
+                    
+                    case 2: // module_c
+                    {
+                        double theta = motor_cmd_msg.module_c().theta();
+                        theta = std::max(17.0*PI/180.0, std::min(160.0*PI/180.0, theta));
+                        tb_cmd << theta, motor_cmd_msg.module_c().beta();
+                        
+                        torque_r = motor_cmd_msg.module_c().torque_r();
+                        torque_l = motor_cmd_msg.module_c().torque_l();
+                        kp_r = motor_cmd_msg.module_c().kp_r();
+                        kp_l = motor_cmd_msg.module_c().kp_l();
+                        ki_r = motor_cmd_msg.module_c().ki_r();
+                        ki_l = motor_cmd_msg.module_c().ki_l();
+                        kd_r = motor_cmd_msg.module_c().kd_r();
+                        kd_l = motor_cmd_msg.module_c().kd_l();
+                    }
+                    break;
+                    
+                    case 3: // module_d
+                    {
+                        double theta = motor_cmd_msg.module_d().theta();
+                        theta = std::max(17.0*PI/180.0, std::min(160.0*PI/180.0, theta));
+                        tb_cmd << theta, motor_cmd_msg.module_d().beta();
+                        
+                        torque_r = motor_cmd_msg.module_d().torque_r();
+                        torque_l = motor_cmd_msg.module_d().torque_l();
+                        kp_r = motor_cmd_msg.module_d().kp_r();
+                        kp_l = motor_cmd_msg.module_d().kp_l();
+                        ki_r = motor_cmd_msg.module_d().ki_r();
+                        ki_l = motor_cmd_msg.module_d().ki_l();
+                        kd_r = motor_cmd_msg.module_d().kd_r();
+                        kd_l = motor_cmd_msg.module_d().kd_l();
+                    }
+                    break;
+                    
+                    default:
+                        index++;
+                        continue;
+                }
+                
+                // Convert theta-beta to phi coordinates
+                Eigen::Vector2d phi_cmd = LegModule::tb2phi(tb_cmd);
+                
+                // Get motors and set commands
+                CANMotor* motorR = mod.getMotor(0);
+                CANMotor* motorL = mod.getMotor(1);
+                
+                if (motorR && motorL)
+                {
+                    // Convert torque using kt (torque constant)
+                    float torque_r_motor = torque_r / motorR->getConfig().kt_;
+                    float torque_l_motor = torque_l / motorL->getConfig().kt_;
+                    
+                    // Set commands (setCommand internally calls encodeControl)
+                    motorR->setCommand(phi_cmd[0], torque_r_motor, kp_r, ki_r, kd_r);
+                    motorL->setCommand(phi_cmd[1], torque_l_motor, kp_l, ki_l, kd_l);
+                }
+
+            }
+            index++;
+        }
+    }
+}
+
+void MotorFSM::handleConfigMode()
+{
+    // for debug
 }
 
 bool MotorFSM::switchMode(FunctionMode next_mode)

@@ -46,7 +46,11 @@ inline FunctionMode mapMotorStateToFunctionMode(uint8_t raw_value)
 
 enum class RobotMode : uint8_t
 {
-    //TODO: develop high level modes
+    SystemOn = 0,
+    Init = 1,
+    IDLE = 2,
+    Standby = 3,
+    MotorConfig = 4,
 };
 
 #endif
