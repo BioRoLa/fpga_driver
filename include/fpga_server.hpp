@@ -52,14 +52,12 @@ class Corgi
     bool signal_switch_;
     bool power_switch_;
 
-    void interruptHandler(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
-                          core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
+    void interruptHandler(core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
                           core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
                           core::Publisher<motor_msg::MotorStateStamped>& state_pub_);
 
     void powerboardPack(power_msg::PowerStateStamped &power_fb_msg);
-    void mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
-                   core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
+    void mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
                    core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
                    core::Publisher<motor_msg::MotorStateStamped>& state_pub_);
 

@@ -16,15 +16,6 @@ void motor_data_cb(motor_msg::MotorCmdStamped motor_msg)
     mutex_.unlock();
 }
 
-power_msg::PowerCmdStamped power_cmd_data;
-void power_data_cb(power_msg::PowerCmdStamped power_msg)
-{
-    mutex_.lock();
-    fpga_message_updated = 1;
-    power_cmd_data = power_msg;
-    mutex_.unlock();
-}
-
 Corgi::Corgi()
     : motor_fsm_(modules_list_, powerboard_state_, fpga_.powerboard_V_list_)
 {
@@ -94,8 +85,7 @@ void Corgi::load_config_()
     }
 }
 
-void Corgi::interruptHandler(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
-                             core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
+void Corgi::interruptHandler(core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
                              core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
                              core::Publisher<motor_msg::MotorStateStamped>& state_pub_)   
 
@@ -137,7 +127,7 @@ void Corgi::interruptHandler(core::Subscriber<power_msg::PowerCmdStamped>& cmd_p
         {
             if (irqsAsserted & NiFpga_Irq_0)
             {
-                mainLoop_(cmd_pb_sub_, state_pb_pub_, cmd_sub_, state_pub_);
+                mainLoop_(state_pb_pub_, cmd_sub_, state_pub_);
                 // Acknowledge IRQ to begin DMA acquisition
                 NiFpga_MergeStatus(&fpga_.status_, NiFpga_AcknowledgeIrqs(fpga_.session_, irqsAsserted));
             }
@@ -154,8 +144,7 @@ void Corgi::interruptHandler(core::Subscriber<power_msg::PowerCmdStamped>& cmd_p
     }
 }
 
-void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
-                      core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
+void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
                       core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
                       core::Publisher<motor_msg::MotorStateStamped>& state_pub_)
 {
@@ -176,38 +165,10 @@ void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
     // Communication with Node Architecture
     powerboardPack(power_fb_msg);
 
+    //FIXME: remove powercmd handeling
+
     // Read Command
     mutex_.lock();
-    if (power_cmd_data.clean() == true)
-    {
-        NO_CAN_TIMEDOUT_ERROR_ = true;
-        NO_SWITCH_TIMEDOUT_ERROR_ = true;
-        HALL_CALIBRATED_ = false;
-        timeout_cnt_ = 0;
-    }
-
-    if (NO_SWITCH_TIMEDOUT_ERROR_)
-    {
-        if (fpga_message_updated)
-        {
-            powerboard_state_.at(0) = power_cmd_data.digital();
-            powerboard_state_.at(1) = power_cmd_data.signal();
-            powerboard_state_.at(2) = power_cmd_data.power();
-
-            FunctionMode current = motor_fsm_.getCurrentMode();
-            if (power_cmd_data.robot_mode() == (int)FunctionMode::MOTOR && current != FunctionMode::MOTOR)
-                motor_fsm_.switchMode(FunctionMode::MOTOR);
-            else if (power_cmd_data.robot_mode() == (int)FunctionMode::HALL_CALIBRATE && current != FunctionMode::HALL_CALIBRATE && current != FunctionMode::MOTOR)
-                motor_fsm_.switchMode(FunctionMode::HALL_CALIBRATE);
-            else if (power_cmd_data.robot_mode() == (int)FunctionMode::SET_ZERO && current != FunctionMode::SET_ZERO)
-                motor_fsm_.switchMode(FunctionMode::SET_ZERO);
-            else if (power_cmd_data.robot_mode() == (int)FunctionMode::CONFIG && current != FunctionMode::CONFIG)
-                motor_fsm_.switchMode(FunctionMode::CONFIG);
-            else if (power_cmd_data.robot_mode() == (int)FunctionMode::REST && current != FunctionMode::REST)
-                motor_fsm_.switchMode(FunctionMode::REST);
-            fpga_message_updated = 0;
-        }
-    }
     motor_fb_msg.mutable_header()->set_seq(seq);
     mutex_.unlock();
     state_pub_.publish(motor_fb_msg);
@@ -259,12 +220,6 @@ void Corgi::powerboardPack(power_msg::PowerStateStamped&power_dashboard_reply)
 
     if (motor_fsm_.isHallCalibrated() == true && NO_SWITCH_TIMEDOUT_ERROR_==true && NO_CAN_TIMEDOUT_ERROR_==true) power_dashboard_reply.set_clean(true);
     else power_dashboard_reply.set_clean(false);
-
-    FunctionMode current_mode = motor_fsm_.getCurrentMode();
-    if (current_mode == FunctionMode::REST) power_dashboard_reply.set_robot_mode(power_msg::REST_MODE);
-    else if (current_mode == FunctionMode::HALL_CALIBRATE) power_dashboard_reply.set_robot_mode(power_msg::HALL_CALIBRATE);
-    else if (current_mode == FunctionMode::MOTOR) power_dashboard_reply.set_robot_mode(power_msg::MOTOR_MODE);
-    else if (current_mode == FunctionMode::SET_ZERO) power_dashboard_reply.set_robot_mode(power_msg::SET_ZERO);
 
     power_dashboard_reply.set_v_0(fpga_.powerboard_V_list_[0]);
     power_dashboard_reply.set_i_0(fpga_.powerboard_I_list_[0]);
@@ -325,12 +280,11 @@ int main(int argc, char* argv[])
     core::NodeHandler nh;
 
     core::Publisher<power_msg::PowerStateStamped>& power_pub = nh.advertise<power_msg::PowerStateStamped>("power/state");
-    core::Subscriber<power_msg::PowerCmdStamped>& power_sub = nh.subscribe<power_msg::PowerCmdStamped>("power/command", 1000, power_data_cb);
 
     core::Publisher<motor_msg::MotorStateStamped>& motor_pub = nh.advertise<motor_msg::MotorStateStamped>("motor/state");
     core::Subscriber<motor_msg::MotorCmdStamped>& motor_sub = nh.subscribe<motor_msg::MotorCmdStamped>("motor/command", 1000, motor_data_cb);
     
-    corgi.interruptHandler(power_sub, power_pub, motor_sub, motor_pub);
+    corgi.interruptHandler(power_pub, motor_sub, motor_pub);
 
     if (NiFpga_IsError(corgi.fpga_.status_)) std::cout << red << "[FPGA Server] Error! Exiting program. LabVIEW error code: " << corgi.fpga_.status_ << reset << std::endl;
     else
