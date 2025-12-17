@@ -446,6 +446,10 @@ bool MotorFSM::switchMode(FunctionMode next_mode)
             if (current_mode_ == FunctionMode::MOTOR) {
                 mod.setMode(FunctionMode::CONTROL);
             }
+            else if (current_mode_ == FunctionMode::CONFIG) {
+                mod.setMode(FunctionMode::CONFIG);
+                mod.setConfigSubMode(ConfigSubMode::CONFIG_OPERATION);
+            }
             else {
                 mod.setMode(FunctionMode::CONFIG);
                 mod.setConfigSubMode(ConfigSubMode::REQUEST_STATE);
