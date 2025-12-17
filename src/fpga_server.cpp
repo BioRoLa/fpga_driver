@@ -1,8 +1,8 @@
 #include "fpga_server.hpp"
 
 /* TCP node connection setup*/
-volatile int motor_message_updated = 0;
-volatile int fpga_message_updated = 0; //power
+std::atomic<int> motor_message_updated{0};
+std::atomic<int> fpga_message_updated{0}; //power
 
 std::ofstream term;
 std::mutex mutex_;
@@ -10,10 +10,9 @@ std::mutex mutex_;
 motor_msg::MotorCmdStamped motor_cmd_data;
 void motor_data_cb(motor_msg::MotorCmdStamped motor_msg)
 {
-    mutex_.lock();
+    std::lock_guard<std::mutex> lock(mutex_);
     motor_message_updated = 1;
     motor_cmd_data = motor_msg;
-    mutex_.unlock();
 }
 
 Corgi::Corgi()
@@ -152,15 +151,16 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
     fpga_.read_powerboard_data_();
 
     core::spinOnce();
-    mutex_.lock();
+    
     power_msg::PowerStateStamped power_fb_msg;
     motor_msg::MotorStateStamped motor_fb_msg;
 
-    motor_fsm_.runFsm(motor_fb_msg, motor_cmd_data);
-    motor_message_updated = 0;    
-    HALL_CALIBRATED_ = motor_fsm_.isHallCalibrated();
-
-    mutex_.unlock();
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        motor_fsm_.runFsm(motor_fb_msg, motor_cmd_data);
+        motor_message_updated = 0;    
+        HALL_CALIBRATED_ = motor_fsm_.isHallCalibrated();
+    }
 
     // Communication with Node Architecture
     powerboardPack(power_fb_msg);
@@ -168,9 +168,11 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
     //FIXME: remove powercmd handeling
 
     // Read Command
-    mutex_.lock();
-    motor_fb_msg.mutable_header()->set_seq(seq);
-    mutex_.unlock();
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        motor_fb_msg.mutable_header()->set_seq(seq);
+    }
+    
     state_pub_.publish(motor_fb_msg);
     state_pb_pub_.publish(power_fb_msg);
     seq++;
@@ -178,6 +180,8 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
 
 void Corgi::canLoop_()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
+    
     for (int i = 0; i < 4; i++)
     {
         if (modules_list_[i].enable_ && powerboard_state_.at(2) == true)
@@ -207,8 +211,8 @@ void Corgi::canLoop_()
 
 void Corgi::powerboardPack(power_msg::PowerStateStamped&power_dashboard_reply)
 {   
+    std::lock_guard<std::mutex> lock(mutex_);
     
-    mutex_.lock();
     gettimeofday(&t_stamp, NULL);
     power_dashboard_reply.mutable_header()->set_seq(seq);
     power_dashboard_reply.mutable_header()->mutable_stamp()->set_sec(t_stamp.tv_sec);
@@ -256,8 +260,6 @@ void Corgi::powerboardPack(power_msg::PowerStateStamped&power_dashboard_reply)
 
     power_dashboard_reply.set_v_11(fpga_.powerboard_V_list_[11]);
     power_dashboard_reply.set_i_11(fpga_.powerboard_I_list_[11]);
-
-    mutex_.unlock();
 }
 
 int main(int argc, char* argv[])
