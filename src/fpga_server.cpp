@@ -24,10 +24,7 @@ Corgi::Corgi()
     can_irq_period_us_ = 800;
     seq = 0;
 
-    /* initialize powerboard state */
-    powerboard_state_.push_back(false);  // Digital OFF
-    powerboard_state_.push_back(false);  // Signal OFF
-    powerboard_state_.push_back(false);  // Power OFF
+    /* powerboard_state_ is already initialized to {false, false, false} in header */
     NO_CAN_TIMEDOUT_ERROR_ = true;
     NO_SWITCH_TIMEDOUT_ERROR_ = true;
     HALL_CALIBRATED_ = false;

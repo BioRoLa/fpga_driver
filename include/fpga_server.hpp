@@ -30,10 +30,11 @@ class Corgi
     FpgaHandler fpga_;
     Console console_;
 
+    std::vector<LegModule> modules_list_;
+    std::vector<bool> powerboard_state_{false, false, false};  // [digital, signal, power] - Must be before motor_fsm_ and robot_fsm_
+    
     MotorFSM motor_fsm_;
     RobotFSM robot_fsm_;
-    std::vector<LegModule> modules_list_;
-    std::vector<bool> powerboard_state_;  // [digital, signal, power]
     std::mutex main_mtx_;
 
     // header msg
