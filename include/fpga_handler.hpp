@@ -40,7 +40,7 @@ public:
   NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorArrayU16Size size_powerboard_data_;
 
   void setIrqPeriod(int main_loop_period, int can_loop_period);
-  void write_powerboard_(bool powerboard_state);
+  void write_powerboard_(std::vector<bool> *powerboard_state_);
 
   // *********************** Unused Functions ************************ //
   // steering

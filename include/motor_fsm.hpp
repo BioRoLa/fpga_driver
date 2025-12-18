@@ -19,7 +19,7 @@ class MotorFSM
 {
 public:
   /* Constructor - pass modules vector by reference */
-  MotorFSM(std::vector<LegModule>& module_list, bool& pb_state, double* pb_v);
+  MotorFSM(std::vector<LegModule>& module_list, std::vector<bool>& pb_state, double* pb_v);
   MotorFSM() = delete;
   
   // Public interface methods
@@ -51,7 +51,7 @@ private:
   // State
   FunctionMode current_mode_;
   std::vector<LegModule>& modules_list_;
-  bool& pb_state_;
+  std::vector<bool>& pb_state_;
 
   // Calibration state
   bool hall_calibrated_;

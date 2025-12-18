@@ -20,9 +20,9 @@ public:
      * @brief Constructor
      * @param motor_fsm Reference to the motor-level FSM
      * @param modules_list Reference to all leg modules
-     * @param powerboard_state Reference to powerboard state (true=ON, false=OFF)
+     * @param powerboard_state Reference to powerboard state vector [digital, signal, power]
      */
-    RobotFSM(MotorFSM& motor_fsm, std::vector<LegModule>& modules_list, bool& powerboard_state);
+    RobotFSM(MotorFSM& motor_fsm, std::vector<LegModule>& modules_list, std::vector<bool>& powerboard_state);
     
     RobotFSM() = delete;
     
@@ -72,7 +72,7 @@ private:
     // References to lower-level components
     MotorFSM& motor_fsm_;
     std::vector<LegModule>& modules_list_;
-    bool& powerboard_state_;
+    std::vector<bool>& powerboard_state_;
     
     // Error flags
     bool has_can_error_;

@@ -3,7 +3,7 @@
 #include <iostream>
 #include <sys/time.h>
 
-RobotFSM::RobotFSM(MotorFSM& motor_fsm, std::vector<LegModule>& modules_list, bool& powerboard_state)
+RobotFSM::RobotFSM(MotorFSM& motor_fsm, std::vector<LegModule>& modules_list, std::vector<bool>& powerboard_state)
     : motor_fsm_(motor_fsm)
     , modules_list_(modules_list)
     , powerboard_state_(powerboard_state)
@@ -88,10 +88,12 @@ void RobotFSM::handleSystemOn()
         motor_fsm_.switchMode(FunctionMode::REST);
     }
     
-    // Ensure power is OFF
-    if (powerboard_state_ != false)
+    // Ensure all power switches are OFF
+    if (powerboard_state_.at(0) != false || powerboard_state_.at(1) != false || powerboard_state_.at(2) != false)
     {
-        powerboard_state_ = false;
+        powerboard_state_.at(0) = false;  // Digital OFF
+        powerboard_state_.at(1) = false;  // Signal OFF
+        powerboard_state_.at(2) = false;  // Power OFF
     }
 }
 
@@ -99,31 +101,33 @@ void RobotFSM::handleInit()
 {
     // Init: System initialization sequence
     // Steps:
-    // 0. Set power ON and wait 0.5 seconds
-    // 1. Check motor timeout
-    // 2. Set motor FSM to SET_ZERO
-    // 3. Set motor FSM to HALL_CALIBRATE
-    // 4. Check motor FSM in MOTOR mode, then transition to IDLE
+    // 0. Turn on digital switch and wait 1 second
+    // 1. Turn on signal switch and wait 1 second
+    // 2. Turn on power switch and wait 1 second
+    // 3. Check motor timeout
+    // 4. Set motor FSM to SET_ZERO
+    // 5. Set motor FSM to HALL_CALIBRATE
+    // 6. Check motor FSM in MOTOR mode, then transition to IDLE
     
     switch (init_step_)
     {
         case 0:
             {
-                // Set power ON
-                if (!powerboard_state_)
+                // Turn on digital switch
+                if (!powerboard_state_.at(0))
                 {
-                    std::cout << cyan << "[Robot FSM] Init Step 0: Turning power ON..." 
+                    std::cout << cyan << "[Robot FSM] Init Step 0: Turning digital switch ON..." 
                               << reset << std::endl;
-                    powerboard_state_ = true;
+                    powerboard_state_.at(0) = true;
                     init_counter_ = 0;
                 }
                 
-                // Wait for 0.5 seconds
+                // Wait for 1 second
                 init_counter_++;
-                int required_cycles = 500000 / loop_period_us_;  // 0.5 seconds
+                int required_cycles = 1000000 / loop_period_us_;  // 1.0 seconds
                 if (init_counter_ >= required_cycles)
                 {
-                    std::cout << cyan << "[Robot FSM] Init Step 0: Power stabilized" 
+                    std::cout << cyan << "[Robot FSM] Init Step 0: Digital switch stabilized" 
                               << reset << std::endl;
                     init_step_++;
                     init_counter_ = 0;
@@ -132,6 +136,54 @@ void RobotFSM::handleInit()
             break;
             
         case 1:
+            {
+                // Turn on signal switch
+                if (!powerboard_state_.at(1))
+                {
+                    std::cout << cyan << "[Robot FSM] Init Step 1: Turning signal switch ON..." 
+                              << reset << std::endl;
+                    powerboard_state_.at(1) = true;
+                    init_counter_ = 0;
+                }
+                
+                // Wait for 1 second
+                init_counter_++;
+                int required_cycles = 1000000 / loop_period_us_;  // 1.0 seconds
+                if (init_counter_ >= required_cycles)
+                {
+                    std::cout << cyan << "[Robot FSM] Init Step 1: Signal switch stabilized" 
+                              << reset << std::endl;
+                    init_step_++;
+                    init_counter_ = 0;
+                }
+            }
+            break;
+            
+        case 2:
+            {
+                // Turn on power switch
+                if (!powerboard_state_.at(2))
+                {
+                    std::cout << cyan << "[Robot FSM] Init Step 2: Turning power switch ON..." 
+                              << reset << std::endl;
+                    powerboard_state_.at(2) = true;
+                    init_counter_ = 0;
+                }
+                
+                // Wait for 1 second
+                init_counter_++;
+                int required_cycles = 1000000 / loop_period_us_;  // 1.0 seconds
+                if (init_counter_ >= required_cycles)
+                {
+                    std::cout << cyan << "[Robot FSM] Init Step 2: Power switch stabilized" 
+                              << reset << std::endl;
+                    init_step_++;
+                    init_counter_ = 0;
+                }
+            }
+            break;
+            
+        case 3:
             // Check motor timeout
             {
                 bool has_timeout = false;
@@ -140,7 +192,7 @@ void RobotFSM::handleInit()
                     if (module.hasTimeout())
                     {
                         has_timeout = true;
-                        std::cout << red << "[Robot FSM] Init Step 1: Module " 
+                        std::cout << red << "[Robot FSM] Init Step 3: Module " 
                                   << module.label_ << " has timeout!" << reset << std::endl;
                         break;
                     }
@@ -154,34 +206,34 @@ void RobotFSM::handleInit()
                 }
                 else
                 {
-                    std::cout << cyan << "[Robot FSM] Init Step 1: All motors responsive" 
+                    std::cout << cyan << "[Robot FSM] Init Step 3: All motors responsive" 
                               << reset << std::endl;
                     init_step_++;
                 }
             }
             break;
             
-        case 2:
+        case 4:
             // Set motor FSM to SET_ZERO mode
-            std::cout << cyan << "[Robot FSM] Init Step 2: Setting motors to SET_ZERO..." 
+            std::cout << cyan << "[Robot FSM] Init Step 4: Setting motors to SET_ZERO..." 
                       << reset << std::endl;
             motor_fsm_.switchMode(FunctionMode::SET_ZERO);
             init_step_++;
             break;
             
-        case 3:
+        case 5:
             // Set motor FSM to HALL_CALIBRATE mode
-            std::cout << cyan << "[Robot FSM] Init Step 3: Starting HALL_CALIBRATE..." 
+            std::cout << cyan << "[Robot FSM] Init Step 5: Starting HALL_CALIBRATE..." 
                       << reset << std::endl;
             motor_fsm_.switchMode(FunctionMode::HALL_CALIBRATE);
             init_step_++;
             break;
             
-        case 4:
+        case 6:
             // Wait for HALL_CALIBRATE to complete and motor FSM to enter MOTOR mode
             if (motor_fsm_.getCurrentMode() == FunctionMode::MOTOR)
             {
-                std::cout << green << "[Robot FSM] Init Step 4: Motors in MOTOR mode" 
+                std::cout << green << "[Robot FSM] Init Step 6: Motors in MOTOR mode" 
                           << reset << std::endl;
                 std::cout << green << "[Robot FSM] Init complete, transitioning to IDLE" 
                           << reset << std::endl;

@@ -33,7 +33,7 @@ class Corgi
     MotorFSM motor_fsm_;
     RobotFSM robot_fsm_;
     std::vector<LegModule> modules_list_;
-    bool powerboard_state_;  // Simplified: true=ON, false=OFF
+    std::vector<bool> powerboard_state_;  // [digital, signal, power]
     std::mutex main_mtx_;
 
     // header msg
