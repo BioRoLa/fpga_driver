@@ -49,21 +49,21 @@ void Console::refreshWindow()
     int refresh_period_ = (int)(1 / frontend_rate_) * 1000000;
     LegModule *lm_null = 0;
     Panel p_power_("[P] Power Board ", "power", lm_null, 1, 9, 60, 40, true);
-    Panel p_cmain_("[F] FPGA Server ", "c_main", lm_null, 1, 1, 8, 40, true);
+    Panel p_robot_("[R] Robot FSM ", "robot", lm_null, 1, 1, 8, 40, true);
     Panel p_modA_("[A] LF_Module ", "module", modA_ptr_, 41, 1, (term_max_y_ - 2) / 2 - 1, 60, true);
     Panel p_modD_("[D] LH_Module ", "module", modD_ptr_, 41, (term_max_y_) / 2, (term_max_y_ - 2) / 2 - 1, 60, true);
     Panel p_modB_("[B] RF_Module ", "module", modB_ptr_, 101, 1, (term_max_y_ - 2) / 2 - 1, 60, true);
     Panel p_modC_("[C] RH_Module ", "module", modC_ptr_, 101, (term_max_y_) / 2, (term_max_y_ - 2) / 2 - 1, 60, true);
 
     p_power_.powerboard_state_ = powerboard_state_;
-    p_cmain_.fsm_ = fsm_;
+    p_robot_.robot_fsm_ = robot_fsm_;
 
     while (1)
     {
         cons_mtx_.lock();
 
         p_power_.infoDisplay(fpga_, powerboard_state_->at(0), powerboard_state_->at(1), powerboard_state_->at(2));
-        p_cmain_.infoDisplay(fsm_->getCurrentMode());
+        p_robot_.infoDisplay(robot_fsm_->getCurrentMode());
         p_modA_.infoDisplay();
         p_modB_.infoDisplay();
         p_modC_.infoDisplay();
@@ -158,50 +158,18 @@ void InputPanel::reset_input_window(WINDOW *win)
 void InputPanel::commandDecode(string buf)
 {
     bool syntax_err = false;
-    bool pb_selected = false;
-    bool lm_selected = false;
-    bool f_selected = false;
     bool r_selected = false;  // Robot FSM selected
 
     bool switchFSM_success = true;
-    LegModule *md_ptr_;
 
     vector<string> bufs;
     bufs = tokenizer(buf);
 
     if (bufs.size() >= 1)
     {
-        if (bufs[0] == "P")
-        {
-            pb_selected = true;
-        }
-        else if (bufs[0] == "F")
-        {
-            f_selected = true;
-        }
-        else if (bufs[0] == "R")
+        if (bufs[0] == "R")
         {
             r_selected = true;
-        }
-        else if (bufs[0] == "A")
-        {
-            lm_selected = true;
-            md_ptr_ = modA_ptr_;
-        }
-        else if (bufs[0] == "B")
-        {
-            lm_selected = true;
-            md_ptr_ = modB_ptr_;
-        }
-        else if (bufs[0] == "C")
-        {
-            lm_selected = true;
-            md_ptr_ = modC_ptr_;
-        }
-        else if (bufs[0] == "D")
-        {
-            lm_selected = true;
-            md_ptr_ = modD_ptr_;
         }
         else
         {
@@ -221,80 +189,7 @@ void InputPanel::commandDecode(string buf)
         mvwprintw(win_, 2, 5, bufs[2].c_str());
         wrefresh(win_);
 
-        if (pb_selected)
-        {
-            if (bufs[1] == "D")
-            {
-                try
-                {
-                    powerboard_state_->at(0) = stoi(bufs[2]);
-                }
-                catch (exception &e)
-                {
-                    syntax_err = true;
-                    mvwprintw(win_, 2, 1, "err");
-                }
-            }
-            else if (bufs[1] == "S")
-            {
-                try
-                {
-                    powerboard_state_->at(1) = stoi(bufs[2]);
-                }
-                catch (exception &e)
-                {
-                    syntax_err = true;
-                    mvwprintw(win_, 2, 1, "err");
-                }
-            }
-            else if (bufs[1] == "P")
-            {
-                try
-                {
-                    powerboard_state_->at(2) = stoi(bufs[2]);
-                }
-                catch (exception &e)
-                {
-                    syntax_err = true;
-                    mvwprintw(win_, 2, 1, "err");
-                }
-            }
-            else
-            {
-                syntax_err = true;
-            }
-        }
-        else if (f_selected)
-        {
-            if (bufs[1] == "M")
-            {
-                if (bufs[2] == "R")
-                {
-                    switchFSM_success = fsm_->switchMode(FunctionMode::REST);
-                }
-                else if (bufs[2] == "M")
-                {
-                    switchFSM_success = fsm_->switchMode(FunctionMode::MOTOR);
-                }
-                else if (bufs[2] == "S")
-                {
-                    switchFSM_success = fsm_->switchMode(FunctionMode::SET_ZERO);
-                }
-                else if (bufs[2] == "H")
-                {
-                    switchFSM_success = fsm_->switchMode(FunctionMode::HALL_CALIBRATE);
-                }
-                else
-                {
-                    syntax_err = true;
-                }
-            }
-            else
-            {
-                syntax_err = true;
-            }
-        }
-        else if (r_selected)
+        if (r_selected)
         {
             if (bufs[1] == "M")  // Robot Mode command
             {
@@ -340,12 +235,7 @@ void InputPanel::commandDecode(string buf)
                 syntax_err = true;
             }
         }
-        else
-        {
-            syntax_err = true;
-        }
     }
-
     else
     {
         syntax_err = true;
@@ -499,18 +389,48 @@ void Panel::infoDisplay(FpgaHandler *fpga_, bool digital_switch, bool signal_swi
     wrefresh(win_);
 }
 
-void Panel::infoDisplay(FunctionMode fsm_mode)
+void Panel::infoDisplay(RobotMode robot_mode)
 {
-    if (fsm_mode == FunctionMode::REST)
-        mvwprintw(win_, 2, 1, "[M] FSM FunctionMode:           REST");
-    else if (fsm_mode == FunctionMode::SET_ZERO)
-        mvwprintw(win_, 2, 1, "[M] FSM FunctionMode:       SET_ZERO");
-    else if (fsm_mode == FunctionMode::HALL_CALIBRATE)
-        mvwprintw(win_, 2, 1, "[M] FSM FunctionMode: HALL_CALIBRATE");
-    else if (fsm_mode == FunctionMode::MOTOR)
-        mvwprintw(win_, 2, 1, "[M] FSM FunctionMode:          MOTOR");
-    mvwprintw(win_, 4, 1, "[R] REST  [S] SET_ZERO ");
-    mvwprintw(win_, 5, 1, "[M] MOTOR [H] HALL_CALIBRATE");
+    // Display current Robot FSM mode
+    mvwprintw(win_, 1, 1, "Current Robot FSM Mode:");
+    if (robot_mode == RobotMode::SystemOn)
+        mvwprintw(win_, 2, 1, "  [O] SystemOn (Safe State)");
+    else if (robot_mode == RobotMode::Init)
+        mvwprintw(win_, 2, 1, "  [I] Init (Initializing)");
+    else if (robot_mode == RobotMode::IDLE)
+        mvwprintw(win_, 2, 1, "  [D] IDLE (Ready)");
+    else if (robot_mode == RobotMode::Standby)
+        mvwprintw(win_, 2, 1, "  [S] Standby (Active)");
+    else if (robot_mode == RobotMode::MotorConfig)
+        mvwprintw(win_, 2, 1, "  [C] MotorConfig");
+    
+    // Display allowed transitions based on current mode
+    mvwprintw(win_, 4, 1, "Allowed Transitions:");
+    if (robot_mode == RobotMode::SystemOn)
+    {
+        mvwprintw(win_, 5, 1, "  :R M I  -> Init");
+    }
+    else if (robot_mode == RobotMode::Init)
+    {
+        mvwprintw(win_, 5, 1, "  :R M D  -> IDLE");
+        mvwprintw(win_, 6, 1, "  :R M O  -> SystemOn");
+    }
+    else if (robot_mode == RobotMode::IDLE)
+    {
+        mvwprintw(win_, 5, 1, "  :R M S  -> Standby");
+        mvwprintw(win_, 6, 1, "  :R M C  -> MotorConfig");
+        mvwprintw(win_, 7, 1, "  :R M O  -> SystemOn");
+    }
+    else if (robot_mode == RobotMode::Standby)
+    {
+        mvwprintw(win_, 5, 1, "  :R M D  -> IDLE");
+    }
+    else if (robot_mode == RobotMode::MotorConfig)
+    {
+        mvwprintw(win_, 5, 1, "  :R M O  -> SystemOn");
+    }
+    
+    mvwprintw(win_, 9, 1, "Emergency Stop: :R E S");
 
     wrefresh(win_);
 }

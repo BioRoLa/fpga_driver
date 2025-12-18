@@ -21,6 +21,12 @@ RobotFSM::RobotFSM(MotorFSM& motor_fsm, std::vector<LegModule>& modules_list, st
 
 void RobotFSM::runFsm()
 {
+    // Update timeout debounce for all modules
+    for (auto& module : modules_list_)
+    {
+        module.updateTimeoutDebounce(loop_period_us_);
+    }
+    
     // Execute behavior for current mode
     switch (current_mode_)
     {
@@ -222,11 +228,22 @@ void RobotFSM::handleInit()
             break;
             
         case 5:
-            // Set motor FSM to HALL_CALIBRATE mode
-            std::cout << cyan << "[Robot FSM] Init Step 5: Starting HALL_CALIBRATE..." 
-                      << reset << std::endl;
-            motor_fsm_.switchMode(FunctionMode::HALL_CALIBRATE);
-            init_step_++;
+            // Set motor FSM to HALL_CALIBRATE mode and wait for calibration to complete
+            if (motor_fsm_.getCurrentMode() != FunctionMode::HALL_CALIBRATE)
+            {
+                std::cout << cyan << "[Robot FSM] Init Step 5: Starting HALL_CALIBRATE..." 
+                          << reset << std::endl;
+                motor_fsm_.switchMode(FunctionMode::HALL_CALIBRATE);
+            }
+            
+            // Wait until calibration is complete
+            if (motor_fsm_.isHallCalibrated())
+            {
+                std::cout << cyan << "[Robot FSM] Init Step 5: Hall calibration complete" 
+                          << reset << std::endl;
+                init_step_++;
+            }
+            
             break;
             
         case 6:
@@ -309,6 +326,7 @@ bool RobotFSM::isTransitionAllowed(RobotMode from, RobotMode to) const
             
         case RobotMode::Standby:
             return (to == RobotMode::IDLE);
+            //TODO: TBD if stanby can go to SystemOn when emergency stop
             
         case RobotMode::MotorConfig:
             return (to == RobotMode::SystemOn);
@@ -354,8 +372,7 @@ void RobotFSM::emergencyStop()
     std::cout << red << "[Robot FSM] EMERGENCY STOP!" << reset << std::endl;
     
     // Force transition to SystemOn (safe state)
-    previous_mode_ = current_mode_;
-    current_mode_ = RobotMode::SystemOn;
+    requestModeTransition(RobotMode::SystemOn);
     
     // Stop all motors
     motor_fsm_.switchMode(FunctionMode::REST);

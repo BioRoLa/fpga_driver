@@ -27,7 +27,8 @@ public:
     void sendCommands();
     void receiveFeedback();
     
-    // Timeout Checks
+    // Timeout Checks (with debounce)
+    void updateTimeoutDebounce(uint32_t loop_period_us);
     bool hasTxTimeout() const;
     bool hasRxTimeout() const;
     bool hasTimeout() const;
@@ -61,6 +62,13 @@ private:
 
     NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayBool port_select_;
     NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayBoolSize port_select_size_;
+    
+    // Timeout debounce
+    mutable uint32_t tx_timeout_counter_us_;
+    mutable uint32_t rx_timeout_counter_us_;
+    static constexpr uint32_t TIMEOUT_DEBOUNCE_US_ = 500000;  // 0.5 seconds
+    mutable bool tx_timeout_debounced_;
+    mutable bool rx_timeout_debounced_;
     
     void initializeResources();
 };

@@ -8,6 +8,10 @@ CANChannel::CANChannel(NiFpga_Status& status, NiFpga_Session& session,
     : status_(status)
     , session_(session)
     , channel_name_(channel_name)
+    , tx_timeout_counter_us_(0)
+    , rx_timeout_counter_us_(0)
+    , tx_timeout_debounced_(false)
+    , rx_timeout_debounced_(false)
 {
     initializeResources();
 }
@@ -227,18 +231,45 @@ void CANChannel::receiveFeedback()
     }
 }
 
+void CANChannel::updateTimeoutDebounce(uint32_t loop_period_us)
+{
+    // Read raw timeout status from FPGA
+    NiFpga_Bool tx_timeout_raw = false;
+    NiFpga_Bool rx_timeout_raw = false;
+    NiFpga_ReadBool(session_, tx_timeout_, &tx_timeout_raw);
+    NiFpga_ReadBool(session_, rx_timeout_, &rx_timeout_raw);
+    
+    // Update TX timeout counter
+    if (tx_timeout_raw) {
+        tx_timeout_counter_us_ += loop_period_us;
+        if (tx_timeout_counter_us_ >= TIMEOUT_DEBOUNCE_US_) {
+            tx_timeout_debounced_ = true;
+        }
+    } else {
+        tx_timeout_counter_us_ = 0;
+        tx_timeout_debounced_ = false;
+    }
+    
+    // Update RX timeout counter
+    if (rx_timeout_raw) {
+        rx_timeout_counter_us_ += loop_period_us;
+        if (rx_timeout_counter_us_ >= TIMEOUT_DEBOUNCE_US_) {
+            rx_timeout_debounced_ = true;
+        }
+    } else {
+        rx_timeout_counter_us_ = 0;
+        rx_timeout_debounced_ = false;
+    }
+}
+
 bool CANChannel::hasTxTimeout() const
 {
-    NiFpga_Bool timeout = false;
-    NiFpga_ReadBool(session_, tx_timeout_, &timeout);
-    return timeout;
+    return tx_timeout_debounced_;
 }
 
 bool CANChannel::hasRxTimeout() const
 {
-    NiFpga_Bool timeout = false;
-    NiFpga_ReadBool(session_, rx_timeout_, &timeout);
-    return timeout;
+    return rx_timeout_debounced_;
 }
 
 bool CANChannel::hasTimeout() const

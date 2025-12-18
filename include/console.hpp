@@ -47,11 +47,12 @@ public:
   std::mutex *main_mtx_;
   std::vector<bool> *powerboard_state_;
   MotorFSM *fsm_;
+  RobotFSM *robot_fsm_;
 
   mutex mutex_;
   void infoDisplay();
   void infoDisplay(FpgaHandler *fpga, bool power_switch, bool signal_switch, bool digital_switch);
-  void infoDisplay(FunctionMode fsm_mode);
+  void infoDisplay(RobotMode robot_mode);
   void resetPanel();
   void panelTitle();
 };

@@ -117,6 +117,13 @@ void LegModule::setConfigSubMode(ConfigSubMode sub_mode)
     }
 }
 
+void LegModule::updateTimeoutDebounce(uint32_t loop_period_us)
+{
+    if (channel_) {
+        channel_->updateTimeoutDebounce(loop_period_us);
+    }
+}
+
 bool LegModule::hasTimeout() const
 {
     return channel_ ? channel_->hasTimeout() : false;
