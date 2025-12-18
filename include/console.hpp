@@ -7,6 +7,7 @@
 
 #include "leg_module.hpp"
 #include "motor_fsm.hpp"
+#include "robot_fsm.hpp"
 
 #include <iostream>
 #include <string>
@@ -81,6 +82,7 @@ public:
   std::mutex *main_mtx_;
   bool *powerboard_state_;
   MotorFSM *fsm_;
+  RobotFSM *robot_fsm_;
 
 private:
   std::thread *thread;
@@ -93,7 +95,7 @@ public:
   {
   }
 
-  void init(FpgaHandler *fpga_, vector<LegModule> *mods_, bool *pb_state_, MotorFSM *fsm_, std::mutex *mtx_);
+  void init(FpgaHandler *fpga_, vector<LegModule> *mods_, bool *pb_state_, MotorFSM *fsm_, RobotFSM *robot_fsm_, std::mutex *mtx_);
   void refreshWindow();
 
   int term_max_x_;
@@ -118,6 +120,7 @@ public:
   std::mutex *main_mtx_;
   bool *powerboard_state_;
   MotorFSM *fsm_;
+  RobotFSM *robot_fsm_;
 
   mutex input_mutex_;
   thread t_frontend_;

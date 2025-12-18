@@ -7,7 +7,7 @@ using namespace std;
 mutex cons_mtx_;
 int refresh_flag;
 
-void Console::init(FpgaHandler *fpga, vector<LegModule> *mods_, bool *pb_state_ptr_, MotorFSM *fsm_ptr_, std::mutex *mtx_ptr_)
+void Console::init(FpgaHandler *fpga, vector<LegModule> *mods_, bool *pb_state_ptr_, MotorFSM *fsm_ptr_, RobotFSM *robot_fsm_ptr_, std::mutex *mtx_ptr_)
 {
     fpga_ = fpga;
 
@@ -30,10 +30,12 @@ void Console::init(FpgaHandler *fpga, vector<LegModule> *mods_, bool *pb_state_p
     input_panel_.main_mtx_ = mtx_ptr_;
     input_panel_.powerboard_state_ = pb_state_ptr_;
     input_panel_.fsm_ = fsm_ptr_;
+    input_panel_.robot_fsm_ = robot_fsm_ptr_;
 
     main_mtx_ = mtx_ptr_;
     powerboard_state_ = pb_state_ptr_;
     fsm_ = fsm_ptr_;
+    robot_fsm_ = robot_fsm_ptr_;
 
     if_resetPanel = false;
     t_frontend_ = thread(&Console::refreshWindow, this);
@@ -159,6 +161,7 @@ void InputPanel::commandDecode(string buf)
     bool pb_selected = false;
     bool lm_selected = false;
     bool f_selected = false;
+    bool r_selected = false;  // Robot FSM selected
 
     bool switchFSM_success = true;
     LegModule *md_ptr_;
@@ -175,6 +178,10 @@ void InputPanel::commandDecode(string buf)
         else if (bufs[0] == "F")
         {
             f_selected = true;
+        }
+        else if (bufs[0] == "R")
+        {
+            r_selected = true;
         }
         else if (bufs[0] == "A")
         {
@@ -252,6 +259,52 @@ void InputPanel::commandDecode(string buf)
                 else if (bufs[2] == "H")
                 {
                     switchFSM_success = fsm_->switchMode(FunctionMode::HALL_CALIBRATE);
+                }
+                else
+                {
+                    syntax_err = true;
+                }
+            }
+            else
+            {
+                syntax_err = true;
+            }
+        }
+        else if (r_selected)
+        {
+            if (bufs[1] == "M")  // Robot Mode command
+            {
+                if (bufs[2] == "I")  // Init
+                {
+                    switchFSM_success = robot_fsm_->requestModeTransition(RobotMode::Init);
+                }
+                else if (bufs[2] == "D")  // IDLE
+                {
+                    switchFSM_success = robot_fsm_->requestModeTransition(RobotMode::IDLE);
+                }
+                else if (bufs[2] == "S")  // Standby
+                {
+                    switchFSM_success = robot_fsm_->requestModeTransition(RobotMode::Standby);
+                }
+                else if (bufs[2] == "C")  // MotorConfig
+                {
+                    switchFSM_success = robot_fsm_->requestModeTransition(RobotMode::MotorConfig);
+                }
+                else if (bufs[2] == "O")  // SystemOn (safe state)
+                {
+                    switchFSM_success = robot_fsm_->requestModeTransition(RobotMode::SystemOn);
+                }
+                else
+                {
+                    syntax_err = true;
+                }
+            }
+            else if (bufs[1] == "E")  // Emergency stop
+            {
+                if (bufs[2] == "S")
+                {
+                    robot_fsm_->emergencyStop();
+                    switchFSM_success = true;
                 }
                 else
                 {

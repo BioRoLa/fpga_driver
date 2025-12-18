@@ -39,7 +39,7 @@ Corgi::Corgi()
 
     load_config_();
 
-    console_.init(&fpga_, &modules_list_, &powerboard_state_, &motor_fsm_, &main_mtx_);
+    console_.init(&fpga_, &modules_list_, &powerboard_state_, &motor_fsm_, &robot_fsm_, &main_mtx_);
 
     fpga_.setIrqPeriod(main_irq_period_us_, can_irq_period_us_);
 }
