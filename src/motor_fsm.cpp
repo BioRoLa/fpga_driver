@@ -1,4 +1,5 @@
 #include <motor_fsm.hpp>
+#include "robot_fsm.hpp"
 
 MotorFSM::MotorFSM(std::vector<LegModule>& _modules, bool& _pb_state, double* pb_v)
     : modules_list_(_modules)
@@ -7,6 +8,7 @@ MotorFSM::MotorFSM(std::vector<LegModule>& _modules, bool& _pb_state, double* pb
     , powerboard_voltage(pb_v)
     , hall_calibrated_(false)
     , hall_calibrate_status_(0)
+    , robot_fsm_(nullptr)
 {
 }
 
@@ -234,6 +236,18 @@ void MotorFSM::handleMotorMode(const motor_msg::MotorCmdStamped& motor_cmd_msg)
 {
     if (*NO_CAN_TIMEDOUT_ERROR_ && *NO_SWITCH_TIMEDOUT_ERROR_)
     {
+        // Check if we should accept new commands from gRPC
+        // In IDLE mode, don't update commands - keep sending the same command
+        bool accept_grpc_commands = true;
+        if (robot_fsm_ != nullptr)
+        {
+            RobotMode robot_mode = robot_fsm_->getCurrentMode();
+            if (robot_mode == RobotMode::IDLE)
+            {
+                accept_grpc_commands = false;
+            }
+        }
+        
         int index = 0;
         for (auto& mod : modules_list_)
         {
@@ -243,24 +257,28 @@ void MotorFSM::handleMotorMode(const motor_msg::MotorCmdStamped& motor_cmd_msg)
                 Eigen::Vector2d tb_cmd;
                 float torque_r, torque_l, kp_r, kp_l, ki_r, ki_l, kd_r, kd_l;
                 
-                switch (index)
+                // Only update from gRPC if in Standby or other active modes
+                if (accept_grpc_commands)
                 {
-                    case 0: // module_a
+                
+                    switch (index)
                     {
-                        double theta = motor_cmd_msg.module_a().theta();
-                        theta = std::max(17.0*PI/180.0, std::min(160.0*PI/180.0, theta));
-                        tb_cmd << theta, motor_cmd_msg.module_a().beta();
-                        
-                        torque_r = motor_cmd_msg.module_a().torque_r();
-                        torque_l = motor_cmd_msg.module_a().torque_l();
-                        kp_r = motor_cmd_msg.module_a().kp_r();
-                        kp_l = motor_cmd_msg.module_a().kp_l();
-                        ki_r = motor_cmd_msg.module_a().ki_r();
-                        ki_l = motor_cmd_msg.module_a().ki_l();
-                        kd_r = motor_cmd_msg.module_a().kd_r();
-                        kd_l = motor_cmd_msg.module_a().kd_l();
-                    }
-                    break;
+                        case 0: // module_a
+                        {
+                            double theta = motor_cmd_msg.module_a().theta();
+                            theta = std::max(17.0*PI/180.0, std::min(160.0*PI/180.0, theta));
+                            tb_cmd << theta, motor_cmd_msg.module_a().beta();
+                            
+                            torque_r = motor_cmd_msg.module_a().torque_r();
+                            torque_l = motor_cmd_msg.module_a().torque_l();
+                            kp_r = motor_cmd_msg.module_a().kp_r();
+                            kp_l = motor_cmd_msg.module_a().kp_l();
+                            ki_r = motor_cmd_msg.module_a().ki_r();
+                            ki_l = motor_cmd_msg.module_a().ki_l();
+                            kd_r = motor_cmd_msg.module_a().kd_r();
+                            kd_l = motor_cmd_msg.module_a().kd_l();
+                        }
+                        break;
                     
                     case 1: // module_b
                     {
@@ -313,9 +331,17 @@ void MotorFSM::handleMotorMode(const motor_msg::MotorCmdStamped& motor_cmd_msg)
                     }
                     break;
                     
-                    default:
-                        index++;
-                        continue;
+                        default:
+                            index++;
+                            continue;
+                    }
+                }  // end if (accept_grpc_commands)
+                else
+                {
+                    // In IDLE mode: don't update from gRPC, motor will keep previous command
+                    // CAN will automatically resend the last command stored in motors
+                    index++;
+                    continue;
                 }
                 
                 // Convert theta-beta to phi coordinates

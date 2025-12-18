@@ -8,6 +8,7 @@ add_executable(fpga_driver  color.cpp
                             fpga_handler.cpp
                             fpga_server.cpp
                             motor_fsm.cpp
+                            robot_fsm.cpp
                             leg_module.cpp
                             can_motor.cpp
                             can_channel.cpp

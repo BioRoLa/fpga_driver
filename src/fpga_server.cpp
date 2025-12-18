@@ -17,6 +17,7 @@ void motor_data_cb(motor_msg::MotorCmdStamped motor_msg)
 
 Corgi::Corgi()
     : motor_fsm_(modules_list_, powerboard_state_, fpga_.powerboard_V_list_)
+    , robot_fsm_(motor_fsm_, modules_list_, powerboard_state_)
 {
     /* default value of interrupt*/
     main_irq_period_us_ = 500;
@@ -32,6 +33,9 @@ Corgi::Corgi()
     max_timeout_cnt_ = 100;
 
     motor_fsm_.setTimeoutErrorFlags(&NO_CAN_TIMEDOUT_ERROR_, &NO_SWITCH_TIMEDOUT_ERROR_);
+    motor_fsm_.setRobotFSM(&robot_fsm_);
+    robot_fsm_.setErrorFlags(!NO_CAN_TIMEDOUT_ERROR_, !NO_SWITCH_TIMEDOUT_ERROR_);
+    robot_fsm_.setLoopPeriod(main_irq_period_us_);
 
     load_config_();
 
@@ -151,6 +155,12 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
+        
+        // Update error flags and run Robot FSM
+        robot_fsm_.setErrorFlags(!NO_CAN_TIMEDOUT_ERROR_, !NO_SWITCH_TIMEDOUT_ERROR_);
+        robot_fsm_.runFsm();
+        
+        // Run Motor FSM
         motor_fsm_.runFsm(motor_fb_msg, motor_cmd_data);
         motor_message_updated = 0;    
         HALL_CALIBRATED_ = motor_fsm_.isHallCalibrated();

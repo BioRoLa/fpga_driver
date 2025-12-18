@@ -12,6 +12,8 @@
 #include "Motor.pb.h"
 #include "Power.pb.h"
 
+// Forward declaration
+class RobotFSM;
 
 class MotorFSM
 {
@@ -33,6 +35,10 @@ public:
   void setTimeoutErrorFlags(bool* no_can_error, bool* no_switch_error) {
     NO_CAN_TIMEDOUT_ERROR_ = no_can_error;
     NO_SWITCH_TIMEDOUT_ERROR_ = no_switch_error;
+  }
+  
+  void setRobotFSM(RobotFSM* robot_fsm) {
+    robot_fsm_ = robot_fsm;
   }
   
   // Configuration setters
@@ -63,6 +69,7 @@ private:
   bool* NO_CAN_TIMEDOUT_ERROR_;
   bool* NO_SWITCH_TIMEDOUT_ERROR_;
   double* powerboard_voltage;
+  RobotFSM* robot_fsm_;  // Pointer to RobotFSM for mode checking
   
   // Private helper methods
   void publishMsg(motor_msg::MotorStateStamped &motor_fb_msg);

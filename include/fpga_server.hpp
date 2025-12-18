@@ -2,6 +2,7 @@
 #include "leg_module.hpp"
 #include "console.hpp"
 #include "motor_fsm.hpp"
+#include "robot_fsm.hpp"
 
 #include <NodeHandler.h>
 #include <sys/time.h>
@@ -30,6 +31,7 @@ class Corgi
     Console console_;
 
     MotorFSM motor_fsm_;
+    RobotFSM robot_fsm_;
     std::vector<LegModule> modules_list_;
     bool powerboard_state_;  // Simplified: true=ON, false=OFF
     std::mutex main_mtx_;
