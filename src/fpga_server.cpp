@@ -15,6 +15,26 @@ void motor_data_cb(motor_msg::MotorCmdStamped motor_msg)
     motor_cmd_data = motor_msg;
 }
 
+// Robot gRPC message callbacks
+std::atomic<int> robot_cmd_message_updated{0};
+robot_msg::RobotCmdStamped robot_cmd_data;
+void robot_cmd_data_cb(robot_msg::RobotCmdStamped robot_cmd_msg)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    robot_cmd_message_updated = 1;
+    robot_cmd_data = robot_cmd_msg;
+}
+
+// Robot Request Update callback
+std::atomic<int> robot_request_update_received{0};
+robot_msg::RobotRequestUpdate robot_request_update_data;
+void robot_request_update_cb(robot_msg::RobotRequestUpdate robot_request_msg)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    robot_request_update_received = 1;
+    robot_request_update_data = robot_request_msg;
+}
+
 Corgi::Corgi()
     : motor_fsm_(modules_list_, powerboard_state_, fpga_.powerboard_V_list_)
     , robot_fsm_(motor_fsm_, modules_list_, powerboard_state_)
@@ -23,6 +43,9 @@ Corgi::Corgi()
     main_irq_period_us_ = 500;
     can_irq_period_us_ = 800;
     seq = 0;
+    
+    /* initialize robot mode - handled by robot_fsm_ initialization */
+    robot_message_updated_ = 0;
 
     /* powerboard_state_ is already initialized to {false, false, false} in header */
     NO_CAN_TIMEDOUT_ERROR_ = true;
@@ -81,7 +104,11 @@ void Corgi::load_config_()
 
 void Corgi::interruptHandler(core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
                              core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
-                             core::Publisher<motor_msg::MotorStateStamped>& state_pub_)   
+                             core::Publisher<motor_msg::MotorStateStamped>& state_pub_,
+                             core::Publisher<robot_msg::RobotStateStamped>& robot_state_pub_,
+                             core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub_,
+                             core::Subscriber<robot_msg::RobotRequestUpdate>& robot_request_sub_,
+                             core::Publisher<robot_msg::RobotRequestUpdate>& robot_request_pub_)   
 
                                                        
 {
@@ -121,7 +148,7 @@ void Corgi::interruptHandler(core::Publisher<power_msg::PowerStateStamped>& stat
         {
             if (irqsAsserted & NiFpga_Irq_0)
             {
-                mainLoop_(state_pb_pub_, cmd_sub_, state_pub_);
+                mainLoop_(state_pb_pub_, cmd_sub_, state_pub_, robot_state_pub_, robot_cmd_sub_, robot_request_sub_, robot_request_pub_);
                 // Acknowledge IRQ to begin DMA acquisition
                 NiFpga_MergeStatus(&fpga_.status_, NiFpga_AcknowledgeIrqs(fpga_.session_, irqsAsserted));
             }
@@ -140,7 +167,11 @@ void Corgi::interruptHandler(core::Publisher<power_msg::PowerStateStamped>& stat
 
 void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
                       core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
-                      core::Publisher<motor_msg::MotorStateStamped>& state_pub_)
+                      core::Publisher<motor_msg::MotorStateStamped>& state_pub_,
+                      core::Publisher<robot_msg::RobotStateStamped>& robot_state_pub_,
+                      core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub_,
+                      core::Subscriber<robot_msg::RobotRequestUpdate>& robot_request_sub_,
+                      core::Publisher<robot_msg::RobotRequestUpdate>& robot_request_pub_)
 {
     fpga_.write_powerboard_(&powerboard_state_);
     fpga_.read_powerboard_data_();
@@ -149,9 +180,21 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
     
     power_msg::PowerStateStamped power_fb_msg;
     motor_msg::MotorStateStamped motor_fb_msg;
+    robot_msg::RobotStateStamped robot_fb_msg;
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
+        
+        // Handle Robot Command if mode_update is set to true
+        if (robot_request_update_received == 1 && robot_request_update_data.mode_update()) {
+            handleRobotCommand(robot_cmd_data);
+            
+            // Set mode_update to false and publish to avoid repeated actions
+            robot_request_update_data.set_mode_update(false);
+            robot_request_pub_.publish(robot_request_update_data);
+            
+            robot_request_update_received = 0;
+        }
         
         // Update error flags and run Robot FSM
         robot_fsm_.setErrorFlags(!NO_CAN_TIMEDOUT_ERROR_, !NO_SWITCH_TIMEDOUT_ERROR_);
@@ -165,17 +208,18 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
 
     // Communication with Node Architecture
     powerboardPack(power_fb_msg);
-
-    //FIXME: remove powercmd handeling
+    robotStatePack(robot_fb_msg);
 
     // Read Command
     {
         std::lock_guard<std::mutex> lock(mutex_);
         motor_fb_msg.mutable_header()->set_seq(seq);
+        robot_fb_msg.mutable_header()->set_seq(seq);
     }
     
     state_pub_.publish(motor_fb_msg);
     state_pb_pub_.publish(power_fb_msg);
+    robot_state_pub_.publish(robot_fb_msg);
     seq++;
 }
 
@@ -265,6 +309,43 @@ void Corgi::powerboardPack(power_msg::PowerStateStamped&power_dashboard_reply)
     power_dashboard_reply.set_i_11(fpga_.powerboard_I_list_[11]);
 }
 
+void Corgi::handleRobotCommand(const robot_msg::RobotCmdStamped& robot_cmd)
+{
+    robot_msg::ROBOTMODE proto_requested_mode = robot_cmd.request_robot_mode();
+    RobotMode requested_mode = static_cast<RobotMode>(proto_requested_mode);
+    RobotMode current_mode = robot_fsm_.getCurrentMode();
+    
+    // Only update mode if it's different from current mode
+    if (requested_mode != current_mode) {
+        std::cout << "[Robot Command] Mode switch requested from " << static_cast<int>(current_mode) 
+                  << " to " << static_cast<int>(requested_mode) << std::endl;
+        
+        // Use RobotFSM to check if mode transition is available
+        bool transition_available = robot_fsm_.requestModeTransition(requested_mode);
+        
+        if (transition_available) {
+            std::cout << "[Robot Mode] Successfully requested transition to mode " << static_cast<int>(requested_mode) << std::endl;
+        } else {
+            std::cout << "[Robot Mode] Transition denied - invalid or not allowed at this time" << std::endl;
+        }
+    }
+}
+
+void Corgi::robotStatePack(robot_msg::RobotStateStamped& robot_state_reply)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    
+    gettimeofday(&t_stamp, NULL);
+    robot_state_reply.mutable_header()->set_seq(seq);
+    robot_state_reply.mutable_header()->mutable_stamp()->set_sec(t_stamp.tv_sec);
+    robot_state_reply.mutable_header()->mutable_stamp()->set_usec(t_stamp.tv_usec);
+    robot_state_reply.mutable_header()->set_frameid("robot_state");
+    
+    // Set current robot mode (get from robot_fsm_ and convert to proto enum)
+    RobotMode current_mode = robot_fsm_.getCurrentMode();
+    robot_state_reply.set_robot_mode(static_cast<robot_msg::ROBOTMODE>(current_mode));
+}
+
 int main(int argc, char* argv[])
 {
     signal(SIGINT, inthand);
@@ -289,7 +370,13 @@ int main(int argc, char* argv[])
     core::Publisher<motor_msg::MotorStateStamped>& motor_pub = nh.advertise<motor_msg::MotorStateStamped>("motor/state");
     core::Subscriber<motor_msg::MotorCmdStamped>& motor_sub = nh.subscribe<motor_msg::MotorCmdStamped>("motor/command", 1000, motor_data_cb);
     
-    corgi.interruptHandler(power_pub, motor_sub, motor_pub);
+    // Robot gRPC publishers and subscribers
+    core::Publisher<robot_msg::RobotStateStamped>& robot_state_pub = nh.advertise<robot_msg::RobotStateStamped>("robot/state");
+    core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub = nh.subscribe<robot_msg::RobotCmdStamped>("robot/command", 1000, robot_cmd_data_cb);
+    core::Subscriber<robot_msg::RobotRequestUpdate>& robot_request_sub = nh.subscribe<robot_msg::RobotRequestUpdate>("robot/request_update", 1000, robot_request_update_cb);
+    core::Publisher<robot_msg::RobotRequestUpdate>& robot_request_pub = nh.advertise<robot_msg::RobotRequestUpdate>("robot/request_update");
+    
+    corgi.interruptHandler(power_pub, motor_sub, motor_pub, robot_state_pub, robot_cmd_sub, robot_request_sub, robot_request_pub);
 
     if (NiFpga_IsError(corgi.fpga_.status_)) std::cout << red << "[FPGA Server] Error! Exiting program. LabVIEW error code: " << corgi.fpga_.status_ << reset << std::endl;
     else
