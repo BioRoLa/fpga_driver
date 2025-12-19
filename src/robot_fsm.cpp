@@ -65,6 +65,18 @@ bool RobotFSM::requestModeTransition(RobotMode next_mode)
         return true;
     }
     
+    // Special case: SystemOn -> IDLE request will go through Init first
+    if (current_mode_ == RobotMode::SystemOn && next_mode == RobotMode::IDLE)
+    {
+        std::cout << cyan << "[Robot FSM] SystemOn -> IDLE requested, going through Init first" 
+                  << reset << std::endl;
+        exitMode(current_mode_);
+        previous_mode_ = current_mode_;
+        current_mode_ = RobotMode::Init;
+        enterMode(current_mode_);
+        return true;
+    }
+    
     if (!isTransitionAllowed(current_mode_, next_mode))
     {
         std::cout << red << "[Robot FSM] Transition from " 
