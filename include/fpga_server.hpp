@@ -44,9 +44,6 @@ class Corgi
     int main_irq_period_us_;
     int can_irq_period_us_;
 
-    int max_timeout_cnt_;
-    int timeout_cnt_;
-
     bool NO_SWITCH_TIMEDOUT_ERROR_;
     bool NO_CAN_TIMEDOUT_ERROR_;
     bool HALL_CALIBRATED_;

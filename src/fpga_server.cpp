@@ -29,8 +29,6 @@ Corgi::Corgi()
     NO_SWITCH_TIMEDOUT_ERROR_ = true;
     HALL_CALIBRATED_ = false;
 
-    max_timeout_cnt_ = 100;
-
     motor_fsm_.setTimeoutErrorFlags(&NO_CAN_TIMEDOUT_ERROR_, &NO_SWITCH_TIMEDOUT_ERROR_);
     motor_fsm_.setRobotFSM(&robot_fsm_);
     robot_fsm_.setErrorFlags(!NO_CAN_TIMEDOUT_ERROR_, !NO_SWITCH_TIMEDOUT_ERROR_);
@@ -200,14 +198,15 @@ void Corgi::canLoop_()
                 }
             }
 
-            if (modules_list_[i].hasTimeout())timeout_cnt_++;
-            else timeout_cnt_ = 0;
-            if (timeout_cnt_ < max_timeout_cnt_)
+            if (!modules_list_[i].hasTimeout())
             {
                 modules_list_[i].sendCommands();
                 NO_CAN_TIMEDOUT_ERROR_ = true;
             }
-            else NO_CAN_TIMEDOUT_ERROR_ = false;
+            else
+            {
+                NO_CAN_TIMEDOUT_ERROR_ = false;
+            }
         }
     }
 }
