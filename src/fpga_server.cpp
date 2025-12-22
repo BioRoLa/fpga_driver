@@ -366,7 +366,7 @@ int main(int argc, char* argv[])
     core::NodeHandler nh;
     
     // Create Log publisher
-    core::Publisher<log_msg::LogEntry>& log_pub = nh.advertise<log_msg::LogEntry>("/log");
+    core::Publisher<log_msg::LogEntry>& log_pub = nh.advertise<log_msg::LogEntry>("/log", 100);
     
     // Initialize Logger with publish callback for remote logging
     core::Logger logger("fpga_driver", [&log_pub](const log_msg::LogEntry& entry) {

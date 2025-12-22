@@ -415,6 +415,7 @@ void Panel::infoDisplay(RobotMode robot_mode)
     if (robot_mode == RobotMode::SystemOn)
     {
         mvwprintw(win_, 5, 1, "  :R M I  -> Init");
+        mvwprintw(win_, 6, 1, "  :R M C  -> MotorConfig");
     }
     else if (robot_mode == RobotMode::Init)
     {
