@@ -579,8 +579,8 @@ void ModeFsm::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
 
 void ModeFsm::executeConfig(config_msg::ConfigStamped &config_data)
 {
-    int mod_index = (int)config_data.module_index();
-    int motor_index = (int)config_data.motor_index();
+    int mod_index = (int)config_data.module();
+    int motor_index = (int)config_data.motor();
 
     if (mod_index < 0 || mod_index >= modules_list_->size())
     {
@@ -590,7 +590,7 @@ void ModeFsm::executeConfig(config_msg::ConfigStamped &config_data)
     }
 
     LegModule* mod = &modules_list_->at(mod_index);
-    CANMotor* motor = mod.getMotor(motor_index);
+    CANMotor* motor = mod->getMotor(motor_index);
 
     if(!motor) 
     {
@@ -600,20 +600,20 @@ void ModeFsm::executeConfig(config_msg::ConfigStamped &config_data)
     }
 
     motor->setMode(Mode::CONFIG);
-    
-    uint8_t addr = (uint8_t)config_data.target_address()
 
-    if(confgi_data.mode() == config_msg::Config::READ) 
+    uint8_t addr = (uint8_t)config_data.address();
+
+    if(config_data.mode() == config_msg::ConfigMode::READ) 
     {
-        motor->setConfigRead((ConfigType)config_data.config_type(), addr);
+        motor->setConfigRead((ConfigType)config_data.type(), addr);
     }
     else
     {
-        if(config_data.config_type() == config_msg::Config::INT) 
+        if(config_data.type() == config_msg::ConfigType::INT) 
         {
             motor->setConfigWriteInt(addr, config_data.value_i());
         }
-        else if(config_data.config_type() == config_msg::Config::FLOAT) 
+        else if(config_data.type() == config_msg::ConfigType::FLOAT) 
         {
             motor->setConfigWriteFloat(addr, config_data.value_f());
         }
@@ -627,22 +627,34 @@ void ModeFsm::publishConfigMsg(config_msg::ConfigStamped &config_data)
     int mod_idx = (int)config_data.module(); 
     int motor_idx = (int)config_data.motor();
 
-    if (mod_idx < 0 || mod_idx >= modules_list_->size()) return;   
-    LegModule* mod = &modules_list_->at(mod_index);
-    CANMotor* motor = mod.getMotor(motor_index);
+    if (mod_idx < 0 || mod_idx >= modules_list_->size()) 
+    {
+        config_data.set_error_code(5); // Invalid module index
+        config_data.set_transmit(false);
+        return;
+    }
+    LegModule* mod = &modules_list_->at(mod_idx);
+    CANMotor* motor = mod->getMotor(motor_idx);
     
-    if(!motor) return;
+    if(!motor)
+    {
+        config_data.set_error_code(6); // Invalid motor index
+        config_data.set_transmit(false);
+        return;
+    }
     const auto& motor_fb = motor->getConfigFeedback().config_fb;
 
-    config_data.set_type(motor_fb.type);
+    config_data.set_type((config_msg::ConfigType)motor_fb.type);
     config_data.set_error_code(motor_fb.state);
-    config_data.set_address((config_msg::Config::ConfigType)motor_fb.target_addr);
+    config_data.set_address(motor_fb.target_addr);
     if(motor_fb.type == ConfigType::INT) 
     {
-        config_data.set_value_i(motor_fb.value_i);
+        config_data.set_value_i(motor_fb.value.i);
     }
     else
     {
-        config_data.set_value_f(motor_fb.value_f);
+        config_data.set_value_f(motor_fb.value.f);
     }
+
+    config_data.set_transmit(false);
 }   

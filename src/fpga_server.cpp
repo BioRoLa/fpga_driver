@@ -115,7 +115,7 @@ void Corgi::load_config_()
 void Corgi::interruptHandler(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
                              core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
                              core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
-                             core::Publisher<motor_msg::MotorStateStamped>& state_pub_
+                             core::Publisher<motor_msg::MotorStateStamped>& state_pub_,
                              core::Subscriber<config_msg::ConfigStamped>& config_sub_, 
                              core::Publisher<config_msg::ConfigStamped>& config_pub_)   
 
@@ -178,7 +178,7 @@ void Corgi::interruptHandler(core::Subscriber<power_msg::PowerCmdStamped>& cmd_p
 void Corgi::mainLoop_(core::Subscriber<power_msg::PowerCmdStamped>& cmd_pb_sub_,
                       core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
                       core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
-                      core::Publisher<motor_msg::MotorStateStamped>& state_pub_
+                      core::Publisher<motor_msg::MotorStateStamped>& state_pub_,
                       core::Subscriber<config_msg::ConfigStamped>& config_sub_,
                       core::Publisher<config_msg::ConfigStamped>& config_pub_)
 {
