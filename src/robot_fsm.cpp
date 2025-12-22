@@ -388,25 +388,25 @@ bool RobotFSM::powerSwitchSequence(int& step_counter, int& cycle_counter)
         return true;  // Skip invalid step
     }
     
-    // Check if switch is already on
-    if (powerboard_state_.at(switch_index))
-    {
-        LOG_DEBUG(*logger_) << "Step " << switch_index << ": " << switch_names[switch_index] 
-                            << " switch already ON, skipping wait";
-        return true;  // Already on, no need to wait
-    }
-    
-    // Turn on the switch
+    // On first cycle, check if switch is already on and turn it on if not
     if (cycle_counter == 0)
     {
+        // Check if switch is already on
+        if (powerboard_state_.at(switch_index))
+        {
+            LOG_DEBUG(*logger_) << "Step " << switch_index << ": " << switch_names[switch_index] 
+                                << " switch already ON, skipping wait";
+            return true;  // Already on, no need to wait
+        }
+        
+        // Turn on the switch
         LOG_INFO(*logger_) << "Step " << switch_index << ": Turning " 
                            << switch_names[switch_index] << " switch ON...";
         powerboard_state_.at(switch_index) = true;
     }
     
-    // Wait for 1 second
     cycle_counter++;
-    int required_cycles = 1000000 / loop_period_us_;  // 1.0 seconds
+    int required_cycles = POWER_SWITCH_STABILIZATION_TIME_US / loop_period_us_;
     
     if (cycle_counter >= required_cycles)
     {

@@ -39,6 +39,9 @@ public:
     void setLogger(core::Logger* logger);  // Set logger after construction
 
 private:
+    // Constants
+    static constexpr int POWER_SWITCH_STABILIZATION_TIME_US = 500000;
+    
     // Current state
     RobotMode current_mode_;
     RobotMode previous_mode_;

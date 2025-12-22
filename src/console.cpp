@@ -396,16 +396,22 @@ void Panel::infoDisplay(RobotMode robot_mode)
     if (robot_mode == RobotMode::SystemOn)
         mvwprintw(win_, 2, 1, "  [O] SystemOn (Safe State)");
     else if (robot_mode == RobotMode::Init)
-        mvwprintw(win_, 2, 1, "  [I] Init (Initializing)");
+        mvwprintw(win_, 2, 1, "  [I] Init (Initializing)  ");
     else if (robot_mode == RobotMode::IDLE)
-        mvwprintw(win_, 2, 1, "  [D] IDLE (Ready)");
+        mvwprintw(win_, 2, 1, "  [D] IDLE (Ready)         ");
     else if (robot_mode == RobotMode::Standby)
-        mvwprintw(win_, 2, 1, "  [S] Standby (Active)");
+        mvwprintw(win_, 2, 1, "  [S] Standby (Active)     ");
     else if (robot_mode == RobotMode::MotorConfig)
-        mvwprintw(win_, 2, 1, "  [C] MotorConfig");
+        mvwprintw(win_, 2, 1, "  [C] MotorConfig          ");
     
     // Display allowed transitions based on current mode
     mvwprintw(win_, 4, 1, "Allowed Transitions:");
+    
+    // Clear previous transition lines to avoid leftover text
+    mvwprintw(win_, 5, 1, "                                        ");
+    mvwprintw(win_, 6, 1, "                                        ");
+    mvwprintw(win_, 7, 1, "                                        ");
+    
     if (robot_mode == RobotMode::SystemOn)
     {
         mvwprintw(win_, 5, 1, "  :R M I  -> Init");
