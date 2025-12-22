@@ -26,42 +26,12 @@ public:
     
     RobotFSM() = delete;
     
-    /**
-     * @brief Main FSM execution - should be called periodically
-     */
     void runFsm();
-    
-    /**
-     * @brief Request a mode transition
-     * @param next_mode The desired RobotMode
-     * @return true if transition is allowed and initiated, false otherwise
-     */
+
     bool requestModeTransition(RobotMode next_mode);
-    
-    /**
-     * @brief Get current robot mode
-     */
     RobotMode getCurrentMode() const { return current_mode_; }
-    
-    /**
-     * @brief Check if robot is ready for operation
-     */
-    bool isReady() const;
-    
-    /**
-     * @brief Emergency stop - immediately transition to safe state
-     */
     void emergencyStop();
-    
-    /**
-     * @brief Set error flags for FSM logic
-     */
     void setErrorFlags(bool can_error, bool switch_error);
-    
-    /**
-     * @brief Set the main loop period in microseconds
-     * @param period_us Period in microseconds (e.g., 500 for 500μs)
-     */
     void setLoopPeriod(int period_us);
 
 private:
@@ -99,6 +69,7 @@ private:
     // Helper methods
     void enterMode(RobotMode new_mode);
     void exitMode(RobotMode old_mode);
+    bool powerSwitchSequence(int& step_counter, int& cycle_counter);
 };
 
 #endif // __ROBOT_FSM_H

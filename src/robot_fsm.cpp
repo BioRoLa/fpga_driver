@@ -130,74 +130,13 @@ void RobotFSM::handleInit()
     switch (init_step_)
     {
         case 0:
-            {
-                // Turn on digital switch
-                if (!powerboard_state_.at(0))
-                {
-                    std::cout << cyan << "[Robot FSM] Init Step 0: Turning digital switch ON..." 
-                              << reset << std::endl;
-                    powerboard_state_.at(0) = true;
-                    init_counter_ = 0;
-                }
-                
-                // Wait for 1 second
-                init_counter_++;
-                int required_cycles = 1000000 / loop_period_us_;  // 1.0 seconds
-                if (init_counter_ >= required_cycles)
-                {
-                    std::cout << cyan << "[Robot FSM] Init Step 0: Digital switch stabilized" 
-                              << reset << std::endl;
-                    init_step_++;
-                    init_counter_ = 0;
-                }
-            }
-            break;
-            
         case 1:
-            {
-                // Turn on signal switch
-                if (!powerboard_state_.at(1))
-                {
-                    std::cout << cyan << "[Robot FSM] Init Step 1: Turning signal switch ON..." 
-                              << reset << std::endl;
-                    powerboard_state_.at(1) = true;
-                    init_counter_ = 0;
-                }
-                
-                // Wait for 1 second
-                init_counter_++;
-                int required_cycles = 1000000 / loop_period_us_;  // 1.0 seconds
-                if (init_counter_ >= required_cycles)
-                {
-                    std::cout << cyan << "[Robot FSM] Init Step 1: Signal switch stabilized" 
-                              << reset << std::endl;
-                    init_step_++;
-                    init_counter_ = 0;
-                }
-            }
-            break;
-            
         case 2:
+            // Power switch sequence: digital -> signal -> power
+            if (powerSwitchSequence(init_step_, init_counter_))
             {
-                // Turn on power switch
-                if (!powerboard_state_.at(2))
-                {
-                    std::cout << cyan << "[Robot FSM] Init Step 2: Turning power switch ON..." 
-                              << reset << std::endl;
-                    powerboard_state_.at(2) = true;
-                    init_counter_ = 0;
-                }
-                
-                // Wait for 1 second
-                init_counter_++;
-                int required_cycles = 1000000 / loop_period_us_;  // 1.0 seconds
-                if (init_counter_ >= required_cycles)
-                {
-                    std::cout << cyan << "[Robot FSM] Init Step 2: Power switch stabilized" 
-                              << reset << std::endl;
-                    init_step_++;
-                    init_counter_ = 0;
-                }
+                init_step_++;
+                init_counter_ = 0;
             }
             break;
             
@@ -315,7 +254,27 @@ void RobotFSM::handleStandby()
 void RobotFSM::handleMotorConfig()
 {
     // MotorConfig: Motor configuration
-    //TODO: implement motor configuration steps
+    // Steps:
+    // 0-2. Power switch sequence (digital -> signal -> power)
+    // 3. Complete configuration
+    
+    switch (config_step_)
+    {
+        case 0:
+        case 1:
+        case 2:
+            // Power switch sequence: digital -> signal -> power
+            if (powerSwitchSequence(config_step_, init_counter_))
+            {
+                config_step_++;
+                init_counter_ = 0;
+            }
+            break;
+            
+        case 3:
+            //TODO: Add motor configuration logic here
+            break;
+    }
 }
 
 bool RobotFSM::isTransitionAllowed(RobotMode from, RobotMode to) const
@@ -326,7 +285,8 @@ bool RobotFSM::isTransitionAllowed(RobotMode from, RobotMode to) const
     switch (from)
     {
         case RobotMode::SystemOn:
-            return (to == RobotMode::Init);
+            return (to == RobotMode::Init ||
+                    to == RobotMode::MotorConfig);
             
         case RobotMode::Init:
             return (to == RobotMode::IDLE || to == RobotMode::SystemOn);
@@ -390,12 +350,6 @@ void RobotFSM::emergencyStop()
     motor_fsm_.switchMode(FunctionMode::REST);
 }
 
-bool RobotFSM::isReady() const
-{
-    return (current_mode_ == RobotMode::Standby || 
-            current_mode_ == RobotMode::IDLE);
-}
-
 void RobotFSM::setErrorFlags(bool can_error, bool switch_error)
 {
     has_can_error_ = can_error;
@@ -405,4 +359,53 @@ void RobotFSM::setErrorFlags(bool can_error, bool switch_error)
 void RobotFSM::setLoopPeriod(int period_us)
 {
     loop_period_us_ = period_us;
+}
+
+bool RobotFSM::powerSwitchSequence(int& step_counter, int& cycle_counter)
+{
+    // Power switch sequence: digital (step 0) -> signal (step 1) -> power (step 2)
+    // Each step waits for 1 second before moving to the next
+    // Returns true when the current step is complete
+    
+    const char* switch_names[] = {"digital", "signal", "power"};
+    int switch_index = step_counter;
+    
+    if (switch_index < 0 || switch_index > 2)
+    {
+        std::cout << red << "Invalid power switch step: " 
+                  << switch_index << reset << std::endl;
+        return true;  // Skip invalid step
+    }
+    
+    // Check if switch is already on
+    if (powerboard_state_.at(switch_index))
+    {
+        std::cout << cyan << "Step " << switch_index 
+                  << ": " << switch_names[switch_index] 
+                  << " switch already ON, skipping wait" << reset << std::endl;
+        return true;  // Already on, no need to wait
+    }
+    
+    // Turn on the switch
+    if (cycle_counter == 0)
+    {
+        std::cout << cyan << "Step " << switch_index 
+                  << ": Turning " << switch_names[switch_index] 
+                  << " switch ON..." << reset << std::endl;
+        powerboard_state_.at(switch_index) = true;
+    }
+    
+    // Wait for 1 second
+    cycle_counter++;
+    int required_cycles = 1000000 / loop_period_us_;  // 1.0 seconds
+    
+    if (cycle_counter >= required_cycles)
+    {
+        std::cout << cyan << "Step " << switch_index 
+                  << ": " << switch_names[switch_index] 
+                  << " switch stabilized" << reset << std::endl;
+        return true;  // Step complete
+    }
+    
+    return false;  // Still waiting
 }
