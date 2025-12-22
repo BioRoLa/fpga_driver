@@ -6,6 +6,7 @@
 #include "mode.hpp"
 #include "motor_fsm.hpp"
 #include "leg_module.hpp"
+#include "Logger.h"
 
 /**
  * @brief Robot-level Finite State Machine
@@ -21,8 +22,10 @@ public:
      * @param motor_fsm Reference to the motor-level FSM
      * @param modules_list Reference to all leg modules
      * @param powerboard_state Reference to powerboard state vector [digital, signal, power]
+     * @param logger Pointer to Logger instance (can be nullptr for local-only logging)
      */
-    RobotFSM(MotorFSM& motor_fsm, std::vector<LegModule>& modules_list, std::vector<bool>& powerboard_state);
+    RobotFSM(MotorFSM& motor_fsm, std::vector<LegModule>& modules_list, 
+             std::vector<bool>& powerboard_state, core::Logger* logger = nullptr);
     
     RobotFSM() = delete;
     
@@ -33,6 +36,7 @@ public:
     void emergencyStop();
     void setErrorFlags(bool can_error, bool switch_error);
     void setLoopPeriod(int period_us);
+    void setLogger(core::Logger* logger);  // Set logger after construction
 
 private:
     // Current state
@@ -70,6 +74,13 @@ private:
     void enterMode(RobotMode new_mode);
     void exitMode(RobotMode old_mode);
     bool powerSwitchSequence(int& step_counter, int& cycle_counter);
+    
+    // Convert RobotMode to string
+    const char* modeToString(RobotMode mode) const;
+    
+    // Logger
+    core::Logger* logger_;
+    core::Logger default_logger_;  // Used if no logger provided
 };
 
 #endif // __ROBOT_FSM_H

@@ -3,7 +3,8 @@
 #include <iostream>
 #include <sys/time.h>
 
-RobotFSM::RobotFSM(MotorFSM& motor_fsm, std::vector<LegModule>& modules_list, std::vector<bool>& powerboard_state)
+RobotFSM::RobotFSM(MotorFSM& motor_fsm, std::vector<LegModule>& modules_list, 
+                   std::vector<bool>& powerboard_state, core::Logger* logger)
     : motor_fsm_(motor_fsm)
     , modules_list_(modules_list)
     , powerboard_state_(powerboard_state)
@@ -15,8 +16,26 @@ RobotFSM::RobotFSM(MotorFSM& motor_fsm, std::vector<LegModule>& modules_list, st
     , init_step_(0)
     , init_counter_(0)
     , config_step_(0)
+    , logger_(logger)
+    , default_logger_("RobotFSM")
 {
-    std::cout << green << "[Robot FSM] Initialized in SystemOn mode" << reset << std::endl;
+    // Use provided logger or default to local-only logger
+    if (!logger_) {
+        logger_ = &default_logger_;
+    }
+    LOG_INFO(*logger_) << "Initialized in SystemOn mode";
+}
+
+const char* RobotFSM::modeToString(RobotMode mode) const
+{
+    switch (mode) {
+        case RobotMode::SystemOn:    return "SystemOn";
+        case RobotMode::Init:        return "Init";
+        case RobotMode::IDLE:        return "IDLE";
+        case RobotMode::Standby:     return "Standby";
+        case RobotMode::MotorConfig: return "MotorConfig";
+        default:                     return "Unknown";
+    }
 }
 
 void RobotFSM::runFsm()
@@ -51,7 +70,7 @@ void RobotFSM::runFsm()
             break;
             
         default:
-            std::cout << red << "[Robot FSM] Unknown mode!" << reset << std::endl;
+            LOG_ERROR(*logger_) << "Unknown mode!";
             emergencyStop();
             break;
     }
@@ -61,15 +80,14 @@ bool RobotFSM::requestModeTransition(RobotMode next_mode)
 {
     if (current_mode_ == next_mode)
     {
-        std::cout << yellow << "[Robot FSM] Already in requested mode" << reset << std::endl;
+        LOG_DEBUG(*logger_) << "Already in requested mode: " << modeToString(next_mode);
         return true;
     }
     
     // Special case: SystemOn -> IDLE request will go through Init first
     if (current_mode_ == RobotMode::SystemOn && next_mode == RobotMode::IDLE)
     {
-        std::cout << cyan << "[Robot FSM] SystemOn -> IDLE requested, going through Init first" 
-                  << reset << std::endl;
+        LOG_INFO(*logger_) << "SystemOn -> IDLE requested, going through Init first";
         exitMode(current_mode_);
         previous_mode_ = current_mode_;
         current_mode_ = RobotMode::Init;
@@ -79,10 +97,8 @@ bool RobotFSM::requestModeTransition(RobotMode next_mode)
     
     if (!isTransitionAllowed(current_mode_, next_mode))
     {
-        std::cout << red << "[Robot FSM] Transition from " 
-                  << static_cast<int>(current_mode_) << " to " 
-                  << static_cast<int>(next_mode) << " not allowed" 
-                  << reset << std::endl;
+        LOG_WARN(*logger_) << "Transition from " << modeToString(current_mode_) 
+                           << " to " << modeToString(next_mode) << " not allowed";
         return false;
     }
     
@@ -149,22 +165,19 @@ void RobotFSM::handleInit()
                     if (module.hasTimeout())
                     {
                         has_timeout = true;
-                        std::cout << red << "[Robot FSM] Init Step 3: Module " 
-                                  << module.label_ << " has timeout!" << reset << std::endl;
+                        LOG_ERROR(*logger_) << "Init Step 3: Module " << module.label_ << " has timeout!";
                         break;
                     }
                 }
                 
                 if (has_timeout)
                 {
-                    std::cout << red << "[Robot FSM] Init failed: Motor timeout detected" 
-                              << reset << std::endl;
+                    LOG_FATAL(*logger_) << "Init failed: Motor timeout detected";
                     emergencyStop();
                 }
                 else
                 {
-                    std::cout << cyan << "[Robot FSM] Init Step 3: All motors responsive" 
-                              << reset << std::endl;
+                    LOG_INFO(*logger_) << "Init Step 3: All motors responsive";
                     init_step_++;
                 }
             }
@@ -172,8 +185,7 @@ void RobotFSM::handleInit()
             
         case 4:
             // Set motor FSM to SET_ZERO mode
-            std::cout << cyan << "[Robot FSM] Init Step 4: Setting motors to SET_ZERO..." 
-                      << reset << std::endl;
+            LOG_INFO(*logger_) << "Init Step 4: Setting motors to SET_ZERO...";
             motor_fsm_.switchMode(FunctionMode::SET_ZERO);
             init_step_++;
             break;
@@ -182,16 +194,14 @@ void RobotFSM::handleInit()
             // Set motor FSM to HALL_CALIBRATE mode and wait for calibration to complete
             if (motor_fsm_.getCurrentMode() != FunctionMode::HALL_CALIBRATE)
             {
-                std::cout << cyan << "[Robot FSM] Init Step 5: Starting HALL_CALIBRATE..." 
-                          << reset << std::endl;
+                LOG_INFO(*logger_) << "Init Step 5: Starting HALL_CALIBRATE...";
                 motor_fsm_.switchMode(FunctionMode::HALL_CALIBRATE);
             }
             
             // Wait until calibration is complete
             if (motor_fsm_.isHallCalibrated())
             {
-                std::cout << cyan << "[Robot FSM] Init Step 5: Hall calibration complete" 
-                          << reset << std::endl;
+                LOG_INFO(*logger_) << "Init Step 5: Hall calibration complete";
                 init_step_++;
             }
             
@@ -201,10 +211,8 @@ void RobotFSM::handleInit()
             // Wait for HALL_CALIBRATE to complete and motor FSM to enter MOTOR mode
             if (motor_fsm_.getCurrentMode() == FunctionMode::MOTOR)
             {
-                std::cout << green << "[Robot FSM] Init Step 6: Motors in MOTOR mode" 
-                          << reset << std::endl;
-                std::cout << green << "[Robot FSM] Init complete, transitioning to IDLE" 
-                          << reset << std::endl;
+                LOG_INFO(*logger_) << "Init Step 6: Motors in MOTOR mode";
+                LOG_INFO(*logger_) << "Init complete, transitioning to IDLE";
                 requestModeTransition(RobotMode::IDLE);
             }
             break;
@@ -224,10 +232,10 @@ void RobotFSM::handleIdle()
     }
     
     // Check for errors - if errors detected, go back to SystemOn
+    // Use LOG_CHANGED to only log when error state changes (not every loop)
     if (has_can_error_ || has_switch_error_)
     {
-        std::cout << red << "[Robot FSM] Error detected in IDLE, returning to SystemOn" 
-                  << reset << std::endl;
+        LOG_ERROR_ONCE(*logger_) << "Error detected in IDLE, returning to SystemOn";
         requestModeTransition(RobotMode::SystemOn);
     }
 }
@@ -242,11 +250,10 @@ void RobotFSM::handleStandby()
         motor_fsm_.switchMode(FunctionMode::MOTOR);
     }
     
-    // Check for errors
+    // Check for errors - only log when error state changes
     if (has_can_error_ || has_switch_error_)
     {
-        std::cout << red << "[Robot FSM] Error detected, returning to IDLE" 
-                  << reset << std::endl;
+        LOG_ERROR_ONCE(*logger_) << "Error detected in Standby, returning to IDLE";
         requestModeTransition(RobotMode::IDLE);
     }
 }
@@ -310,8 +317,7 @@ bool RobotFSM::isTransitionAllowed(RobotMode from, RobotMode to) const
 
 void RobotFSM::enterMode(RobotMode new_mode)
 {
-    std::cout << green << "[Robot FSM] Entering mode: " 
-              << static_cast<int>(new_mode) << reset << std::endl;
+    LOG_INFO(*logger_) << "Entering mode: " << modeToString(new_mode);
     
     // Reset state-specific counters
     switch (new_mode)
@@ -332,8 +338,7 @@ void RobotFSM::enterMode(RobotMode new_mode)
 
 void RobotFSM::exitMode(RobotMode old_mode)
 {
-    std::cout << yellow << "[Robot FSM] Exiting mode: " 
-              << static_cast<int>(old_mode) << reset << std::endl;
+    LOG_INFO(*logger_) << "Exiting mode: " << modeToString(old_mode);
     
     // Cleanup actions when leaving a mode
     // Add specific cleanup logic here if needed
@@ -341,7 +346,7 @@ void RobotFSM::exitMode(RobotMode old_mode)
 
 void RobotFSM::emergencyStop()
 {
-    std::cout << red << "[Robot FSM] EMERGENCY STOP!" << reset << std::endl;
+    LOG_FATAL(*logger_) << "EMERGENCY STOP!";
     
     // Force transition to SystemOn (safe state)
     requestModeTransition(RobotMode::SystemOn);
@@ -361,6 +366,13 @@ void RobotFSM::setLoopPeriod(int period_us)
     loop_period_us_ = period_us;
 }
 
+void RobotFSM::setLogger(core::Logger* logger)
+{
+    if (logger) {
+        logger_ = logger;
+    }
+}
+
 bool RobotFSM::powerSwitchSequence(int& step_counter, int& cycle_counter)
 {
     // Power switch sequence: digital (step 0) -> signal (step 1) -> power (step 2)
@@ -372,26 +384,23 @@ bool RobotFSM::powerSwitchSequence(int& step_counter, int& cycle_counter)
     
     if (switch_index < 0 || switch_index > 2)
     {
-        std::cout << red << "Invalid power switch step: " 
-                  << switch_index << reset << std::endl;
+        LOG_ERROR(*logger_) << "Invalid power switch step: " << switch_index;
         return true;  // Skip invalid step
     }
     
     // Check if switch is already on
     if (powerboard_state_.at(switch_index))
     {
-        std::cout << cyan << "Step " << switch_index 
-                  << ": " << switch_names[switch_index] 
-                  << " switch already ON, skipping wait" << reset << std::endl;
+        LOG_DEBUG(*logger_) << "Step " << switch_index << ": " << switch_names[switch_index] 
+                            << " switch already ON, skipping wait";
         return true;  // Already on, no need to wait
     }
     
     // Turn on the switch
     if (cycle_counter == 0)
     {
-        std::cout << cyan << "Step " << switch_index 
-                  << ": Turning " << switch_names[switch_index] 
-                  << " switch ON..." << reset << std::endl;
+        LOG_INFO(*logger_) << "Step " << switch_index << ": Turning " 
+                           << switch_names[switch_index] << " switch ON...";
         powerboard_state_.at(switch_index) = true;
     }
     
@@ -401,9 +410,8 @@ bool RobotFSM::powerSwitchSequence(int& step_counter, int& cycle_counter)
     
     if (cycle_counter >= required_cycles)
     {
-        std::cout << cyan << "Step " << switch_index 
-                  << ": " << switch_names[switch_index] 
-                  << " switch stabilized" << reset << std::endl;
+        LOG_INFO(*logger_) << "Step " << switch_index << ": " 
+                           << switch_names[switch_index] << " switch stabilized";
         return true;  // Step complete
     }
     

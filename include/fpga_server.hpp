@@ -4,6 +4,8 @@
 #include "motor_fsm.hpp"
 #include "robot_fsm.hpp"
 #include "mode.hpp"
+#include "Logger.h"
+#include "Log.pb.h"
 
 #include <NodeHandler.h>
 #include <sys/time.h>

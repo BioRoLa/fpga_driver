@@ -364,6 +364,18 @@ int main(int argc, char* argv[])
     Corgi corgi;
 
     core::NodeHandler nh;
+    
+    // Create Log publisher
+    core::Publisher<log_msg::LogEntry>& log_pub = nh.advertise<log_msg::LogEntry>("/log");
+    
+    // Initialize Logger with publish callback for remote logging
+    core::Logger logger("fpga_driver", [&log_pub](const log_msg::LogEntry& entry) {
+        log_pub.publish(entry);
+    });
+    logger.setMinLevel(core::LogLevel::DEBUG);  // Set minimum log level
+    
+    // Set logger for robot FSM (enables remote logging)
+    corgi.robot_fsm_.setLogger(&logger);
 
     core::Publisher<power_msg::PowerStateStamped>& power_pub = nh.advertise<power_msg::PowerStateStamped>("power/state");
 
