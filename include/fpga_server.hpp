@@ -56,7 +56,6 @@ class Corgi
     // gRPC Robot message variables
     std::atomic<int> robot_message_updated_{0};
     robot_msg::RobotCmdStamped robot_cmd_data_;
-    robot_msg::RobotRequestUpdate robot_request_data_;
     robot_msg::RobotStateStamped robot_state_data_;
     std::mutex robot_mutex_;
 
@@ -64,9 +63,7 @@ class Corgi
                           core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
                           core::Publisher<motor_msg::MotorStateStamped>& state_pub_,
                           core::Publisher<robot_msg::RobotStateStamped>& robot_state_pub_,
-                          core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub_,
-                          core::Subscriber<robot_msg::RobotRequestUpdate>& robot_request_sub_,
-                          core::Publisher<robot_msg::RobotRequestUpdate>& robot_request_pub_);
+                          core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub_);
 
     void powerboardPack(power_msg::PowerStateStamped &power_fb_msg);
     void robotStatePack(robot_msg::RobotStateStamped &robot_state_msg);
@@ -75,9 +72,7 @@ class Corgi
                    core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
                    core::Publisher<motor_msg::MotorStateStamped>& state_pub_,
                    core::Publisher<robot_msg::RobotStateStamped>& robot_state_pub_,
-                   core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub_,
-                   core::Subscriber<robot_msg::RobotRequestUpdate>& robot_request_sub_,
-                   core::Publisher<robot_msg::RobotRequestUpdate>& robot_request_pub_);
+                   core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub_);
 
     void canLoop_();
 };

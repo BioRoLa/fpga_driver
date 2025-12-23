@@ -18,21 +18,13 @@ void motor_data_cb(motor_msg::MotorCmdStamped motor_msg)
 // Robot gRPC message callbacks
 std::atomic<int> robot_cmd_message_updated{0};
 robot_msg::RobotCmdStamped robot_cmd_data;
+static uint64_t last_robot_cmd_seq = 0;
+
 void robot_cmd_data_cb(robot_msg::RobotCmdStamped robot_cmd_msg)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     robot_cmd_message_updated = 1;
     robot_cmd_data = robot_cmd_msg;
-}
-
-// Robot Request Update callback
-std::atomic<int> robot_request_update_received{0};
-robot_msg::RobotRequestUpdate robot_request_update_data;
-void robot_request_update_cb(robot_msg::RobotRequestUpdate robot_request_msg)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    robot_request_update_received = 1;
-    robot_request_update_data = robot_request_msg;
 }
 
 Corgi::Corgi()
@@ -106,9 +98,7 @@ void Corgi::interruptHandler(core::Publisher<power_msg::PowerStateStamped>& stat
                              core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
                              core::Publisher<motor_msg::MotorStateStamped>& state_pub_,
                              core::Publisher<robot_msg::RobotStateStamped>& robot_state_pub_,
-                             core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub_,
-                             core::Subscriber<robot_msg::RobotRequestUpdate>& robot_request_sub_,
-                             core::Publisher<robot_msg::RobotRequestUpdate>& robot_request_pub_)   
+                             core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub_)   
 
                                                        
 {
@@ -148,7 +138,7 @@ void Corgi::interruptHandler(core::Publisher<power_msg::PowerStateStamped>& stat
         {
             if (irqsAsserted & NiFpga_Irq_0)
             {
-                mainLoop_(state_pb_pub_, cmd_sub_, state_pub_, robot_state_pub_, robot_cmd_sub_, robot_request_sub_, robot_request_pub_);
+                mainLoop_(state_pb_pub_, cmd_sub_, state_pub_, robot_state_pub_, robot_cmd_sub_);
                 // Acknowledge IRQ to begin DMA acquisition
                 NiFpga_MergeStatus(&fpga_.status_, NiFpga_AcknowledgeIrqs(fpga_.session_, irqsAsserted));
             }
@@ -169,9 +159,7 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
                       core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
                       core::Publisher<motor_msg::MotorStateStamped>& state_pub_,
                       core::Publisher<robot_msg::RobotStateStamped>& robot_state_pub_,
-                      core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub_,
-                      core::Subscriber<robot_msg::RobotRequestUpdate>& robot_request_sub_,
-                      core::Publisher<robot_msg::RobotRequestUpdate>& robot_request_pub_)
+                      core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub_)
 {
     fpga_.write_powerboard_(&powerboard_state_);
     fpga_.read_powerboard_data_();
@@ -185,15 +173,11 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
     {
         std::lock_guard<std::mutex> lock(mutex_);
         
-        // Handle Robot Command if mode_update is set to true
-        if (robot_request_update_received == 1 && robot_request_update_data.mode_update()) {
+        // Handle Robot Command if seq has changed (indicating new command)
+        if (robot_cmd_message_updated == 1 && robot_cmd_data.header().seq() != last_robot_cmd_seq) {
             handleRobotCommand(robot_cmd_data);
-            
-            // Set mode_update to false and publish to avoid repeated actions
-            robot_request_update_data.set_mode_update(false);
-            robot_request_pub_.publish(robot_request_update_data);
-            
-            robot_request_update_received = 0;
+            last_robot_cmd_seq = robot_cmd_data.header().seq();
+            robot_cmd_message_updated = 0;
         }
         
         // Update error flags and run Robot FSM
@@ -385,10 +369,8 @@ int main(int argc, char* argv[])
     // Robot gRPC publishers and subscribers
     core::Publisher<robot_msg::RobotStateStamped>& robot_state_pub = nh.advertise<robot_msg::RobotStateStamped>("robot/state");
     core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub = nh.subscribe<robot_msg::RobotCmdStamped>("robot/command", 1000, robot_cmd_data_cb);
-    core::Subscriber<robot_msg::RobotRequestUpdate>& robot_request_sub = nh.subscribe<robot_msg::RobotRequestUpdate>("robot/request_update", 1000, robot_request_update_cb);
-    core::Publisher<robot_msg::RobotRequestUpdate>& robot_request_pub = nh.advertise<robot_msg::RobotRequestUpdate>("robot/request_update");
     
-    corgi.interruptHandler(power_pub, motor_sub, motor_pub, robot_state_pub, robot_cmd_sub, robot_request_sub, robot_request_pub);
+    corgi.interruptHandler(power_pub, motor_sub, motor_pub, robot_state_pub, robot_cmd_sub);
 
     if (NiFpga_IsError(corgi.fpga_.status_)) std::cout << red << "[FPGA Server] Error! Exiting program. LabVIEW error code: " << corgi.fpga_.status_ << reset << std::endl;
     else
