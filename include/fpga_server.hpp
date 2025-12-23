@@ -68,6 +68,7 @@ class Corgi
     void powerboardPack(power_msg::PowerStateStamped &power_fb_msg);
     void robotStatePack(robot_msg::RobotStateStamped &robot_state_msg);
     void handleRobotCommand(const robot_msg::RobotCmdStamped& robot_cmd);
+    void safeShutdown();
     void mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
                    core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
                    core::Publisher<motor_msg::MotorStateStamped>& state_pub_,

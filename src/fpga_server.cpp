@@ -7,6 +7,9 @@ std::atomic<int> fpga_message_updated{0}; //power
 std::ofstream term;
 std::mutex mutex_;
 
+// Atomic flag for safe shutdown request
+std::atomic<bool> shutdown_requested{false};
+
 motor_msg::MotorCmdStamped motor_cmd_data;
 void motor_data_cb(motor_msg::MotorCmdStamped motor_msg)
 {
@@ -104,6 +107,7 @@ void Corgi::interruptHandler(core::Publisher<power_msg::PowerStateStamped>& stat
 {
     while (NiFpga_IsNotError(fpga_.status_) && !sys_stop)
     {
+
         uint32_t irqsAsserted;
         uint32_t irqTimeout = 10;  // ms
         NiFpga_Bool TimedOut = 0;
@@ -152,6 +156,11 @@ void Corgi::interruptHandler(core::Publisher<power_msg::PowerStateStamped>& stat
             }
         }
         usleep(10);
+
+        if (shutdown_requested)
+        {
+            safeShutdown();
+        }
     }
 }
 
@@ -315,6 +324,32 @@ void Corgi::handleRobotCommand(const robot_msg::RobotCmdStamped& robot_cmd)
     }
 }
 
+void Corgi::safeShutdown()
+{
+    std::cout << "\n[FPGA Server] Shutdown signal received, initiating safe shutdown..." << std::endl;
+    
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        
+        // Step 1: Turn off all power states
+        std::cout << "[FPGA Server] Turning off power board..." << std::endl;
+        powerboard_state_[0] = false;  // digital
+        powerboard_state_[1] = false;  // signal
+        powerboard_state_[2] = false;  // power
+        
+        // Write power off command to FPGA
+        fpga_.write_powerboard_(&powerboard_state_);
+    }
+    
+    // Step 2: Wait 0.5 seconds for power down to complete
+    std::cout << "[FPGA Server] Waiting for power down (0.5s)..." << std::endl;
+    usleep(500000);  // 500ms
+    
+    // Step 3: Set sys_stop flag to exit loop
+    std::cout << "[FPGA Server] Shutdown complete." << std::endl;
+    sys_stop = 1;
+}
+
 void Corgi::robotStatePack(robot_msg::RobotStateStamped& robot_state_reply)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -385,8 +420,8 @@ int main(int argc, char* argv[])
 /* CAPTURE SYS STOP SIGNAL TO KILL PROCESS*/
 void inthand(int signum)
 {
-    //TODO: add safe shutdown procedure(power off etc)
-    sys_stop = 1;
+    // Only set atomic flag in signal handler (async-signal-safe)
+    shutdown_requested = true;
 }
 
 
