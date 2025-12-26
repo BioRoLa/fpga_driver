@@ -277,6 +277,10 @@ void InputPanel::commandDecode(string buf)
                 {
                     switchFSM_success = fsm_->switchMode(Mode::HALL_CALIBRATE);
                 }
+                else if (bufs[2] == "C")
+                {
+                    switchFSM_success = fsm_->switchMode(Mode::CONFIG);
+                }
                 else
                 {
                     syntax_err = true;
@@ -467,6 +471,8 @@ void Panel::infoDisplay(Behavior bhv, Mode fsm_mode)
         mvwprintw(win_, 3, 1, "[M] FSM Mode: HALL_CALIBRATE");
     else if (fsm_mode == Mode::MOTOR)
         mvwprintw(win_, 3, 1, "[M] FSM Mode:          MOTOR");
+    else if (fsm_mode == Mode::CONFIG)
+        mvwprintw(win_, 3, 1, "[M] FSM Mode:         CONFIG");
     mvwprintw(win_, 5, 1, "[R] REST  [S] SET_ZERO ");
     mvwprintw(win_, 6, 1, "[M] MOTOR [H] HALL_CALIBRATE");
 
