@@ -31,11 +31,18 @@ public:
 
   void sendCommands();
   void receiveFeedback();
-  void setMode(Mode mode);
+  void setMode(FunctionMode mode);
+  void setConfigSubMode(ConfigSubMode sub_mode);
+  void updateTimeoutDebounce(uint32_t loop_period_us);
   bool hasTimeout() const;
 
   CANMotor* getMotor(size_t index);
   size_t getMotorCount() const;
+
+  // Math utility functions
+  static double deg2rad(double deg);
+  static Eigen::Vector2d tb2phi(const Eigen::Vector2d &tb);
+  static Eigen::Vector2d phi2tb(const Eigen::Vector2d &phi);
 
   int CAN_timeout_us;
 
@@ -48,9 +55,5 @@ private:
 
   void load_config();
 };
-
-double deg2rad(double deg);
-Eigen::Vector2d tb2phi(const Eigen::Vector2d &tb);
-Eigen::Vector2d phi2tb(const Eigen::Vector2d &phi);
 
 #endif

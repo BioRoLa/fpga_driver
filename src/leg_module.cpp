@@ -103,10 +103,24 @@ void LegModule::receiveFeedback()
     }
 }
 
-void LegModule::setMode(Mode mode)
+void LegModule::setMode(FunctionMode mode)
 {
     if (channel_) {
         channel_->setMode(mode);
+    }
+}
+
+void LegModule::setConfigSubMode(ConfigSubMode sub_mode)
+{
+    if (channel_) {
+        channel_->setConfigSubMode(sub_mode);
+    }
+}
+
+void LegModule::updateTimeoutDebounce(uint32_t loop_period_us)
+{
+    if (channel_) {
+        channel_->updateTimeoutDebounce(loop_period_us);
     }
 }
 
@@ -125,12 +139,12 @@ size_t LegModule::getMotorCount() const
     return channel_ ? channel_->getMotorCount() : 0;
 }
 
-double deg2rad(double deg)
+double LegModule::deg2rad(double deg)
 {
     return deg * M_PI / 180.0;
 }
 
-Eigen::Vector2d tb2phi(const Eigen::Vector2d &tb)
+Eigen::Vector2d LegModule::tb2phi(const Eigen::Vector2d &tb)
 {
     Eigen::Vector2d phi;
     Eigen::Matrix2d t;
@@ -141,8 +155,7 @@ Eigen::Vector2d tb2phi(const Eigen::Vector2d &tb)
     return phi;
 }
 
-
-Eigen::Vector2d phi2tb(const Eigen::Vector2d &phi)
+Eigen::Vector2d LegModule::phi2tb(const Eigen::Vector2d &phi)
 {
     Eigen::Vector2d tb;
     Eigen::Matrix2d t;

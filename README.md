@@ -48,10 +48,15 @@ make -j16
 ```
 
 ## Directory Structure
-    .
-    fpga_driver/
-    ├── src/               # Source code for the driver
-    ├── include/           # Header files
-    ├── cmake/             # CMake configuration files
-    ├── build/             # Build directory (generated after compilation)
-    └── README.md          # Project documentation
+    ```
+    corgi_ws/
+    ├── fpga_driver/
+    │   ├── src/               # Source code for the driver
+    │   ├── include/           # Header files
+    │   ├── cmake/             # CMake configuration files
+    │   ├── config/            # YAML configuration files
+    │   ├── fpga_bitfile/      # FPGA bitfile
+    │   ├── build/             # Build directory (generated after compilation)
+    │   └── README.md          # Project documentation
+    └── install/
+    ```

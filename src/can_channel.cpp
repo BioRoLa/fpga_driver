@@ -1,12 +1,17 @@
 #include "can_channel.hpp"
 #include "color.hpp"
 #include <iostream>
+#include <cstring>
 
 CANChannel::CANChannel(NiFpga_Status& status, NiFpga_Session& session, 
                        const std::string& channel_name)
     : status_(status)
     , session_(session)
     , channel_name_(channel_name)
+    , tx_timeout_counter_us_(0)
+    , rx_timeout_counter_us_(0)
+    , tx_timeout_debounced_(false)
+    , rx_timeout_debounced_(false)
 {
     initializeResources();
 }
@@ -173,7 +178,7 @@ void CANChannel::setup(uint32_t timeout_us)
         NiFpga_WriteU32(session_, timeout_us_, timeout_us));
 }
 
-void CANChannel::setMode(Mode mode)
+void CANChannel::setMode(FunctionMode mode)
 {
     uint32_t mode_val = static_cast<uint32_t>(mode);
     
@@ -184,11 +189,32 @@ void CANChannel::setMode(Mode mode)
     }
 }
 
+void CANChannel::setConfigSubMode(ConfigSubMode sub_mode)
+{
+    for (size_t i = 0; i < motors_.size(); ++i) {
+        motors_[i]->setConfigSubMode(sub_mode);
+    }
+}
+
 void CANChannel::sendCommands()
 {
     for (size_t i = 0; i < motors_.size(); ++i) {
-        NiFpga_MergeStatus(&status_, 
-            NiFpga_WriteArrayU8(session_, tx_buffers_[i], motors_[i]->getCommandRaw(), tx_buf_size_));
+        const uint8_t* cmd_data = motors_[i]->getCommandRaw();
+        
+        // Read function code and check if need to override first byte
+        uint32_t fc = 0;
+        NiFpga_MergeStatus(&status_, NiFpga_ReadU32(session_, can_id_fcs_[i], &fc));
+        
+        if (fc == 1) {  // CONFIG mode - need to modify first byte
+            uint8_t tx_buffer[8];
+            std::memcpy(tx_buffer, cmd_data, 8);
+            tx_buffer[0] = 255;
+            NiFpga_MergeStatus(&status_, 
+                NiFpga_WriteArrayU8(session_, tx_buffers_[i], tx_buffer, tx_buf_size_));
+        } else {
+            NiFpga_MergeStatus(&status_, 
+                NiFpga_WriteArrayU8(session_, tx_buffers_[i], cmd_data, tx_buf_size_));
+        }
     }
     
     // transmit trigger
@@ -205,18 +231,45 @@ void CANChannel::receiveFeedback()
     }
 }
 
+void CANChannel::updateTimeoutDebounce(uint32_t loop_period_us)
+{
+    // Read raw timeout status from FPGA
+    NiFpga_Bool tx_timeout_raw = false;
+    NiFpga_Bool rx_timeout_raw = false;
+    NiFpga_ReadBool(session_, tx_timeout_, &tx_timeout_raw);
+    NiFpga_ReadBool(session_, rx_timeout_, &rx_timeout_raw);
+    
+    // Update TX timeout counter
+    if (tx_timeout_raw) {
+        tx_timeout_counter_us_ += loop_period_us;
+        if (tx_timeout_counter_us_ >= TIMEOUT_DEBOUNCE_US_) {
+            tx_timeout_debounced_ = true;
+        }
+    } else {
+        tx_timeout_counter_us_ = 0;
+        tx_timeout_debounced_ = false;
+    }
+    
+    // Update RX timeout counter
+    if (rx_timeout_raw) {
+        rx_timeout_counter_us_ += loop_period_us;
+        if (rx_timeout_counter_us_ >= TIMEOUT_DEBOUNCE_US_) {
+            rx_timeout_debounced_ = true;
+        }
+    } else {
+        rx_timeout_counter_us_ = 0;
+        rx_timeout_debounced_ = false;
+    }
+}
+
 bool CANChannel::hasTxTimeout() const
 {
-    NiFpga_Bool timeout = false;
-    NiFpga_ReadBool(session_, tx_timeout_, &timeout);
-    return timeout;
+    return tx_timeout_debounced_;
 }
 
 bool CANChannel::hasRxTimeout() const
 {
-    NiFpga_Bool timeout = false;
-    NiFpga_ReadBool(session_, rx_timeout_, &timeout);
-    return timeout;
+    return rx_timeout_debounced_;
 }
 
 bool CANChannel::hasTimeout() const

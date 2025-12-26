@@ -7,7 +7,7 @@ using namespace std;
 mutex cons_mtx_;
 int refresh_flag;
 
-void Console::init(FpgaHandler *fpga, vector<LegModule> *mods_, std::vector<bool> *pb_state_ptr_, ModeFsm *fsm_ptr_, std::mutex *mtx_ptr_)
+void Console::init(FpgaHandler *fpga, vector<LegModule> *mods_, std::vector<bool> *pb_state_ptr_, MotorFSM *fsm_ptr_, RobotFSM *robot_fsm_ptr_, std::mutex *mtx_ptr_)
 {
     fpga_ = fpga;
 
@@ -30,10 +30,12 @@ void Console::init(FpgaHandler *fpga, vector<LegModule> *mods_, std::vector<bool
     input_panel_.main_mtx_ = mtx_ptr_;
     input_panel_.powerboard_state_ = pb_state_ptr_;
     input_panel_.fsm_ = fsm_ptr_;
+    input_panel_.robot_fsm_ = robot_fsm_ptr_;
 
     main_mtx_ = mtx_ptr_;
     powerboard_state_ = pb_state_ptr_;
     fsm_ = fsm_ptr_;
+    robot_fsm_ = robot_fsm_ptr_;
 
     if_resetPanel = false;
     t_frontend_ = thread(&Console::refreshWindow, this);
@@ -47,21 +49,21 @@ void Console::refreshWindow()
     int refresh_period_ = (int)(1 / frontend_rate_) * 1000000;
     LegModule *lm_null = 0;
     Panel p_power_("[P] Power Board ", "power", lm_null, 1, 9, 60, 40, true);
-    Panel p_cmain_("[F] FPGA Server ", "c_main", lm_null, 1, 1, 8, 40, true);
+    Panel p_robot_("[R] Robot FSM ", "robot", lm_null, 1, 1, 8, 40, true);
     Panel p_modA_("[A] LF_Module ", "module", modA_ptr_, 41, 1, (term_max_y_ - 2) / 2 - 1, 60, true);
     Panel p_modD_("[D] LH_Module ", "module", modD_ptr_, 41, (term_max_y_) / 2, (term_max_y_ - 2) / 2 - 1, 60, true);
     Panel p_modB_("[B] RF_Module ", "module", modB_ptr_, 101, 1, (term_max_y_ - 2) / 2 - 1, 60, true);
     Panel p_modC_("[C] RH_Module ", "module", modC_ptr_, 101, (term_max_y_) / 2, (term_max_y_ - 2) / 2 - 1, 60, true);
 
     p_power_.powerboard_state_ = powerboard_state_;
-    p_cmain_.fsm_ = fsm_;
+    p_robot_.robot_fsm_ = robot_fsm_;
 
     while (1)
     {
         cons_mtx_.lock();
 
         p_power_.infoDisplay(fpga_, powerboard_state_->at(0), powerboard_state_->at(1), powerboard_state_->at(2));
-        p_cmain_.infoDisplay(Behavior::TCP_SLAVE, fsm_->workingMode_);
+        p_robot_.infoDisplay(robot_fsm_->getCurrentMode());
         p_modA_.infoDisplay();
         p_modB_.infoDisplay();
         p_modC_.infoDisplay();
@@ -100,7 +102,7 @@ void InputPanel::inputHandler(WINDOW *win_, std::mutex &input_mutex)
             if (ch == 'e')
             {
                 endwin();
-                std::cout << "Normal Mode" << std::endl;
+                std::cout << "Normal FunctionMode" << std::endl;
                 refresh_flag = 0;
             }
             if (ch == 'E')
@@ -156,45 +158,18 @@ void InputPanel::reset_input_window(WINDOW *win)
 void InputPanel::commandDecode(string buf)
 {
     bool syntax_err = false;
-    bool pb_selected = false;
-    bool lm_selected = false;
-    bool f_selected = false;
+    bool r_selected = false;  // Robot FSM selected
 
     bool switchFSM_success = true;
-    LegModule *md_ptr_;
 
     vector<string> bufs;
     bufs = tokenizer(buf);
 
     if (bufs.size() >= 1)
     {
-        if (bufs[0] == "P")
+        if (bufs[0] == "R")
         {
-            pb_selected = true;
-        }
-        else if (bufs[0] == "F")
-        {
-            f_selected = true;
-        }
-        else if (bufs[0] == "A")
-        {
-            lm_selected = true;
-            md_ptr_ = modA_ptr_;
-        }
-        else if (bufs[0] == "B")
-        {
-            lm_selected = true;
-            md_ptr_ = modB_ptr_;
-        }
-        else if (bufs[0] == "C")
-        {
-            lm_selected = true;
-            md_ptr_ = modC_ptr_;
-        }
-        else if (bufs[0] == "D")
-        {
-            lm_selected = true;
-            md_ptr_ = modD_ptr_;
+            r_selected = true;
         }
         else
         {
@@ -214,68 +189,41 @@ void InputPanel::commandDecode(string buf)
         mvwprintw(win_, 2, 5, bufs[2].c_str());
         wrefresh(win_);
 
-        if (pb_selected)
+        if (r_selected)
         {
-            if (bufs[1] == "D")
+            if (bufs[1] == "M")  // Robot Mode command
             {
-                try
+                if (bufs[2] == "I")  // Init
                 {
-                    powerboard_state_->at(0) = stoi(bufs[2]);
+                    switchFSM_success = robot_fsm_->requestModeTransition(RobotMode::Init);
                 }
-                catch (exception &e)
+                else if (bufs[2] == "D")  // IDLE
+                {
+                    switchFSM_success = robot_fsm_->requestModeTransition(RobotMode::IDLE);
+                }
+                else if (bufs[2] == "S")  // Standby
+                {
+                    switchFSM_success = robot_fsm_->requestModeTransition(RobotMode::Standby);
+                }
+                else if (bufs[2] == "C")  // MotorConfig
+                {
+                    switchFSM_success = robot_fsm_->requestModeTransition(RobotMode::MotorConfig);
+                }
+                else if (bufs[2] == "O")  // SystemOn (safe state)
+                {
+                    switchFSM_success = robot_fsm_->requestModeTransition(RobotMode::SystemOn);
+                }
+                else
                 {
                     syntax_err = true;
-                    mvwprintw(win_, 2, 1, "err");
                 }
             }
-            else if (bufs[1] == "S")
+            else if (bufs[1] == "E")  // Emergency stop
             {
-                try
+                if (bufs[2] == "S")
                 {
-                    powerboard_state_->at(1) = stoi(bufs[2]);
-                }
-                catch (exception &e)
-                {
-                    syntax_err = true;
-                    mvwprintw(win_, 2, 1, "err");
-                }
-            }
-            else if (bufs[1] == "P")
-            {
-                try
-                {
-                    powerboard_state_->at(2) = stoi(bufs[2]);
-                }
-                catch (exception &e)
-                {
-                    syntax_err = true;
-                    mvwprintw(win_, 2, 1, "err");
-                }
-            }
-            else
-            {
-                syntax_err = true;
-            }
-        }
-        else if (f_selected)
-        {
-            if (bufs[1] == "M")
-            {
-                if (bufs[2] == "R")
-                {
-                    switchFSM_success = fsm_->switchMode(Mode::REST);
-                }
-                else if (bufs[2] == "M")
-                {
-                    switchFSM_success = fsm_->switchMode(Mode::MOTOR);
-                }
-                else if (bufs[2] == "S")
-                {
-                    switchFSM_success = fsm_->switchMode(Mode::SET_ZERO);
-                }
-                else if (bufs[2] == "H")
-                {
-                    switchFSM_success = fsm_->switchMode(Mode::HALL_CALIBRATE);
+                    robot_fsm_->emergencyStop();
+                    switchFSM_success = true;
                 }
                 else if (bufs[2] == "C")
                 {
@@ -291,12 +239,7 @@ void InputPanel::commandDecode(string buf)
                 syntax_err = true;
             }
         }
-        else
-        {
-            syntax_err = true;
-        }
     }
-
     else
     {
         syntax_err = true;
@@ -308,7 +251,7 @@ void InputPanel::commandDecode(string buf)
     }
     else if (!switchFSM_success)
     {
-        mvwprintw(win_, 0, 1, "Switch Mode Timeout !");
+        mvwprintw(win_, 0, 1, "Switch FunctionMode Timeout !");
     }
     else
     {
@@ -383,21 +326,21 @@ void Panel::infoDisplay()
         mvwprintw(win_, 2, 1, "[C] [CAN] ID: %9d", motorR->getCANID());
         mvwprintw(win_, 3, 1, "    [tx] TIMEDOUT: %4d", md_ptr_->channel_->hasTxTimeout() ? 1 : 0);
         
-        // Command data //FIXME: Note: command data is internal, we show "N/A" or could decode from raw
-        mvwprintw(win_, y_org + 2, 1, "[A] [tx] Pos:  N/A");
-        mvwprintw(win_, y_org + 3, 1, "[T] [tx] Trq:  N/A");
-        mvwprintw(win_, y_org + 4, 1, "[P] [tx] KP:   N/A");
-        mvwprintw(win_, y_org + 5, 1, "[I] [tx] KI:   N/A");
-        mvwprintw(win_, y_org + 6, 1, "[D] [tx] KD:   N/A");
+        // Command data
+        mvwprintw(win_, y_org + 2, 1, "[A] [tx] Pos: %4.5f", motorR->getCommandPosition());
+        mvwprintw(win_, y_org + 3, 1, "[T] [tx] Trq: %4.5f", motorR->getCommandTorque());
+        mvwprintw(win_, y_org + 4, 1, "[P] [tx] KP:  %4.5f", motorR->getCommandKp());
+        mvwprintw(win_, y_org + 5, 1, "[I] [tx] KI:  %4.5f", motorR->getCommandKi());
+        mvwprintw(win_, y_org + 6, 1, "[D] [tx] KD:  %4.5f", motorR->getCommandKd());
         
         // Feedback data
         mvwprintw(win_, 3, 30, "[rx] TIMEDOUT: %4d", md_ptr_->channel_->hasRxTimeout() ? 1 : 0);
         mvwprintw(win_, y_org + 2, 30, "[rx] Ver:   %7d", (int)motorR->getVersion());
-        mvwprintw(win_, y_org + 3, 30, "[rx] Mode:  %7d", (int)motorR->getModeState());
+        mvwprintw(win_, y_org + 3, 30, "[rx] FunctionMode:  %7d", (int)motorR->getModeState());
         mvwprintw(win_, y_org + 4, 30, "[rx] Pos:   %4.5f", motorR->getPosition());
         mvwprintw(win_, y_org + 5, 30, "[rx] Vel:   %4.5f", motorR->getVelocity());
         mvwprintw(win_, y_org + 6, 30, "[rx] Trq:   %4.5f", motorR->getTorque());
-        mvwprintw(win_, y_org + 7, 30, "[rx] Cal:   %7d", (int)motorR->getCalibrateFinish());
+        mvwprintw(win_, y_org + 7, 30, "[rx] Cal:   %7d", (int)motorR->getHallCalibrateState());
     }
 
     // Motor L
@@ -406,21 +349,21 @@ void Panel::infoDisplay()
         mvwprintw(win_, 11, 1, "[C] [CAN] ID: %9d", motorL->getCANID());
         mvwprintw(win_, 12, 1, "    [tx] TIMEDOUT: %4d", md_ptr_->channel_->hasTxTimeout() ? 1 : 0);
         
-        // Command data //FIXME: command data is internal, we show "N/A" or could decode from raw
-        mvwprintw(win_, y_org + 11, 1, "[A] [tx] Pos:  N/A");
-        mvwprintw(win_, y_org + 12, 1, "[T] [tx] Trq:  N/A");
-        mvwprintw(win_, y_org + 13, 1, "[P] [tx] KP:   N/A");
-        mvwprintw(win_, y_org + 14, 1, "[I] [tx] KI:   N/A");
-        mvwprintw(win_, y_org + 15, 1, "[D] [tx] KD:   N/A");
+        // Command data
+        mvwprintw(win_, y_org + 11, 1, "[A] [tx] Pos: %4.5f", motorL->getCommandPosition());
+        mvwprintw(win_, y_org + 12, 1, "[T] [tx] Trq: %4.5f", motorL->getCommandTorque());
+        mvwprintw(win_, y_org + 13, 1, "[P] [tx] KP:  %4.5f", motorL->getCommandKp());
+        mvwprintw(win_, y_org + 14, 1, "[I] [tx] KI:  %4.5f", motorL->getCommandKi());
+        mvwprintw(win_, y_org + 15, 1, "[D] [tx] KD:  %4.5f", motorL->getCommandKd());
         
         // Feedback data
         mvwprintw(win_, 12, 30, "[rx] TIMEDOUT: %4d", md_ptr_->channel_->hasRxTimeout() ? 1 : 0);
         mvwprintw(win_, y_org + 11, 30, "[rx] Ver:   %7d", (int)motorL->getVersion());
-        mvwprintw(win_, y_org + 12, 30, "[rx] Mode:  %7d", (int)motorL->getModeState());
+        mvwprintw(win_, y_org + 12, 30, "[rx] FunctionMode:  %7d", (int)motorL->getModeState());
         mvwprintw(win_, y_org + 13, 30, "[rx] Pos:   %4.5f", motorL->getPosition());
         mvwprintw(win_, y_org + 14, 30, "[rx] Vel:   %4.5f", motorL->getVelocity());
         mvwprintw(win_, y_org + 15, 30, "[rx] Trq:   %4.5f", motorL->getTorque());
-        mvwprintw(win_, y_org + 16, 30, "[rx] Cal:   %7d", (int)motorL->getCalibrateFinish());
+        mvwprintw(win_, y_org + 16, 30, "[rx] Cal:   %7d", (int)motorL->getHallCalibrateState());
     }
     
     wrefresh(win_);
@@ -450,31 +393,55 @@ void Panel::infoDisplay(FpgaHandler *fpga_, bool digital_switch, bool signal_swi
     wrefresh(win_);
 }
 
-void Panel::infoDisplay(Behavior bhv, Mode fsm_mode)
+void Panel::infoDisplay(RobotMode robot_mode)
 {
-    if (bhv == Behavior::TCP_SLAVE)
-        mvwprintw(win_, 2, 1, "Behavior: TCP_SLAVE");
-    else if (bhv == Behavior::SET_THETA)
-        mvwprintw(win_, 2, 1, "Behavior: SET_THETA");
-    else if (bhv == Behavior::CUSTOM_1)
-        mvwprintw(win_, 2, 1, "Behavior: CUSTOM_1");
-    else if (bhv == Behavior::CUSTOM_1)
-        mvwprintw(win_, 2, 1, "Behavior: CUSTOM_2");
-    else if (bhv == Behavior::CUSTOM_1)
-        mvwprintw(win_, 2, 1, "Behavior: CUSTOM_3");
-
-    if (fsm_mode == Mode::REST)
-        mvwprintw(win_, 3, 1, "[M] FSM Mode:           REST");
-    else if (fsm_mode == Mode::SET_ZERO)
-        mvwprintw(win_, 3, 1, "[M] FSM Mode:       SET_ZERO");
-    else if (fsm_mode == Mode::HALL_CALIBRATE)
-        mvwprintw(win_, 3, 1, "[M] FSM Mode: HALL_CALIBRATE");
-    else if (fsm_mode == Mode::MOTOR)
-        mvwprintw(win_, 3, 1, "[M] FSM Mode:          MOTOR");
-    else if (fsm_mode == Mode::CONFIG)
-        mvwprintw(win_, 3, 1, "[M] FSM Mode:         CONFIG");
-    mvwprintw(win_, 5, 1, "[R] REST  [S] SET_ZERO ");
-    mvwprintw(win_, 6, 1, "[M] MOTOR [H] HALL_CALIBRATE");
+    // Display current Robot FSM mode
+    mvwprintw(win_, 1, 1, "Current Robot FSM Mode:");
+    if (robot_mode == RobotMode::SystemOn)
+        mvwprintw(win_, 2, 1, "  [O] SystemOn (Safe State)");
+    else if (robot_mode == RobotMode::Init)
+        mvwprintw(win_, 2, 1, "  [I] Init (Initializing)  ");
+    else if (robot_mode == RobotMode::IDLE)
+        mvwprintw(win_, 2, 1, "  [D] IDLE (Ready)         ");
+    else if (robot_mode == RobotMode::Standby)
+        mvwprintw(win_, 2, 1, "  [S] Standby (Active)     ");
+    else if (robot_mode == RobotMode::MotorConfig)
+        mvwprintw(win_, 2, 1, "  [C] MotorConfig          ");
+    
+    // Display allowed transitions based on current mode
+    mvwprintw(win_, 4, 1, "Allowed Transitions:");
+    
+    // Clear previous transition lines to avoid leftover text
+    mvwprintw(win_, 5, 1, "                                        ");
+    mvwprintw(win_, 6, 1, "                                        ");
+    mvwprintw(win_, 7, 1, "                                        ");
+    
+    if (robot_mode == RobotMode::SystemOn)
+    {
+        mvwprintw(win_, 5, 1, "  :R M I  -> Init");
+        mvwprintw(win_, 6, 1, "  :R M C  -> MotorConfig");
+    }
+    else if (robot_mode == RobotMode::Init)
+    {
+        mvwprintw(win_, 5, 1, "  :R M D  -> IDLE");
+        mvwprintw(win_, 6, 1, "  :R M O  -> SystemOn");
+    }
+    else if (robot_mode == RobotMode::IDLE)
+    {
+        mvwprintw(win_, 5, 1, "  :R M S  -> Standby");
+        mvwprintw(win_, 6, 1, "  :R M C  -> MotorConfig");
+        mvwprintw(win_, 7, 1, "  :R M O  -> SystemOn");
+    }
+    else if (robot_mode == RobotMode::Standby)
+    {
+        mvwprintw(win_, 5, 1, "  :R M D  -> IDLE");
+    }
+    else if (robot_mode == RobotMode::MotorConfig)
+    {
+        mvwprintw(win_, 5, 1, "  :R M O  -> SystemOn");
+    }
+    
+    mvwprintw(win_, 9, 1, "Emergency Stop: :R E S");
 
     wrefresh(win_);
 }
