@@ -129,7 +129,7 @@ void CANMotor::encodeRequestState()
         command_data_raw[i] = 0;
     }
 }
-/*
+
 void CANMotor::encodeConfigCommand()
 {
     command_data_raw[0] = config_cmd_data_.config_cmd.mode;
@@ -149,8 +149,8 @@ void CANMotor::encodeConfigCommand()
     }
     command_data_raw[7] = 0; 
 }
-*/
-/*
+
+
 void CANMotor::decodeConfigFeedback()
 {
     config_fb_data_.config_fb.state = static_cast<ConfigState>(feedback_data_raw[0]);
@@ -172,7 +172,7 @@ void CANMotor::decodeConfigFeedback()
 
     std::memcpy(config_fb_data_.raw_data, feedback_data_raw, 8);
 }
-*/
+/* temporarily disabled original version
 void CANMotor::encodeConfigCommand()
 {
     // Copy config_cmd_data_ to command_data_raw
@@ -186,7 +186,7 @@ void CANMotor::decodeConfigFeedback()
     // Caller can access decoded data via config_fb_data_.config_fb
     std::memcpy(config_fb_data_.raw_data, feedback_data_raw, CAN_DATA_LEN);
 }
-
+*/
 int CANMotor::float_to_uint(float x, float x_min, float x_max, int bits)
 {
     float span = x_max - x_min;
