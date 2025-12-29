@@ -225,10 +225,6 @@ void InputPanel::commandDecode(string buf)
                     robot_fsm_->emergencyStop();
                     switchFSM_success = true;
                 }
-                else if (bufs[2] == "C")
-                {
-                    switchFSM_success = fsm_->switchMode(Mode::CONFIG);
-                }
                 else
                 {
                     syntax_err = true;

@@ -19,6 +19,14 @@ void motor_data_cb(motor_msg::MotorCmdStamped motor_msg)
     motor_cmd_data = motor_msg;
 }
 
+config_msg::ConfigStamped config_data;
+void config_data_cb(config_msg::ConfigStamped config_msg)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    config_message_updated = 1;
+    config_data = config_msg;
+}
+
 // Robot gRPC message callbacks
 std::atomic<int> robot_cmd_message_updated{0};
 robot_msg::RobotCmdStamped robot_cmd_data;
@@ -31,16 +39,6 @@ void robot_cmd_data_cb(robot_msg::RobotCmdStamped robot_cmd_msg)
     robot_cmd_data = robot_cmd_msg;
 }
 
-config_msg::ConfigStamped config_data_shared;
-void config_data_cb(config_msg::ConfigStamped config_msg)
-{
-    mutex_.lock();
-    config_message_updated = 1;
-    config_data_shared = config_msg;
-    mutex_.unlock();
-}
-
-Corgi::Corgi()
 Corgi::Corgi(core::Logger* logger)
     : motor_fsm_(modules_list_, powerboard_state_, fpga_.powerboard_V_list_)
     , robot_fsm_(motor_fsm_, modules_list_, powerboard_state_)
@@ -112,10 +110,10 @@ void Corgi::load_config_()
 void Corgi::interruptHandler(core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
                              core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
                              core::Publisher<motor_msg::MotorStateStamped>& state_pub_, 
-                             core::Subscriber<config_msg::ConfigStamped>& config_sub_, 
                              core::Publisher<config_msg::ConfigStamped>& config_pub_,
+                             core::Subscriber<config_msg::ConfigStamped>& config_sub_, 
                              core::Publisher<robot_msg::RobotStateStamped>& robot_state_pub_,
-                             core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub_,)
+                             core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub_)
 
 
                                                        
@@ -155,7 +153,7 @@ void Corgi::interruptHandler(core::Publisher<power_msg::PowerStateStamped>& stat
         {
             if (irqsAsserted & NiFpga_Irq_0)
             {
-                mainLoop_(state_pb_pub_, cmd_sub_, state_pub_, config_sub_, config_pub_, robot_state_pub_, robot_cmd_sub_);
+                mainLoop_(state_pb_pub_, cmd_sub_, state_pub_, config_pub_, config_sub_, robot_state_pub_, robot_cmd_sub_);
                 // Acknowledge IRQ to begin DMA acquisition
                 NiFpga_MergeStatus(&fpga_.status_, NiFpga_AcknowledgeIrqs(fpga_.session_, irqsAsserted));
             }
@@ -180,8 +178,8 @@ void Corgi::interruptHandler(core::Publisher<power_msg::PowerStateStamped>& stat
 void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
                       core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
                       core::Publisher<motor_msg::MotorStateStamped>& state_pub_,
-                      core::Subscriber<config_msg::ConfigStamped>& config_sub_,
                       core::Publisher<config_msg::ConfigStamped>& config_pub_,
+                      core::Subscriber<config_msg::ConfigStamped>& config_sub_,
                       core::Publisher<robot_msg::RobotStateStamped>& robot_state_pub_,
                       core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub_)
 {
@@ -209,7 +207,7 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
         robot_fsm_.runFsm();
         
         // Run Motor FSM
-        motor_fsm_.runFsm(motor_fb_msg, motor_cmd_data, config_data_shared);
+        motor_fsm_.runFsm(motor_fb_msg, motor_cmd_data, config_data);
         motor_message_updated = 0;    
         config_message_updated = 0;
         HALL_CALIBRATED_ = motor_fsm_.isHallCalibrated();
@@ -225,12 +223,9 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
         motor_fb_msg.mutable_header()->set_seq(seq);
         robot_fb_msg.mutable_header()->set_seq(seq);
     }
-    gettimeofday(&t_stamp, NULL);
-    config_data_shared.mutable_header()->mutable_stamp()->set_sec(t_stamp.tv_sec);
-    config_data_shared.mutable_header()->mutable_stamp()->set_usec(t_stamp.tv_usec);
-    mutex_.unlock();
-    if (fsm_.workingMode_ == Mode::CONFIG) {
-        config_pub_.publish(config_data_shared);
+
+    if (robot_fsm_.getCurrentMode() == RobotMode::MotorConfig) {
+        config_pub_.publish(config_data);
     }
     state_pub_.publish(motor_fb_msg);
     state_pb_pub_.publish(power_fb_msg);
@@ -427,12 +422,11 @@ int main(int argc, char* argv[])
     core::Publisher<config_msg::ConfigStamped>& config_pub = nh.advertise<config_msg::ConfigStamped>(config_topic);
     core::Subscriber<config_msg::ConfigStamped>& config_sub = nh.subscribe<config_msg::ConfigStamped>(config_topic, 1000, config_data_cb);
 
-    corgi.interruptHandler(power_sub, power_pub, motor_sub, motor_pub, config_sub, config_pub);
     // Robot gRPC publishers and subscribers
     core::Publisher<robot_msg::RobotStateStamped>& robot_state_pub = nh.advertise<robot_msg::RobotStateStamped>("robot/state");
     core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub = nh.subscribe<robot_msg::RobotCmdStamped>("robot/command", 1000, robot_cmd_data_cb);
     
-    corgi.interruptHandler(power_pub, motor_sub, motor_pub, robot_state_pub, robot_cmd_sub);
+    corgi.interruptHandler(power_pub, motor_sub, motor_pub, config_pub, config_sub, robot_state_pub, robot_cmd_sub);
 
     if (NiFpga_IsError(corgi.fpga_.status_)) {
         LOG_ERROR(logger) << "[FPGA Server] Error! Exiting program. LabVIEW error code: " << corgi.fpga_.status_;

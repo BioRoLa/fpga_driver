@@ -83,7 +83,6 @@ public:
     void setCommand(float position, float torque, float kp, float ki, float kd);
     void encodeMotorControl();                          // control_data_ -> command_data_raw (for motor control)
     void encodeRequestState();                          // Encode request state command (first byte = 255)
-    void encodeConfigCommand();                         // Encode config command (config_cmd_data_ -> command_data_raw)
     const uint8_t* getCommandRaw() const { return command_data_raw; }
     
     // Command data getters
@@ -110,8 +109,7 @@ public:
     void setConfigRead(ConfigType type, uint8_t target_addr);
     void setConfigWriteInt(uint8_t target_addr, int value);
     void setConfigWriteFloat(uint8_t target_addr, float value);
-    void encodeConfig();                               // config_cmd_data_ -> command_data_raw
-    void decodeConfig();                               // feedback_data_raw -> config_fb_data_
+    void encodeConfigCommand();                         // Encode config command (config_cmd_data_ -> command_data_raw)
     
     // Config feedback access
     const CONFIGData& getConfigFeedback() const { return config_fb_data_; }
