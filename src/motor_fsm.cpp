@@ -141,6 +141,7 @@ void MotorFSM::handleHallCalibrateMode()
                         CANMotor* motor = mod.getMotor(j);
                         if (motor) {
                             // Check hall_cal_state status
+                            motor -> encodeRequestState();
                             if (motor->getHallCalibrateState() != 2) {
                                 all_calibrated = false;
                                 break;
