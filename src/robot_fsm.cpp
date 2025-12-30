@@ -280,6 +280,11 @@ void RobotFSM::handleMotorConfig()
             
         case 3:
             //TODO: Add motor configuration logic here
+            // Ensure motors are in CONFIG mode
+            if (motor_fsm_.getCurrentMode() != FunctionMode::CONFIG)
+            {
+                motor_fsm_.switchMode(FunctionMode::CONFIG);
+            }   
             break;
     }
 }
