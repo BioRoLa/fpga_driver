@@ -132,8 +132,8 @@ void CANMotor::encodeRequestState()
 
 void CANMotor::encodeConfigCommand()
 {
-    command_data_raw[0] = config_cmd_data_.config_cmd.mode;
-    command_data_raw[1] = config_cmd_data_.config_cmd.type;
+    command_data_raw[0] = static_cast<uint8_t>(config_cmd_data_.config_cmd.mode);
+    command_data_raw[1] = static_cast<uint8_t>(config_cmd_data_.config_cmd.type);
     command_data_raw[2] = config_cmd_data_.config_cmd.target_addr;
 
     if(config_cmd_data_.config_cmd.mode == ConfigMode::WRITE) {
