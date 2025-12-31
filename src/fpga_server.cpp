@@ -192,6 +192,7 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
     motor_msg::MotorStateStamped motor_fb_msg;
     robot_msg::RobotStateStamped robot_fb_msg;
 
+    bool is_config_processed = false;
     {
         std::lock_guard<std::mutex> lock(mutex_);
         
@@ -202,6 +203,10 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
             robot_cmd_message_updated = 0;
         }
         
+        if(config_message_updated == 1 && config_data.transmit()) {
+            is_config_processed = true;
+        }
+
         // Update error flags and run Robot FSM
         robot_fsm_.setErrorFlags(!NO_CAN_TIMEDOUT_ERROR_, !NO_SWITCH_TIMEDOUT_ERROR_);
         robot_fsm_.runFsm();
@@ -224,7 +229,8 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
         robot_fb_msg.mutable_header()->set_seq(seq);
     }
 
-    if (robot_fsm_.getCurrentMode() == RobotMode::MotorConfig) {
+    if (robot_fsm_.getCurrentMode() == RobotMode::MotorConfig && is_config_processed) 
+    {
         config_pub_.publish(config_data);
     }
     state_pub_.publish(motor_fb_msg);

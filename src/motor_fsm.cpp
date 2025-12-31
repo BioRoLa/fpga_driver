@@ -372,15 +372,15 @@ void MotorFSM::handleMotorMode(const motor_msg::MotorCmdStamped& motor_cmd_msg)
 void MotorFSM::handleConfigMode(config_msg::ConfigStamped &config_msg)
 {
     if(config_msg.transmit() == true && config_msg.header().seq() != last_process_seq)
-        {
-            handleConfigMessage(config_msg);
-            last_process_seq = config_msg.header().seq();
-        }
-        else
-        {
-            config_msg.set_transmit(false);
-        }
-        publishConfigMsg(config_msg);
+    {
+        handleConfigMessage(config_msg);
+        last_process_seq = config_msg.header().seq();
+    }
+    else
+    {
+        config_msg.set_transmit(false);
+    }
+    publishConfigMsg(config_msg);
 }
 
 bool MotorFSM::switchMode(FunctionMode next_mode)
