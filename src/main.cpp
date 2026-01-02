@@ -119,7 +119,7 @@ void Corgi::interruptHandler(core::Publisher<power_msg::PowerStateStamped>& stat
 
         if (NiFpga_IsError(fpga_.status_))
         {
-            LOG_ERROR(*logger_) << "[FPGA Server] Error! Exiting program. LabVIEW error code: " << fpga_.status_;
+            LOG_ERROR(*logger_) << "[FPGA Driver] Error! Exiting program. LabVIEW error code: " << fpga_.status_;
         }
 
         uint32_t irq0_cnt;
@@ -325,13 +325,13 @@ void Corgi::handleRobotCommand(const robot_msg::RobotCmdStamped& robot_cmd)
 
 void Corgi::safeShutdown()
 {
-    LOG_INFO(*logger_) << "[FPGA Server] Shutdown signal received, initiating safe shutdown...";
+    LOG_INFO(*logger_) << "[FPGA Driver] Shutdown signal received, initiating safe shutdown...";
     
     {
         std::lock_guard<std::mutex> lock(mutex_);
         
         // Step 1: Turn off all power states
-        LOG_INFO(*logger_) << "[FPGA Server] Turning off power board...";
+        LOG_INFO(*logger_) << "[FPGA Driver] Turning off power board...";
         powerboard_state_[0] = false;  // digital
         powerboard_state_[1] = false;  // signal
         powerboard_state_[2] = false;  // power
@@ -341,11 +341,11 @@ void Corgi::safeShutdown()
     }
     
     // Step 2: Wait 0.5 seconds for power down to complete
-    LOG_INFO(*logger_) << "[FPGA Server] Waiting for power down (0.5s)...";
+    LOG_INFO(*logger_) << "[FPGA Driver] Waiting for power down (0.5s)...";
     usleep(500000);  // 500ms
     
     // Step 3: Set sys_stop flag to exit loop
-    LOG_INFO(*logger_) << "[FPGA Server] Shutdown complete.";
+    LOG_INFO(*logger_) << "[FPGA Driver] Shutdown complete.";
     sys_stop = 1;
 }
 
@@ -368,7 +368,7 @@ int main(int argc, char* argv[])
 {
     signal(SIGINT, inthand);
 
-    important_message("[FPGA Server] : Launched");
+    important_message("[FPGA Driver] : Launched");
 
     if (argc == 3)
     {
@@ -406,10 +406,10 @@ int main(int argc, char* argv[])
     corgi.interruptHandler(power_pub, motor_sub, motor_pub, robot_state_pub, robot_cmd_sub);
 
     if (NiFpga_IsError(corgi.fpga_.status_)) {
-        LOG_ERROR(logger) << "[FPGA Server] Error! Exiting program. LabVIEW error code: " << corgi.fpga_.status_;
+        LOG_ERROR(logger) << "[FPGA Driver] Error! Exiting program. LabVIEW error code: " << corgi.fpga_.status_;
     } else {
         endwin();
-        important_message("\n[FPGA Server] : Exit Safely");
+        important_message("\n[FPGA Driver] : Exit Safely");
     }
 
     return 0;
