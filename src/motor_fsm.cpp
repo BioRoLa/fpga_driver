@@ -1,5 +1,9 @@
 #include <motor_fsm.hpp>
 #include "robot_fsm.hpp"
+#include <atomic>
+
+// External flag from fpga_server.cpp - indicates if a new motor command has been received
+extern std::atomic<int> motor_message_updated;
 
 MotorFSM::MotorFSM(std::vector<LegModule>& _modules, std::vector<bool>& _pb_state, double* pb_v)
     : modules_list_(_modules)
@@ -237,14 +241,16 @@ void MotorFSM::handleMotorMode(const motor_msg::MotorCmdStamped& motor_cmd_msg)
     if (*NO_CAN_TIMEDOUT_ERROR_ && *NO_SWITCH_TIMEDOUT_ERROR_)
     {
         // Check if we should accept new commands from gRPC
-        // In IDLE mode, don't update commands - keep sending the same command
-        bool accept_grpc_commands = true;
+        bool accept_grpc_commands = false;
         if (robot_fsm_ != nullptr)
         {
             RobotMode robot_mode = robot_fsm_->getCurrentMode();
-            if (robot_mode == RobotMode::IDLE)
+            if (robot_mode == RobotMode::Standby)
             {
-                accept_grpc_commands = false;
+                if (motor_message_updated == 1)
+                {
+                    accept_grpc_commands = true;
+                }
             }
         }
         
