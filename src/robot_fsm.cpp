@@ -4,10 +4,12 @@
 #include <sys/time.h>
 
 RobotFSM::RobotFSM(MotorFSM& motor_fsm, std::vector<LegModule>& modules_list, 
-                   std::vector<bool>& powerboard_state, core::Logger* logger)
+                   std::vector<bool>& powerboard_state, double* powerboard_voltage,
+                   core::Logger* logger)
     : motor_fsm_(motor_fsm)
     , modules_list_(modules_list)
     , powerboard_state_(powerboard_state)
+    , powerboard_voltage_(powerboard_voltage)
     , current_mode_(RobotMode::SystemOn)
     , previous_mode_(RobotMode::SystemOn)
     , has_can_error_(false)
@@ -157,7 +159,7 @@ void RobotFSM::handleInit()
             break;
             
         case 3:
-            // Check motor timeout
+            // Check motor timeout and emergency stop
             {
                 bool has_timeout = false;
                 for (auto& module : modules_list_)
@@ -178,7 +180,18 @@ void RobotFSM::handleInit()
                 else
                 {
                     LOG_INFO(*logger_) << "Init Step 3: All motors responsive";
-                    init_step_++;
+                    
+                    if (checkEStop())
+                    {
+                        LOG_ERROR(*logger_) << "Init failed: Emergency stop is pressed!";
+                        LOG_ERROR(*logger_) << "Please release emergency stop button and ensure power output is normal.";
+                        emergencyStop();
+                    }
+                    else
+                    {
+                        LOG_INFO(*logger_) << "Init Step 3: Emergency stop check passed, power output normal";
+                        init_step_++;
+                    }
                 }
             }
             break;
@@ -231,6 +244,14 @@ void RobotFSM::handleIdle()
         motor_fsm_.switchMode(FunctionMode::MOTOR);
     }
     
+    // Check for emergency stop
+    if (checkEStop())
+    {
+        LOG_ERROR(*logger_) << "Emergency stop detected in IDLE, returning to SystemOn";
+        emergencyStop();
+        return;
+    }
+    
     // Check for errors - if errors detected, go back to SystemOn
     // Use LOG_CHANGED to only log when error state changes (not every loop)
     if (has_can_error_ || has_switch_error_)
@@ -250,6 +271,14 @@ void RobotFSM::handleStandby()
         motor_fsm_.switchMode(FunctionMode::MOTOR);
     }
     
+    // Check for emergency stop
+    if (checkEStop())
+    {
+        LOG_ERROR(*logger_) << "Emergency stop detected in Standby, returning to SystemOn";
+        emergencyStop();
+        return;
+    }
+    
     // Check for errors - only log when error state changes
     if (has_can_error_ || has_switch_error_)
     {
@@ -264,6 +293,14 @@ void RobotFSM::handleMotorConfig()
     // Steps:
     // 0-2. Power switch sequence (digital -> signal -> power)
     // 3. Complete configuration
+    
+    // Check for emergency stop
+    if (checkEStop())
+    {
+        LOG_ERROR(*logger_) << "Emergency stop detected in MotorConfig, returning to SystemOn";
+        emergencyStop();
+        return;
+    }
     
     switch (config_step_)
     {
@@ -304,8 +341,8 @@ bool RobotFSM::isTransitionAllowed(RobotMode from, RobotMode to) const
                     to == RobotMode::SystemOn);
             
         case RobotMode::Standby:
-            return (to == RobotMode::IDLE);
-            //TODO: TBD if stanby can go to SystemOn when emergency stop
+            return (to == RobotMode::IDLE ||
+                    to == RobotMode::SystemOn);
             
         case RobotMode::MotorConfig:
             return (to == RobotMode::SystemOn);
@@ -416,4 +453,24 @@ bool RobotFSM::powerSwitchSequence(int& step_counter, int& cycle_counter)
     }
     
     return false;  // Still waiting
+}
+
+bool RobotFSM::checkEStop()
+{
+    
+    if (!powerboard_voltage_) {
+        LOG_ERROR(*logger_) << "Powerboard voltage pointer is null!";
+        return false;
+    }
+    
+    for (int i = 2; i <= 11; i++) {
+        if (powerboard_voltage_[i] < ESTOP_VOLTAGE_THRESHOLD) {
+            LOG_WARN(*logger_) << "EStop detected: Power[" << i 
+                               << "] voltage = " << powerboard_voltage_[i] 
+                               << "V (threshold: " << ESTOP_VOLTAGE_THRESHOLD << "V)";
+            return true;
+        }
+    }
+    
+    return false;
 }

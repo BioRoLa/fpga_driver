@@ -22,10 +22,12 @@ public:
      * @param motor_fsm Reference to the motor-level FSM
      * @param modules_list Reference to all leg modules
      * @param powerboard_state Reference to powerboard state vector [digital, signal, power]
+     * @param powerboard_voltage Pointer to powerboard voltage array [0-11]
      * @param logger Pointer to Logger instance (can be nullptr for local-only logging)
      */
     RobotFSM(MotorFSM& motor_fsm, std::vector<LegModule>& modules_list, 
-             std::vector<bool>& powerboard_state, core::Logger* logger = nullptr);
+             std::vector<bool>& powerboard_state, double* powerboard_voltage,
+             core::Logger* logger = nullptr);
     
     RobotFSM() = delete;
     
@@ -41,6 +43,7 @@ public:
 private:
     // Constants
     static constexpr int POWER_SWITCH_STABILIZATION_TIME_US = 500000;
+    static constexpr double ESTOP_VOLTAGE_THRESHOLD = 10.0;
     
     // Current state
     RobotMode current_mode_;
@@ -50,6 +53,7 @@ private:
     MotorFSM& motor_fsm_;
     std::vector<LegModule>& modules_list_;
     std::vector<bool>& powerboard_state_;
+    double* powerboard_voltage_;
     
     // Error flags
     bool has_can_error_;
@@ -77,6 +81,7 @@ private:
     void enterMode(RobotMode new_mode);
     void exitMode(RobotMode old_mode);
     bool powerSwitchSequence(int& step_counter, int& cycle_counter);
+    bool checkEStop();
     
     // Convert RobotMode to string
     const char* modeToString(RobotMode mode) const;

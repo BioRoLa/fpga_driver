@@ -32,7 +32,7 @@ void robot_cmd_data_cb(robot_msg::RobotCmdStamped robot_cmd_msg)
 
 Corgi::Corgi(core::Logger* logger)
     : motor_fsm_(modules_list_, powerboard_state_, fpga_.powerboard_V_list_)
-    , robot_fsm_(motor_fsm_, modules_list_, powerboard_state_)
+    , robot_fsm_(motor_fsm_, modules_list_, powerboard_state_, fpga_.powerboard_V_list_)
     , logger_(logger)
 {
     /* default value of interrupt*/
