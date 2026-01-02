@@ -22,6 +22,10 @@ void motor_data_cb(motor_msg::MotorCmdStamped motor_msg)
 config_msg::ConfigStamped config_data;
 void config_data_cb(config_msg::ConfigStamped config_msg)
 {
+    if (config_msg.transmit() == false) {
+        return; 
+    }
+    
     std::lock_guard<std::mutex> lock(mutex_);
     config_message_updated = 1;
     config_data = config_msg;
@@ -232,12 +236,19 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
 
     if (robot_fsm_.getCurrentMode() == RobotMode::MotorConfig && should_reply_config) 
     {
+        if (config_data.transmit() == true) {
+        LOG_ERROR(*logger_) << "[Server] ERROR: Reply Sent but Transmit is still TRUE! MotorFSM logic didn't run.";
+        LOG_ERROR(*logger_) << "         Check: 1. MotorFSM Mode (Should be CONFIG) 2. Seq Number consistency.";
+        } 
+        else 
+        {
+        LOG_INFO(*logger_) << "[Server] Reply Sent! (Transmit = " << config_data.transmit() << ")";
+        LOG_INFO(*logger_) << "[Server] Reply Sent! (Seq = " << config_data.header().seq() << ")";
+        LOG_INFO(*logger_) << "[Server] Reply Sent! (Mode = " << config_data.mode() << ")";
+        LOG_INFO(*logger_) << "[Server] Reply Sent! (Type = " << config_data.type() << ")";
+        LOG_INFO(*logger_) << "[Server] Reply Sent! (Value = " << config_data.value_f() << ")";
+        }
         config_pub_.publish(config_data);
-        LOG_INFO(*logger_) << "[Server] Reply Sent!";
-    }
-    else if (should_reply_config)
-    {
-        LOG_WARN(*logger_) << "[Server] Command ignored! Robot Mode is: " << (int)robot_fsm_.getCurrentMode() << " (Req: MotorConfig)";
     }
 
     state_pub_.publish(motor_fb_msg);
