@@ -205,6 +205,7 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
         
         if(config_message_updated == 1 && config_data.transmit()) {
             should_reply_config = true;
+            LOG_INFO(*logger_) << "[Server] Processing Config Req Seq: " << config_data.header().seq();
         }
 
         // Update error flags and run Robot FSM
@@ -232,8 +233,13 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
     if (robot_fsm_.getCurrentMode() == RobotMode::MotorConfig && should_reply_config) 
     {
         config_pub_.publish(config_data);
+        LOG_INFO(*logger_) << "[Server] Reply Sent!";
     }
-    
+    else if (should_reply_config)
+    {
+        LOG_WARN(*logger_) << "[Server] Command ignored! Robot Mode is: " << (int)robot_fsm_.getCurrentMode() << " (Req: MotorConfig)";
+    }
+
     state_pub_.publish(motor_fb_msg);
     state_pb_pub_.publish(power_fb_msg);
     robot_state_pub_.publish(robot_fb_msg);

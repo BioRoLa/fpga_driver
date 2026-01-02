@@ -53,6 +53,7 @@ public:
   void infoDisplay();
   void infoDisplay(FpgaHandler *fpga, bool power_switch, bool signal_switch, bool digital_switch);
   void infoDisplay(RobotMode robot_mode);
+  void infoDisplayConfig();
   void resetPanel();
   void panelTitle();
 };
