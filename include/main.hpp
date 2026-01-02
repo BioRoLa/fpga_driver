@@ -1,3 +1,6 @@
+#ifndef __MAIN_HPP__
+#define __MAIN_HPP__
+
 #include "fpga_handler.hpp"
 #include "leg_module.hpp"
 #include "console.hpp"
@@ -80,3 +83,5 @@ class Corgi
 private:
     core::Logger* logger_;
 };
+
+#endif // __MAIN_HPP__

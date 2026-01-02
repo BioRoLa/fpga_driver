@@ -2,7 +2,7 @@
 #include "robot_fsm.hpp"
 #include <atomic>
 
-// External flag from fpga_server.cpp - indicates if a new motor command has been received
+// External flag from main.cpp - indicates if a new motor command has been received
 extern std::atomic<int> motor_message_updated;
 
 MotorFSM::MotorFSM(std::vector<LegModule>& _modules, std::vector<bool>& _pb_state, double* pb_v)

@@ -1,4 +1,4 @@
-#include "fpga_server.hpp"
+#include "main.hpp"
 
 /* TCP node connection setup*/
 std::atomic<int> motor_message_updated{0};
@@ -390,7 +390,7 @@ int main(int argc, char* argv[])
     });
     logger.setMinLevel(core::LogLevel::DEBUG);  // Set minimum log level
     
-    // Create Corgi instance with logger (passed to both fpga_server and robot FSM)
+    // Create Corgi instance with logger (passed to both main and robot FSM)
     Corgi corgi(&logger);
     corgi.robot_fsm_.setLogger(&logger);
 

@@ -11,7 +11,7 @@ endif()
 add_executable(fpga_driver  color.cpp
                             console.cpp       
                             fpga_handler.cpp
-                            fpga_server.cpp
+                            main.cpp
                             motor_fsm.cpp
                             robot_fsm.cpp
                             leg_module.cpp
