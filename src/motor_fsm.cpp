@@ -370,18 +370,86 @@ void MotorFSM::handleMotorMode(const motor_msg::MotorCmdStamped& motor_cmd_msg)
     }
 }
 
-void MotorFSM::handleConfigMode(config_msg::ConfigStamped &config_msg)
+void MotorFSM::handleConfigMode(config_msg::ConfigStamped &motor_config_reply)
 {
-    if(config_msg.transmit() == true && config_msg.header().seq() != last_process_seq)
+    // Check if this is a new request (and has transmit flag set)
+    if(motor_config_reply.transmit() == true && motor_config_reply.header().seq() != last_motor_config_seq)
     {
-        handleConfigMessage(config_msg);
-        last_process_seq = config_msg.header().seq();
+        // --- Logic: Process motor/config Request ---
+        int mod_index = (int)motor_config_reply.module();
+        int motor_index = (int)motor_config_reply.motor();
+
+        if (mod_index < 0 || mod_index >= modules_list_.size())
+        {
+            motor_config_reply.set_error_code(5); // Invalid module index
+            motor_config_reply.set_transmit(false);
+            return;
+        }
+
+        LegModule* mod = &modules_list_.at(mod_index);
+        CANMotor* motor = mod->getMotor(motor_index);
+
+        if(!motor) 
+        {
+            motor_config_reply.set_error_code(6); // Invalid motor index
+            motor_config_reply.set_transmit(false);
+            return;
+        }
+
+        uint8_t addr = (uint8_t)motor_config_reply.address();
+
+        if(motor_config_reply.mode() == config_msg::ConfigMode::READ) 
+        {
+            motor->setConfigRead((ConfigType)motor_config_reply.type(), addr);
+        }
+        else
+        {
+            if(motor_config_reply.type() == config_msg::ConfigType::INT) 
+            {
+                motor->setConfigWriteInt(addr, motor_config_reply.value_i());
+            }
+            else if(motor_config_reply.type() == config_msg::ConfigType::FLOAT) 
+            {
+                motor->setConfigWriteFloat(addr, motor_config_reply.value_f());
+            }
+        }
+        mod->sendCommands();
+        // TODO : Test whether usleep is needed to ensure correct decoding
+        usleep(1000); // Wait for CAN response 
+
+        mod->receiveFeedback();
+
+        motor->decodeBasedOnMode();
+
+        // --- Logic: Prepare motor/config Reply  ---
+
+        const auto& motor_fb = motor->getConfigFeedback().config_fb;
+
+        motor_config_reply.set_type((config_msg::ConfigType)motor_fb.type);
+        motor_config_reply.set_error_code(motor_fb.state);
+        motor_config_reply.set_address(motor_fb.target_addr);
+
+        if(motor_fb.type == ConfigType::INT) 
+        {
+            motor_config_reply.set_value_i(motor_fb.value.i);
+            motor_config_reply.set_value_f(0); // Clear float field
+        }
+        else
+        {
+            motor_config_reply.set_value_f(motor_fb.value.f);
+            motor_config_reply.set_value_i(0); // Clear int field
+        }
+
+        // Mark request as processed (Update Seq)
+        last_motor_config_seq = motor_config_reply.header().seq();
+        motor_config_reply.set_transmit(false); // Mark as Reply
     }
     else
     {
-        config_msg.set_transmit(false);
+        // If not a new request, or Sequence number matches last processed,
+        // ensure transmit is false to indicate no action/reply state.
+        motor_config_reply.set_transmit(false);
     }
-    publishConfigMsg(config_msg);
 }
 
 bool MotorFSM::switchMode(FunctionMode next_mode)
@@ -642,83 +710,4 @@ void MotorFSM::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
     }
 
 }
-void MotorFSM::handleConfigMessage(config_msg::ConfigStamped &config_data)
-{
-    int mod_index = (int)config_data.module();
-    int motor_index = (int)config_data.motor();
 
-    if (mod_index < 0 || mod_index >= modules_list_.size())
-    {
-        config_data.set_error_code(5); // Invalid module index
-        config_data.set_transmit(false);
-        return;
-    }
-
-    LegModule* mod = &modules_list_.at(mod_index);
-    CANMotor* motor = mod->getMotor(motor_index);
-
-    if(!motor) 
-    {
-        config_data.set_error_code(6); // Invalid motor index
-        config_data.set_transmit(false);
-        return;
-    }
-
-    uint8_t addr = (uint8_t)config_data.address();
-
-    if(config_data.mode() == config_msg::ConfigMode::READ) 
-    {
-        motor->setConfigRead((ConfigType)config_data.type(), addr);
-    }
-    else
-    {
-        if(config_data.type() == config_msg::ConfigType::INT) 
-        {
-            motor->setConfigWriteInt(addr, config_data.value_i());
-        }
-        else if(config_data.type() == config_msg::ConfigType::FLOAT) 
-        {
-            motor->setConfigWriteFloat(addr, config_data.value_f());
-        }
-    }
-    mod->sendCommands();
-    mod->receiveFeedback();
-    motor->decodeBasedOnMode();
-}
-
-void MotorFSM::publishConfigMsg(config_msg::ConfigStamped &config_data)
-{
-    int mod_idx = (int)config_data.module(); 
-    int motor_idx = (int)config_data.motor();
-
-    if (mod_idx < 0 || mod_idx >= modules_list_.size()) 
-    {
-        config_data.set_error_code(5); // Invalid module index
-        config_data.set_transmit(false);
-        return;
-    }
-    LegModule* mod = &modules_list_.at(mod_idx);
-    CANMotor* motor = mod->getMotor(motor_idx);
-    
-    if(!motor)
-    {
-        config_data.set_error_code(6); // Invalid motor index
-        config_data.set_transmit(false);
-        return;
-    }
-    const auto& motor_fb = motor->getConfigFeedback().config_fb;
-
-    config_data.set_type((config_msg::ConfigType)motor_fb.type);
-    config_data.set_error_code(motor_fb.state);
-    config_data.set_address(motor_fb.target_addr);
-    if(motor_fb.type == ConfigType::INT) 
-    {
-        config_data.set_value_i(motor_fb.value.i);
-    }
-    else
-    {
-        config_data.set_value_f(motor_fb.value.f);
-    }
-
-    config_data.set_transmit(false);
-}
