@@ -169,8 +169,8 @@ void CANMotor::decodeConfigFeedback()
     // Map raw motor state to corresponding FunctionMode
     uint8_t mode_raw = feedback_data_raw[7] & 0x0F;
     feedback_data_.motor_state = mapMotorStateToFunctionMode(mode_raw);
-
-    std::memcpy(config_fb_data_.raw_data, feedback_data_raw, 8);
+    //temporarily disabled since may cause padding problem
+    //std::memcpy(config_fb_data_.raw_data, feedback_data_raw, 8);
 }
 /* temporarily disabled original version
 void CANMotor::encodeConfigCommand()
