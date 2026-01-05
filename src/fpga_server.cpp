@@ -3,7 +3,7 @@
 /* TCP node connection setup*/
 std::atomic<int> motor_message_updated{0};
 std::atomic<int> fpga_message_updated{0}; //power
-std::atomic<int> config_message_updated{0};
+std::atomic<int> motor_config_message_updated{0};
 
 std::ofstream term;
 std::mutex mutex_;
@@ -37,7 +37,7 @@ void motor_config_cb(config_msg::ConfigStamped motor_config_request)
     LOG_INFO << "CALLBACK RECEIVED! (Value_f = " << motor_config_request.value_f() << ")";
     LOG_INFO << "CALLBACK RECEIVED! (Value_i = " << motor_config_request.value_i() << ")";
     LOG_INFO << "CALLBACK RECEIVED! (Error_code = " << motor_config_request.error_code() << ")";
-    config_message_updated = 1;
+    motor_config_message_updated = 1;
     motor_config_reply = motor_config_request;
 }
 
@@ -239,7 +239,7 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
         robot_fb_msg.mutable_header()->set_seq(seq);
     }
 
-    if (robot_fsm_.getCurrentMode() == RobotMode::MotorConfig && config_message_updated == 1) 
+    if (robot_fsm_.getCurrentMode() == RobotMode::MotorConfig && motor_config_message_updated == 1) 
     {
         LOG_INFO << "[Server] Reply Sent! (Seq = " << motor_config_reply.header().seq() << ")";
         LOG_INFO << "[Server] Reply Sent! (Transmit = " << motor_config_reply.transmit() << ")";
@@ -255,7 +255,7 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
         config_pub_.publish(motor_config_reply);
     }
     std::lock_guard<std::mutex> lock(mutex_);
-    config_message_updated = 0;
+    motor_config_message_updated = 0;
 
     state_pub_.publish(motor_fb_msg);
     state_pb_pub_.publish(power_fb_msg);
@@ -449,7 +449,7 @@ int main(int argc, char* argv[])
     std::string config_topic = "motor/config"; 
     
     core::Publisher<config_msg::ConfigStamped>& config_pub = nh.advertise<config_msg::ConfigStamped>(config_topic);
-    core::Subscriber<config_msg::ConfigStamped>& config_sub = nh.subscribe<config_msg::ConfigStamped>(config_topic, 1000, motor_config_cb);
+    core::Subscriber<config_msg::ConfigStamped>& config_sub = nh.subscribe<config_msg::ConfigStamped>(config_topic, 1000, motor_config_cb, 10);
 
     // Robot gRPC publishers and subscribers
     core::Publisher<robot_msg::RobotStateStamped>& robot_state_pub = nh.advertise<robot_msg::RobotStateStamped>("robot/state");
