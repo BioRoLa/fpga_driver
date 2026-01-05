@@ -237,16 +237,21 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
     if (robot_fsm_.getCurrentMode() == RobotMode::MotorConfig && should_reply_config) 
     {
         if (config_data.transmit() == true) {
-        LOG_ERROR(*logger_) << "[Server] ERROR: Reply Sent but Transmit is still TRUE! MotorFSM logic didn't run.";
-        LOG_ERROR(*logger_) << "         Check: 1. MotorFSM Mode (Should be CONFIG) 2. Seq Number consistency.";
+            LOG_ERROR(*logger_) << "[Server] ERROR: Reply Sent but Transmit is still TRUE! MotorFSM logic didn't run.";
+            LOG_ERROR(*logger_) << "         Check: 1. MotorFSM Mode (Should be CONFIG) 2. Seq Number consistency.";
         } 
         else 
         {
-        LOG_INFO(*logger_) << "[Server] Reply Sent! (Transmit = " << config_data.transmit() << ")";
-        LOG_INFO(*logger_) << "[Server] Reply Sent! (Seq = " << config_data.header().seq() << ")";
-        LOG_INFO(*logger_) << "[Server] Reply Sent! (Mode = " << config_data.mode() << ")";
-        LOG_INFO(*logger_) << "[Server] Reply Sent! (Type = " << config_data.type() << ")";
-        LOG_INFO(*logger_) << "[Server] Reply Sent! (Value = " << config_data.value_f() << ")";
+            LOG_INFO(*logger_) << "[Server] Reply Sent! (Seq = " << config_data.header().seq() << ")";
+            LOG_INFO(*logger_) << "[Server] Reply Sent! (Transmit = " << config_data.transmit() << ")";
+            LOG_INFO(*logger_) << "[Server] Reply Sent! (Module = " << config_data.module() << ")";
+            LOG_INFO(*logger_) << "[Server] Reply Sent! (Motor = " << config_data.motor() << ")";
+            LOG_INFO(*logger_) << "[Server] Reply Sent! (Mode = " << config_data.mode() << ")";
+            LOG_INFO(*logger_) << "[Server] Reply Sent! (Type = " << config_data.type() << ")";
+            LOG_INFO(*logger_) << "[Server] Reply Sent! (Address = " << config_data.address() << ")";
+            LOG_INFO(*logger_) << "[Server] Reply Sent! (Value_f = " << config_data.value_f() << ")";
+            LOG_INFO(*logger_) << "[Server] Reply Sent! (Value_i = " << config_data.value_i() << ")";
+            LOG_INFO(*logger_) << "[Server] Reply Sent! (Error_code = " << config_data.error_code() << ")";
         }
         config_pub_.publish(config_data);
     }
