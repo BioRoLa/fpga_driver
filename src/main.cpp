@@ -3,6 +3,7 @@
 /* TCP node connection setup*/
 std::atomic<int> motor_message_updated{0};
 std::atomic<int> fpga_message_updated{0}; //power
+std::atomic<int> config_message_updated{0};
 
 std::ofstream term;
 std::mutex mutex_;
@@ -18,6 +19,18 @@ void motor_data_cb(motor_msg::MotorCmdStamped motor_msg)
     motor_cmd_data = motor_msg;
 }
 
+config_msg::ConfigStamped config_data;
+void config_data_cb(config_msg::ConfigStamped config_msg)
+{
+    if (config_msg.transmit() == false) {
+        return; 
+    }
+    
+    std::lock_guard<std::mutex> lock(mutex_);
+    config_message_updated = 1;
+    config_data = config_msg;
+}
+
 // Robot gRPC message callbacks
 std::atomic<int> robot_cmd_message_updated{0};
 robot_msg::RobotCmdStamped robot_cmd_data;
@@ -30,10 +43,9 @@ void robot_cmd_data_cb(robot_msg::RobotCmdStamped robot_cmd_msg)
     robot_cmd_data = robot_cmd_msg;
 }
 
-Corgi::Corgi(core::Logger* logger)
+Corgi::Corgi()
     : motor_fsm_(modules_list_, powerboard_state_, fpga_.powerboard_V_list_)
     , robot_fsm_(motor_fsm_, modules_list_, powerboard_state_, fpga_.powerboard_V_list_)
-    , logger_(logger)
 {
     /* default value of interrupt*/
     main_irq_period_us_ = 500;
@@ -87,12 +99,12 @@ void Corgi::load_config_()
     YAML::Node Factors_node_ = yaml_node_["Powerboard_Scaling_Factor"];
     int idx_ = 0;
 
-    LOG_INFO(*logger_) << "PowerBoard Scaling Factor";
+    LOG_INFO << "PowerBoard Scaling Factor";
     for (auto f : Factors_node_)
     {
         fpga_.powerboard_Ifactor[idx_] = f["Current_Factor"].as<double>();
         fpga_.powerboard_Vfactor[idx_] = f["Voltage_Factor"].as<double>();
-        LOG_INFO(*logger_) << "Index " << idx_ << " Current Factor: " << fpga_.powerboard_Ifactor[idx_]
+        LOG_INFO << "Index " << idx_ << " Current Factor: " << fpga_.powerboard_Ifactor[idx_]
                            << ", Voltage Factor: " << fpga_.powerboard_Vfactor[idx_];
         idx_++;
     }
@@ -100,9 +112,12 @@ void Corgi::load_config_()
 
 void Corgi::interruptHandler(core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
                              core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
-                             core::Publisher<motor_msg::MotorStateStamped>& state_pub_,
+                             core::Publisher<motor_msg::MotorStateStamped>& state_pub_, 
+                             core::Publisher<config_msg::ConfigStamped>& config_pub_,
+                             core::Subscriber<config_msg::ConfigStamped>& config_sub_, 
                              core::Publisher<robot_msg::RobotStateStamped>& robot_state_pub_,
-                             core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub_)   
+                             core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub_)
+
 
                                                        
 {
@@ -119,7 +134,7 @@ void Corgi::interruptHandler(core::Publisher<power_msg::PowerStateStamped>& stat
 
         if (NiFpga_IsError(fpga_.status_))
         {
-            LOG_ERROR(*logger_) << "[FPGA Driver] Error! Exiting program. LabVIEW error code: " << fpga_.status_;
+            LOG_ERROR << "[FPGA Server] Error! Exiting program. LabVIEW error code: " << fpga_.status_;
         }
 
         uint32_t irq0_cnt;
@@ -133,7 +148,7 @@ void Corgi::interruptHandler(core::Publisher<power_msg::PowerStateStamped>& stat
 
         if (TimedOut)
         {
-            LOG_ERROR(*logger_) << "IRQ timedout, IRQ_0 cnt: " << irq0_cnt << ", IRQ_1 cnt: " << irq1_cnt;
+            LOG_ERROR << "IRQ timedout, IRQ_0 cnt: " << irq0_cnt << ", IRQ_1 cnt: " << irq1_cnt;
         }
 
         /* if an IRQ was asserted */
@@ -141,14 +156,17 @@ void Corgi::interruptHandler(core::Publisher<power_msg::PowerStateStamped>& stat
         {
             if (irqsAsserted & NiFpga_Irq_0)
             {
-                mainLoop_(state_pb_pub_, cmd_sub_, state_pub_, robot_state_pub_, robot_cmd_sub_);
+                mainLoop_(state_pb_pub_, cmd_sub_, state_pub_, config_pub_, config_sub_, robot_state_pub_, robot_cmd_sub_);
                 // Acknowledge IRQ to begin DMA acquisition
                 NiFpga_MergeStatus(&fpga_.status_, NiFpga_AcknowledgeIrqs(fpga_.session_, irqsAsserted));
             }
             if (irqsAsserted & NiFpga_Irq_1)
             {
-                /* Handling CAN-BUS communication */
-                canLoop_();
+                if (robot_fsm_.getCurrentMode() != RobotMode::MotorConfig)
+                {
+                    /* Handling CAN-BUS communication */
+                    canLoop_();
+                }
 
                 // Acknowledge IRQ to begin DMA acquisition
                 NiFpga_MergeStatus(&fpga_.status_, NiFpga_AcknowledgeIrqs(fpga_.session_, irqsAsserted));
@@ -166,6 +184,8 @@ void Corgi::interruptHandler(core::Publisher<power_msg::PowerStateStamped>& stat
 void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
                       core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
                       core::Publisher<motor_msg::MotorStateStamped>& state_pub_,
+                      core::Publisher<config_msg::ConfigStamped>& config_pub_,
+                      core::Subscriber<config_msg::ConfigStamped>& config_sub_,
                       core::Publisher<robot_msg::RobotStateStamped>& robot_state_pub_,
                       core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub_)
 {
@@ -178,6 +198,7 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
     motor_msg::MotorStateStamped motor_fb_msg;
     robot_msg::RobotStateStamped robot_fb_msg;
 
+    bool should_reply_config = false;
     {
         std::lock_guard<std::mutex> lock(mutex_);
         
@@ -188,13 +209,19 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
             robot_cmd_message_updated = 0;
         }
         
+        if(config_message_updated == 1 && config_data.transmit()) {
+            should_reply_config = true;
+            LOG_INFO << "[Server] Processing Config Req Seq: " << config_data.header().seq();
+        }
+
         // Update error flags and run Robot FSM
         robot_fsm_.setErrorFlags(!NO_CAN_TIMEDOUT_ERROR_, !NO_SWITCH_TIMEDOUT_ERROR_);
         robot_fsm_.runFsm();
         
         // Run Motor FSM
-        motor_fsm_.runFsm(motor_fb_msg, motor_cmd_data);
+        motor_fsm_.runFsm(motor_fb_msg, motor_cmd_data, config_data);
         motor_message_updated = 0;    
+        config_message_updated = 0;
         HALL_CALIBRATED_ = motor_fsm_.isHallCalibrated();
     }
 
@@ -208,7 +235,23 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
         motor_fb_msg.mutable_header()->set_seq(seq);
         robot_fb_msg.mutable_header()->set_seq(seq);
     }
-    
+
+    if (robot_fsm_.getCurrentMode() == RobotMode::MotorConfig && should_reply_config) 
+    {
+        LOG_INFO << "[Server] Reply Sent! (Seq = " << config_data.header().seq() << ")";
+        LOG_INFO << "[Server] Reply Sent! (Transmit = " << config_data.transmit() << ")";
+        LOG_INFO << "[Server] Reply Sent! (Module = " << config_data.module() << ")";
+        LOG_INFO << "[Server] Reply Sent! (Motor = " << config_data.motor() << ")";
+        LOG_INFO << "[Server] Reply Sent! (Mode = " << config_data.mode() << ")";
+        LOG_INFO << "[Server] Reply Sent! (Type = " << config_data.type() << ")";
+        LOG_INFO << "[Server] Reply Sent! (Address = " << config_data.address() << ")";
+        LOG_INFO << "[Server] Reply Sent! (Value_f = " << config_data.value_f() << ")";
+        LOG_INFO << "[Server] Reply Sent! (Value_i = " << config_data.value_i() << ")";
+        LOG_INFO << "[Server] Reply Sent! (Error_code = " << config_data.error_code() << ")";
+        LOG_INFO << "[Server] Reply Sent! (Motor_fsm = " << int(motor_fsm_.getCurrentMode()) << ")";
+        config_pub_.publish(config_data);
+    }
+
     state_pub_.publish(motor_fb_msg);
     state_pb_pub_.publish(power_fb_msg);
     robot_state_pub_.publish(robot_fb_msg);
@@ -309,29 +352,29 @@ void Corgi::handleRobotCommand(const robot_msg::RobotCmdStamped& robot_cmd)
     
     // Only update mode if it's different from current mode
     if (requested_mode != current_mode) {
-        LOG_INFO(*logger_) << "[Robot Command] Mode switch requested from " << static_cast<int>(current_mode) 
+        LOG_INFO << "[Robot Command] Mode switch requested from " << static_cast<int>(current_mode) 
                            << " to " << static_cast<int>(requested_mode);
         
         // Use RobotFSM to check if mode transition is available
         bool transition_available = robot_fsm_.requestModeTransition(requested_mode);
         
         if (transition_available) {
-            LOG_INFO(*logger_) << "[Robot Mode] Successfully requested transition to mode " << static_cast<int>(requested_mode);
+            LOG_INFO << "[Robot Mode] Successfully requested transition to mode " << static_cast<int>(requested_mode);
         } else {
-            LOG_WARN(*logger_) << "[Robot Mode] Transition denied - invalid or not allowed at this time";
+            LOG_WARN << "[Robot Mode] Transition denied - invalid or not allowed at this time";
         }
     }
 }
 
 void Corgi::safeShutdown()
 {
-    LOG_INFO(*logger_) << "[FPGA Driver] Shutdown signal received, initiating safe shutdown...";
+    LOG_INFO << "[FPGA Server] Shutdown signal received, initiating safe shutdown...";
     
     {
         std::lock_guard<std::mutex> lock(mutex_);
         
         // Step 1: Turn off all power states
-        LOG_INFO(*logger_) << "[FPGA Driver] Turning off power board...";
+        LOG_INFO << "[FPGA Server] Turning off power board...";
         powerboard_state_[0] = false;  // digital
         powerboard_state_[1] = false;  // signal
         powerboard_state_[2] = false;  // power
@@ -341,11 +384,11 @@ void Corgi::safeShutdown()
     }
     
     // Step 2: Wait 0.5 seconds for power down to complete
-    LOG_INFO(*logger_) << "[FPGA Driver] Waiting for power down (0.5s)...";
+    LOG_INFO << "[FPGA Server] Waiting for power down (0.5s)...";
     usleep(500000);  // 500ms
     
     // Step 3: Set sys_stop flag to exit loop
-    LOG_INFO(*logger_) << "[FPGA Driver] Shutdown complete.";
+    LOG_INFO << "[FPGA Server] Shutdown complete.";
     sys_stop = 1;
 }
 
@@ -368,7 +411,8 @@ int main(int argc, char* argv[])
 {
     signal(SIGINT, inthand);
 
-    important_message("[FPGA Driver] : Launched");
+    // Initialize global logger with node name
+    LOG_INIT("fpga_driver");
 
     if (argc == 3)
     {
@@ -381,35 +425,38 @@ int main(int argc, char* argv[])
     
     core::NodeHandler nh;
     
-    // Create Log publisher
+    // Create log publisher and set callback for remote logging
     core::Publisher<log_msg::LogEntry>& log_pub = nh.advertise<log_msg::LogEntry>("/log", 100);
-    
-    // Initialize Logger with publish callback for remote logging
-    core::Logger logger("fpga_driver", [&log_pub](const log_msg::LogEntry& entry) {
-        log_pub.publish(entry);
+    core::GlobalLoggerImpl::instance().setPublishCallback([&log_pub](const log_msg::LogEntry& entry) {
+        log_pub.publish(const_cast<log_msg::LogEntry&>(entry));
     });
-    logger.setMinLevel(core::LogLevel::DEBUG);  // Set minimum log level
+
+    LOG_INFO << "[FPGA Server] : Launched";
     
-    // Create Corgi instance with logger (passed to both main and robot FSM)
-    Corgi corgi(&logger);
-    corgi.robot_fsm_.setLogger(&logger);
+    // Create Corgi instance (Logger is now global, no need to pass)
+    Corgi corgi;
 
     core::Publisher<power_msg::PowerStateStamped>& power_pub = nh.advertise<power_msg::PowerStateStamped>("power/state");
 
     core::Publisher<motor_msg::MotorStateStamped>& motor_pub = nh.advertise<motor_msg::MotorStateStamped>("motor/state");
     core::Subscriber<motor_msg::MotorCmdStamped>& motor_sub = nh.subscribe<motor_msg::MotorCmdStamped>("motor/command", 1000, motor_data_cb);
     
+    std::string config_topic = "config/bus"; 
+    
+    core::Publisher<config_msg::ConfigStamped>& config_pub = nh.advertise<config_msg::ConfigStamped>(config_topic);
+    core::Subscriber<config_msg::ConfigStamped>& config_sub = nh.subscribe<config_msg::ConfigStamped>(config_topic, 1000, config_data_cb);
+
     // Robot gRPC publishers and subscribers
     core::Publisher<robot_msg::RobotStateStamped>& robot_state_pub = nh.advertise<robot_msg::RobotStateStamped>("robot/state");
     core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub = nh.subscribe<robot_msg::RobotCmdStamped>("robot/command", 1000, robot_cmd_data_cb);
     
-    corgi.interruptHandler(power_pub, motor_sub, motor_pub, robot_state_pub, robot_cmd_sub);
+    corgi.interruptHandler(power_pub, motor_sub, motor_pub, config_pub, config_sub, robot_state_pub, robot_cmd_sub);
 
     if (NiFpga_IsError(corgi.fpga_.status_)) {
-        LOG_ERROR(logger) << "[FPGA Driver] Error! Exiting program. LabVIEW error code: " << corgi.fpga_.status_;
+        LOG_ERROR << "[FPGA Server] Error! Exiting program. LabVIEW error code: " << corgi.fpga_.status_;
     } else {
         endwin();
-        important_message("\n[FPGA Driver] : Exit Safely");
+        LOG_INFO << "[FPGA Server] : Exit Safely";
     }
 
     return 0;

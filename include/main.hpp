@@ -30,7 +30,7 @@ void inthand(int signum);
 class Corgi
 {
   public:
-    Corgi(core::Logger* logger);
+    Corgi();
     void load_config_();
 
     YAML::Node yaml_node_;
@@ -65,6 +65,8 @@ class Corgi
     void interruptHandler(core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
                           core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
                           core::Publisher<motor_msg::MotorStateStamped>& state_pub_,
+                          core::Publisher<config_msg::ConfigStamped>& config_pub_,
+                          core::Subscriber<config_msg::ConfigStamped>& config_sub_, 
                           core::Publisher<robot_msg::RobotStateStamped>& robot_state_pub_,
                           core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub_);
 
@@ -75,13 +77,12 @@ class Corgi
     void mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pub_,
                    core::Subscriber<motor_msg::MotorCmdStamped>& cmd_sub_,
                    core::Publisher<motor_msg::MotorStateStamped>& state_pub_,
+                   core::Publisher<config_msg::ConfigStamped>& config_pub_,
+                   core::Subscriber<config_msg::ConfigStamped>& config_sub_,
                    core::Publisher<robot_msg::RobotStateStamped>& robot_state_pub_,
                    core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub_);
 
     void canLoop_();
-
-private:
-    core::Logger* logger_;
 };
 
 #endif // __MAIN_HPP__

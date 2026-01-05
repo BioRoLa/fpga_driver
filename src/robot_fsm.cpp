@@ -4,8 +4,7 @@
 #include <sys/time.h>
 
 RobotFSM::RobotFSM(MotorFSM& motor_fsm, std::vector<LegModule>& modules_list, 
-                   std::vector<bool>& powerboard_state, double* powerboard_voltage,
-                   core::Logger* logger)
+                   std::vector<bool>& powerboard_state, double* powerboard_voltage)
     : motor_fsm_(motor_fsm)
     , modules_list_(modules_list)
     , powerboard_state_(powerboard_state)
@@ -18,14 +17,8 @@ RobotFSM::RobotFSM(MotorFSM& motor_fsm, std::vector<LegModule>& modules_list,
     , init_step_(0)
     , init_counter_(0)
     , config_step_(0)
-    , logger_(logger)
-    , default_logger_("RobotFSM")
 {
-    // Use provided logger or default to local-only logger
-    if (!logger_) {
-        logger_ = &default_logger_;
-    }
-    LOG_INFO(*logger_) << "Initialized in SystemOn mode";
+    LOG_INFO << "Initialized in SystemOn mode";
 }
 
 const char* RobotFSM::modeToString(RobotMode mode) const
@@ -72,7 +65,7 @@ void RobotFSM::runFsm()
             break;
             
         default:
-            LOG_ERROR(*logger_) << "Unknown mode!";
+            LOG_ERROR << "Unknown mode!";
             emergencyStop();
             break;
     }
@@ -82,14 +75,14 @@ bool RobotFSM::requestModeTransition(RobotMode next_mode)
 {
     if (current_mode_ == next_mode)
     {
-        LOG_DEBUG(*logger_) << "Already in requested mode: " << modeToString(next_mode);
+        LOG_DEBUG << "Already in requested mode: " << modeToString(next_mode);
         return true;
     }
     
     // Special case: SystemOn -> IDLE request will go through Init first
     if (current_mode_ == RobotMode::SystemOn && next_mode == RobotMode::IDLE)
     {
-        LOG_INFO(*logger_) << "SystemOn -> IDLE requested, going through Init first";
+        LOG_INFO << "SystemOn -> IDLE requested, going through Init first";
         exitMode(current_mode_);
         previous_mode_ = current_mode_;
         current_mode_ = RobotMode::Init;
@@ -99,7 +92,7 @@ bool RobotFSM::requestModeTransition(RobotMode next_mode)
     
     if (!isTransitionAllowed(current_mode_, next_mode))
     {
-        LOG_WARN(*logger_) << "Transition from " << modeToString(current_mode_) 
+        LOG_WARN << "Transition from " << modeToString(current_mode_) 
                            << " to " << modeToString(next_mode) << " not allowed";
         return false;
     }
@@ -167,29 +160,29 @@ void RobotFSM::handleInit()
                     if (module.hasTimeout())
                     {
                         has_timeout = true;
-                        LOG_ERROR(*logger_) << "Init Step 3: Module " << module.label_ << " has timeout!";
+                        LOG_ERROR << "Init Step 3: Module " << module.label_ << " has timeout!";
                         break;
                     }
                 }
                 
                 if (has_timeout)
                 {
-                    LOG_FATAL(*logger_) << "Init failed: Motor timeout detected";
+                    LOG_FATAL << "Init failed: Motor timeout detected";
                     emergencyStop();
                 }
                 else
                 {
-                    LOG_INFO(*logger_) << "Init Step 3: All motors responsive";
+                    LOG_INFO << "Init Step 3: All motors responsive";
                     
                     if (checkEStop())
                     {
-                        LOG_ERROR(*logger_) << "Init failed: Emergency stop is pressed!";
-                        LOG_ERROR(*logger_) << "Please release emergency stop button and ensure power output is normal.";
+                        LOG_ERROR << "Init failed: Emergency stop is pressed!";
+                        LOG_ERROR << "Please release emergency stop button and ensure power output is normal.";
                         emergencyStop();
                     }
                     else
                     {
-                        LOG_INFO(*logger_) << "Init Step 3: Emergency stop check passed, power output normal";
+                        LOG_INFO << "Init Step 3: Emergency stop check passed, power output normal";
                         init_step_++;
                     }
                 }
@@ -198,7 +191,7 @@ void RobotFSM::handleInit()
             
         case 4:
             // Set motor FSM to SET_ZERO mode
-            LOG_INFO(*logger_) << "Init Step 4: Setting motors to SET_ZERO...";
+            LOG_INFO << "Init Step 4: Setting motors to SET_ZERO...";
             motor_fsm_.switchMode(FunctionMode::SET_ZERO);
             init_step_++;
             break;
@@ -207,14 +200,14 @@ void RobotFSM::handleInit()
             // Set motor FSM to HALL_CALIBRATE mode and wait for calibration to complete
             if (motor_fsm_.getCurrentMode() != FunctionMode::HALL_CALIBRATE)
             {
-                LOG_INFO(*logger_) << "Init Step 5: Starting HALL_CALIBRATE...";
+                LOG_INFO << "Init Step 5: Starting HALL_CALIBRATE...";
                 motor_fsm_.switchMode(FunctionMode::HALL_CALIBRATE);
             }
             
             // Wait until calibration is complete
             if (motor_fsm_.isHallCalibrated())
             {
-                LOG_INFO(*logger_) << "Init Step 5: Hall calibration complete";
+                LOG_INFO << "Init Step 5: Hall calibration complete";
                 init_step_++;
             }
             
@@ -224,8 +217,8 @@ void RobotFSM::handleInit()
             // Wait for HALL_CALIBRATE to complete and motor FSM to enter MOTOR mode
             if (motor_fsm_.getCurrentMode() == FunctionMode::MOTOR)
             {
-                LOG_INFO(*logger_) << "Init Step 6: Motors in MOTOR mode";
-                LOG_INFO(*logger_) << "Init complete, transitioning to IDLE";
+                LOG_INFO << "Init Step 6: Motors in MOTOR mode";
+                LOG_INFO << "Init complete, transitioning to IDLE";
                 requestModeTransition(RobotMode::IDLE);
             }
             break;
@@ -247,7 +240,7 @@ void RobotFSM::handleIdle()
     // Check for emergency stop
     if (checkEStop())
     {
-        LOG_ERROR(*logger_) << "Emergency stop detected in IDLE, returning to SystemOn";
+        LOG_ERROR << "Emergency stop detected in IDLE, returning to SystemOn";
         emergencyStop();
         return;
     }
@@ -256,7 +249,7 @@ void RobotFSM::handleIdle()
     // Use LOG_CHANGED to only log when error state changes (not every loop)
     if (has_can_error_ || has_switch_error_)
     {
-        LOG_ERROR_ONCE(*logger_) << "Error detected in IDLE, returning to SystemOn";
+        LOG_ERROR_ONCE << "Error detected in IDLE, returning to SystemOn";
         requestModeTransition(RobotMode::SystemOn);
     }
 }
@@ -274,7 +267,7 @@ void RobotFSM::handleStandby()
     // Check for emergency stop
     if (checkEStop())
     {
-        LOG_ERROR(*logger_) << "Emergency stop detected in Standby, returning to SystemOn";
+        LOG_ERROR << "Emergency stop detected in Standby, returning to SystemOn";
         emergencyStop();
         return;
     }
@@ -282,7 +275,7 @@ void RobotFSM::handleStandby()
     // Check for errors - only log when error state changes
     if (has_can_error_ || has_switch_error_)
     {
-        LOG_ERROR_ONCE(*logger_) << "Error detected in Standby, returning to IDLE";
+        LOG_ERROR_ONCE << "Error detected in Standby, returning to IDLE";
         requestModeTransition(RobotMode::IDLE);
     }
 }
@@ -297,7 +290,7 @@ void RobotFSM::handleMotorConfig()
     // Check for emergency stop
     if (checkEStop())
     {
-        LOG_ERROR(*logger_) << "Emergency stop detected in MotorConfig, returning to SystemOn";
+        LOG_ERROR << "Emergency stop detected in MotorConfig, returning to SystemOn";
         emergencyStop();
         return;
     }
@@ -317,6 +310,12 @@ void RobotFSM::handleMotorConfig()
             
         case 3:
             //TODO: Add motor configuration logic here
+            // Ensure motors are in CONFIG mode
+            if (motor_fsm_.getCurrentMode() != FunctionMode::CONFIG)
+            {
+                bool is_switch_success = motor_fsm_.switchMode(FunctionMode::CONFIG);
+                LOG_INFO << "MotorConfig: Switching motors to CONFIG mode: "  << (is_switch_success ? "Success" : "Failed");
+            }   
             break;
     }
 }
@@ -354,7 +353,7 @@ bool RobotFSM::isTransitionAllowed(RobotMode from, RobotMode to) const
 
 void RobotFSM::enterMode(RobotMode new_mode)
 {
-    LOG_INFO(*logger_) << "Entering mode: " << modeToString(new_mode);
+    LOG_INFO << "Entering mode: " << modeToString(new_mode);
     
     // Reset state-specific counters
     switch (new_mode)
@@ -375,7 +374,7 @@ void RobotFSM::enterMode(RobotMode new_mode)
 
 void RobotFSM::exitMode(RobotMode old_mode)
 {
-    LOG_INFO(*logger_) << "Exiting mode: " << modeToString(old_mode);
+    LOG_INFO << "Exiting mode: " << modeToString(old_mode);
     
     // Cleanup actions when leaving a mode
     // Add specific cleanup logic here if needed
@@ -383,7 +382,7 @@ void RobotFSM::exitMode(RobotMode old_mode)
 
 void RobotFSM::emergencyStop()
 {
-    LOG_FATAL(*logger_) << "EMERGENCY STOP!";
+    LOG_FATAL << "EMERGENCY STOP!";
     
     // Force transition to SystemOn (safe state)
     requestModeTransition(RobotMode::SystemOn);
@@ -403,13 +402,6 @@ void RobotFSM::setLoopPeriod(int period_us)
     loop_period_us_ = period_us;
 }
 
-void RobotFSM::setLogger(core::Logger* logger)
-{
-    if (logger) {
-        logger_ = logger;
-    }
-}
-
 bool RobotFSM::powerSwitchSequence(int& step_counter, int& cycle_counter)
 {
     // Power switch sequence: digital (step 0) -> signal (step 1) -> power (step 2)
@@ -421,7 +413,7 @@ bool RobotFSM::powerSwitchSequence(int& step_counter, int& cycle_counter)
     
     if (switch_index < 0 || switch_index > 2)
     {
-        LOG_ERROR(*logger_) << "Invalid power switch step: " << switch_index;
+        LOG_ERROR << "Invalid power switch step: " << switch_index;
         return true;  // Skip invalid step
     }
     
@@ -431,13 +423,13 @@ bool RobotFSM::powerSwitchSequence(int& step_counter, int& cycle_counter)
         // Check if switch is already on
         if (powerboard_state_.at(switch_index))
         {
-            LOG_DEBUG(*logger_) << "Step " << switch_index << ": " << switch_names[switch_index] 
+            LOG_DEBUG << "Step " << switch_index << ": " << switch_names[switch_index] 
                                 << " switch already ON, skipping wait";
             return true;  // Already on, no need to wait
         }
         
         // Turn on the switch
-        LOG_INFO(*logger_) << "Step " << switch_index << ": Turning " 
+        LOG_INFO << "Step " << switch_index << ": Turning " 
                            << switch_names[switch_index] << " switch ON...";
         powerboard_state_.at(switch_index) = true;
     }
@@ -447,7 +439,7 @@ bool RobotFSM::powerSwitchSequence(int& step_counter, int& cycle_counter)
     
     if (cycle_counter >= required_cycles)
     {
-        LOG_INFO(*logger_) << "Step " << switch_index << ": " 
+        LOG_INFO << "Step " << switch_index << ": " 
                            << switch_names[switch_index] << " switch stabilized";
         return true;  // Step complete
     }
@@ -459,15 +451,15 @@ bool RobotFSM::checkEStop()
 {
     
     if (!powerboard_voltage_) {
-        LOG_ERROR(*logger_) << "Powerboard voltage pointer is null!";
+        LOG_ERROR << "Powerboard voltage pointer is null!";
         return false;
     }
     
     for (int i = 2; i <= 11; i++) {
         if (powerboard_voltage_[i] < ESTOP_VOLTAGE_THRESHOLD) {
-            LOG_WARN(*logger_) << "EStop detected: Power[" << i 
-                               << "] voltage = " << powerboard_voltage_[i] 
-                               << "V (threshold: " << ESTOP_VOLTAGE_THRESHOLD << "V)";
+            LOG_WARN << "EStop detected: Power[" << i 
+                     << "] voltage = " << powerboard_voltage_[i] 
+                     << "V (threshold: " << ESTOP_VOLTAGE_THRESHOLD << "V)";
             return true;
         }
     }

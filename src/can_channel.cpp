@@ -200,7 +200,7 @@ void CANChannel::sendCommands()
 {
     for (size_t i = 0; i < motors_.size(); ++i) {
         const uint8_t* cmd_data = motors_[i]->getCommandRaw();
-        
+        /* temporarily disable FC-based first byte override
         // Read function code and check if need to override first byte
         uint32_t fc = 0;
         NiFpga_MergeStatus(&status_, NiFpga_ReadU32(session_, can_id_fcs_[i], &fc));
@@ -215,6 +215,9 @@ void CANChannel::sendCommands()
             NiFpga_MergeStatus(&status_, 
                 NiFpga_WriteArrayU8(session_, tx_buffers_[i], cmd_data, tx_buf_size_));
         }
+        */
+        NiFpga_MergeStatus(&status_, 
+            NiFpga_WriteArrayU8(session_, tx_buffers_[i], cmd_data, tx_buf_size_));
     }
     
     // transmit trigger

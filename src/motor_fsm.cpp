@@ -14,6 +14,7 @@ MotorFSM::MotorFSM(std::vector<LegModule>& _modules, std::vector<bool>& _pb_stat
     , hall_calibrate_status_(0)
     , robot_fsm_(nullptr)
 {
+    LOG_INFO << "Initialized in REST mode";
 }
 
 double theta_error(double start_theta, double goal_theta)
@@ -30,7 +31,7 @@ double theta_error(double start_theta, double goal_theta)
     return theta_err;
 }
 
-void MotorFSM::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg::MotorCmdStamped& motor_cmd_msg)
+void MotorFSM::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg::MotorCmdStamped& motor_cmd_msg, config_msg::ConfigStamped& config_msg)
 {
     // Publish feedback message at the beginning if not in HALL_CALIBRATE mode
     if (current_mode_ != FunctionMode::HALL_CALIBRATE)
@@ -58,7 +59,7 @@ void MotorFSM::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_ms
             break;
 
         case FunctionMode::CONFIG:
-            handleConfigMode();
+            handleConfigMode(config_msg);
             break;
     }
 }
@@ -145,6 +146,7 @@ void MotorFSM::handleHallCalibrateMode()
                         CANMotor* motor = mod.getMotor(j);
                         if (motor) {
                             // Check hall_cal_state status
+                            motor -> encodeRequestState();
                             if (motor->getHallCalibrateState() != 2) {
                                 all_calibrated = false;
                                 break;
@@ -374,9 +376,18 @@ void MotorFSM::handleMotorMode(const motor_msg::MotorCmdStamped& motor_cmd_msg)
     }
 }
 
-void MotorFSM::handleConfigMode()
+void MotorFSM::handleConfigMode(config_msg::ConfigStamped &config_msg)
 {
-    // for debug
+    if(config_msg.transmit() == true && config_msg.header().seq() != last_process_seq)
+    {
+        handleConfigMessage(config_msg);
+        last_process_seq = config_msg.header().seq();
+    }
+    else
+    {
+        config_msg.set_transmit(false);
+    }
+    publishConfigMsg(config_msg);
 }
 
 bool MotorFSM::switchMode(FunctionMode next_mode)
@@ -412,7 +423,14 @@ bool MotorFSM::switchMode(FunctionMode next_mode)
         {
             if (mod.enable_)
             {
-                mod.setMode(next_mode_switch);
+                if (next_mode_switch == FunctionMode::CONFIG)
+                {
+                    mod.setMode(FunctionMode::REST);
+                }
+                else 
+                {
+                    mod.setMode(next_mode_switch);
+                }
                 
                 // For SET_ZERO mode, prepare the motors before sending
                 if (next_mode_switch == FunctionMode::SET_ZERO)
@@ -452,9 +470,18 @@ bool MotorFSM::switchMode(FunctionMode next_mode)
                             break;
                         }
                     }
+                    else if (next_mode_switch == FunctionMode::CONFIG)
+                    {
+                        if (motor->getModeState() != (uint8_t)FunctionMode::REST) 
+                        {
+                            all_motors_switched = false;
+                            break;
+                        }
+                    }
                     else
                     {
-                        if (motor->getModeState() != (uint8_t)next_mode_switch) {
+                        if (motor->getModeState() != (uint8_t)next_mode_switch) 
+                        {
                             all_motors_switched = false;
                             break;
                         }
@@ -620,4 +647,83 @@ void MotorFSM::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
         index++;
     }
 
+}
+void MotorFSM::handleConfigMessage(config_msg::ConfigStamped &config_data)
+{
+    int mod_index = (int)config_data.module();
+    int motor_index = (int)config_data.motor();
+
+    if (mod_index < 0 || mod_index >= modules_list_.size())
+    {
+        config_data.set_error_code(5); // Invalid module index
+        config_data.set_transmit(false);
+        return;
+    }
+
+    LegModule* mod = &modules_list_.at(mod_index);
+    CANMotor* motor = mod->getMotor(motor_index);
+
+    if(!motor) 
+    {
+        config_data.set_error_code(6); // Invalid motor index
+        config_data.set_transmit(false);
+        return;
+    }
+
+    uint8_t addr = (uint8_t)config_data.address();
+
+    if(config_data.mode() == config_msg::ConfigMode::READ) 
+    {
+        motor->setConfigRead((ConfigType)config_data.type(), addr);
+    }
+    else
+    {
+        if(config_data.type() == config_msg::ConfigType::INT) 
+        {
+            motor->setConfigWriteInt(addr, config_data.value_i());
+        }
+        else if(config_data.type() == config_msg::ConfigType::FLOAT) 
+        {
+            motor->setConfigWriteFloat(addr, config_data.value_f());
+        }
+    }
+
+    config_data.set_transmit(false);
+}
+
+void MotorFSM::publishConfigMsg(config_msg::ConfigStamped &config_data)
+{
+    int mod_idx = (int)config_data.module(); 
+    int motor_idx = (int)config_data.motor();
+
+    if (mod_idx < 0 || mod_idx >= modules_list_.size()) 
+    {
+        config_data.set_error_code(5); // Invalid module index
+        config_data.set_transmit(false);
+        return;
+    }
+    LegModule* mod = &modules_list_.at(mod_idx);
+    CANMotor* motor = mod->getMotor(motor_idx);
+    
+    if(!motor)
+    {
+        config_data.set_error_code(6); // Invalid motor index
+        config_data.set_transmit(false);
+        return;
+    }
+    const auto& motor_fb = motor->getConfigFeedback().config_fb;
+
+    config_data.set_type((config_msg::ConfigType)motor_fb.type);
+    config_data.set_error_code(motor_fb.state);
+    config_data.set_address(motor_fb.target_addr);
+    if(motor_fb.type == ConfigType::INT) 
+    {
+        config_data.set_value_i(motor_fb.value.i);
+    }
+    else
+    {
+        config_data.set_value_f(motor_fb.value.f);
+    }
+
+    config_data.set_transmit(false);
 }

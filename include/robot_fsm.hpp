@@ -23,11 +23,9 @@ public:
      * @param modules_list Reference to all leg modules
      * @param powerboard_state Reference to powerboard state vector [digital, signal, power]
      * @param powerboard_voltage Pointer to powerboard voltage array [0-11]
-     * @param logger Pointer to Logger instance (can be nullptr for local-only logging)
      */
-    RobotFSM(MotorFSM& motor_fsm, std::vector<LegModule>& modules_list, 
-             std::vector<bool>& powerboard_state, double* powerboard_voltage,
-             core::Logger* logger = nullptr);
+    RobotFSM(MotorFSM& motor_fsm, std::vector<LegModule>& modules_list,
+             std::vector<bool>& powerboard_state, double* powerboard_voltage);
     
     RobotFSM() = delete;
     
@@ -38,7 +36,6 @@ public:
     void emergencyStop();
     void setErrorFlags(bool can_error, bool switch_error);
     void setLoopPeriod(int period_us);
-    void setLogger(core::Logger* logger);  // Set logger after construction
 
 private:
     // Constants
@@ -85,10 +82,6 @@ private:
     
     // Convert RobotMode to string
     const char* modeToString(RobotMode mode) const;
-    
-    // Logger
-    core::Logger* logger_;
-    core::Logger default_logger_;  // Used if no logger provided
 };
 
 #endif // __ROBOT_FSM_H
