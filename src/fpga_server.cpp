@@ -246,6 +246,7 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
         LOG_INFO(*logger_) << "[Server] Reply Sent! (Value_f = " << config_data.value_f() << ")";
         LOG_INFO(*logger_) << "[Server] Reply Sent! (Value_i = " << config_data.value_i() << ")";
         LOG_INFO(*logger_) << "[Server] Reply Sent! (Error_code = " << config_data.error_code() << ")";
+        LOG_INFO(*logger_) << "[Server] Reply Sent! (Motor_fsm = " << motor_fsm_.getCurrentMode() << ")";
         config_pub_.publish(config_data);
     }
 
