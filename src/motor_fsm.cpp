@@ -416,7 +416,14 @@ bool MotorFSM::switchMode(FunctionMode next_mode)
         {
             if (mod.enable_)
             {
-                mod.setMode(next_mode_switch);
+                if (next_mode_switch == FunctionMode::CONFIG)
+                {
+                    mod.setMode(FunctionMode::REST);
+                }
+                else 
+                {
+                    mod.setMode(next_mode_switch);
+                }
                 
                 // For SET_ZERO mode, prepare the motors before sending
                 if (next_mode_switch == FunctionMode::SET_ZERO)
@@ -456,9 +463,18 @@ bool MotorFSM::switchMode(FunctionMode next_mode)
                             break;
                         }
                     }
+                    else if (next_mode_switch == FunctionMode::CONFIG)
+                    {
+                        if (motor->getModeState() != (uint8_t)FunctionMode::REST) 
+                        {
+                            all_motors_switched = false;
+                            break;
+                        }
+                    }
                     else
                     {
-                        if (motor->getModeState() != (uint8_t)next_mode_switch) {
+                        if (motor->getModeState() != (uint8_t)next_mode_switch) 
+                        {
                             all_motors_switched = false;
                             break;
                         }
