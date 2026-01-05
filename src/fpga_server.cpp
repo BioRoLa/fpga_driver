@@ -19,27 +19,26 @@ void motor_data_cb(motor_msg::MotorCmdStamped motor_msg)
     motor_cmd_data = motor_msg;
 }
 
-config_msg::ConfigStamped config_data;
-void config_data_cb(config_msg::ConfigStamped config_msg)
+config_msg::ConfigStamped motor_config_reply;
+void motor_config_cb(config_msg::ConfigStamped motor_config_request)
 {
-    if (config_msg.transmit() == false) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (motor_config_request.transmit() == false) {
         return; 
     }
     LOG_INFO << "CALLBACK RECEIVED";
-    LOG_INFO << "CALLBACK RECEIVED! (Seq = " << config_data.header().seq() << ")";
-    LOG_INFO << "CALLBACK RECEIVED! (Transmit = " << config_data.transmit() << ")";
-    LOG_INFO << "CALLBACK RECEIVED! (Module = " << config_data.module() << ")";
-    LOG_INFO << "CALLBACK RECEIVED! (Motor = " << config_data.motor() << ")";
-    LOG_INFO << "CALLBACK RECEIVED! (Mode = " << config_data.mode() << ")";
-    LOG_INFO << "CALLBACK RECEIVED! (Type = " << config_data.type() << ")";
-    LOG_INFO << "CALLBACK RECEIVED! (Address = " << config_data.address() << ")";
-    LOG_INFO << "CALLBACK RECEIVED! (Value_f = " << config_data.value_f() << ")";
-    LOG_INFO << "CALLBACK RECEIVED! (Value_i = " << config_data.value_i() << ")";
-    LOG_INFO << "CALLBACK RECEIVED! (Error_code = " << config_data.error_code() << ")";
-    std::lock_guard<std::mutex> lock(mutex_);
+    LOG_INFO << "CALLBACK RECEIVED! (Seq = " << motor_config_request.header().seq() << ")";
+    LOG_INFO << "CALLBACK RECEIVED! (Transmit = " << motor_config_request.transmit() << ")";
+    LOG_INFO << "CALLBACK RECEIVED! (Module = " << motor_config_request.module() << ")";
+    LOG_INFO << "CALLBACK RECEIVED! (Motor = " << motor_config_request.motor() << ")";
+    LOG_INFO << "CALLBACK RECEIVED! (Mode = " << motor_config_request.mode() << ")";
+    LOG_INFO << "CALLBACK RECEIVED! (Type = " << motor_config_request.type() << ")";
+    LOG_INFO << "CALLBACK RECEIVED! (Address = " << motor_config_request.address() << ")";
+    LOG_INFO << "CALLBACK RECEIVED! (Value_f = " << motor_config_request.value_f() << ")";
+    LOG_INFO << "CALLBACK RECEIVED! (Value_i = " << motor_config_request.value_i() << ")";
+    LOG_INFO << "CALLBACK RECEIVED! (Error_code = " << motor_config_request.error_code() << ")";
     config_message_updated = 1;
-    config_data = config_msg;
-    
+    motor_config_reply = motor_config_request;
 }
 
 // Robot gRPC message callbacks
@@ -224,7 +223,7 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
         robot_fsm_.runFsm();
         
         // Run Motor FSM
-        motor_fsm_.runFsm(motor_fb_msg, motor_cmd_data, config_data);
+        motor_fsm_.runFsm(motor_fb_msg, motor_cmd_data, motor_config_reply);
         motor_message_updated = 0;    
         HALL_CALIBRATED_ = motor_fsm_.isHallCalibrated();
     }
@@ -242,18 +241,18 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
 
     if (robot_fsm_.getCurrentMode() == RobotMode::MotorConfig && config_message_updated == 1) 
     {
-        LOG_INFO << "[Server] Reply Sent! (Seq = " << config_data.header().seq() << ")";
-        LOG_INFO << "[Server] Reply Sent! (Transmit = " << config_data.transmit() << ")";
-        LOG_INFO << "[Server] Reply Sent! (Module = " << config_data.module() << ")";
-        LOG_INFO << "[Server] Reply Sent! (Motor = " << config_data.motor() << ")";
-        LOG_INFO << "[Server] Reply Sent! (Mode = " << config_data.mode() << ")";
-        LOG_INFO << "[Server] Reply Sent! (Type = " << config_data.type() << ")";
-        LOG_INFO << "[Server] Reply Sent! (Address = " << config_data.address() << ")";
-        LOG_INFO << "[Server] Reply Sent! (Value_f = " << config_data.value_f() << ")";
-        LOG_INFO << "[Server] Reply Sent! (Value_i = " << config_data.value_i() << ")";
-        LOG_INFO << "[Server] Reply Sent! (Error_code = " << config_data.error_code() << ")";
+        LOG_INFO << "[Server] Reply Sent! (Seq = " << motor_config_reply.header().seq() << ")";
+        LOG_INFO << "[Server] Reply Sent! (Transmit = " << motor_config_reply.transmit() << ")";
+        LOG_INFO << "[Server] Reply Sent! (Module = " << motor_config_reply.module() << ")";
+        LOG_INFO << "[Server] Reply Sent! (Motor = " << motor_config_reply.motor() << ")";
+        LOG_INFO << "[Server] Reply Sent! (Mode = " << motor_config_reply.mode() << ")";
+        LOG_INFO << "[Server] Reply Sent! (Type = " << motor_config_reply.type() << ")";
+        LOG_INFO << "[Server] Reply Sent! (Address = " << motor_config_reply.address() << ")";
+        LOG_INFO << "[Server] Reply Sent! (Value_f = " << motor_config_reply.value_f() << ")";
+        LOG_INFO << "[Server] Reply Sent! (Value_i = " << motor_config_reply.value_i() << ")";
+        LOG_INFO << "[Server] Reply Sent! (Error_code = " << motor_config_reply.error_code() << ")";
         LOG_INFO << "[Server] Reply Sent! (Motor_fsm = " << int(motor_fsm_.getCurrentMode()) << ")";
-        config_pub_.publish(config_data);
+        config_pub_.publish(motor_config_reply);
     }
     std::lock_guard<std::mutex> lock(mutex_);
     config_message_updated = 0;
@@ -447,10 +446,10 @@ int main(int argc, char* argv[])
     core::Publisher<motor_msg::MotorStateStamped>& motor_pub = nh.advertise<motor_msg::MotorStateStamped>("motor/state");
     core::Subscriber<motor_msg::MotorCmdStamped>& motor_sub = nh.subscribe<motor_msg::MotorCmdStamped>("motor/command", 1000, motor_data_cb);
     
-    std::string config_topic = "config/bus"; 
+    std::string config_topic = "motor/config"; 
     
     core::Publisher<config_msg::ConfigStamped>& config_pub = nh.advertise<config_msg::ConfigStamped>(config_topic);
-    core::Subscriber<config_msg::ConfigStamped>& config_sub = nh.subscribe<config_msg::ConfigStamped>(config_topic, 1000, config_data_cb);
+    core::Subscriber<config_msg::ConfigStamped>& config_sub = nh.subscribe<config_msg::ConfigStamped>(config_topic, 1000, motor_config_cb);
 
     // Robot gRPC publishers and subscribers
     core::Publisher<robot_msg::RobotStateStamped>& robot_state_pub = nh.advertise<robot_msg::RobotStateStamped>("robot/state");
