@@ -27,7 +27,7 @@ void inthand(int signum);
 class Corgi
 {
   public:
-    Corgi(core::Logger* logger);
+    Corgi();
     void load_config_();
 
     YAML::Node yaml_node_;
@@ -80,7 +80,4 @@ class Corgi
                    core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub_);
 
     void canLoop_();
-
-private:
-    core::Logger* logger_;
 };

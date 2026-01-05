@@ -1,7 +1,7 @@
 #include <motor_fsm.hpp>
 #include "robot_fsm.hpp"
 
-MotorFSM::MotorFSM(std::vector<LegModule>& _modules, std::vector<bool>& _pb_state, double* pb_v, core::Logger* logger)
+MotorFSM::MotorFSM(std::vector<LegModule>& _modules, std::vector<bool>& _pb_state, double* pb_v)
     : modules_list_(_modules)
     , pb_state_(_pb_state)
     , current_mode_(FunctionMode::REST)
@@ -9,14 +9,8 @@ MotorFSM::MotorFSM(std::vector<LegModule>& _modules, std::vector<bool>& _pb_stat
     , hall_calibrated_(false)
     , hall_calibrate_status_(0)
     , robot_fsm_(nullptr)
-    , logger_(logger)
-    , default_logger_("MotorFSM")
 {
-    // Use provided logger or default to local-only logger
-    if (!logger_) {
-        logger_ = &default_logger_;
-    }
-    LOG_INFO(*logger_) << "Initialized in SystemOn mode";
+    LOG_INFO << "Initialized in REST mode";
 }
 
 double theta_error(double start_theta, double goal_theta)
@@ -726,10 +720,4 @@ void MotorFSM::publishConfigMsg(config_msg::ConfigStamped &config_data)
     }
 
     config_data.set_transmit(false);
-}
-void MotorFSM::setLogger(core::Logger* logger)
-{
-    if (logger) {
-        logger_ = logger;
-    }
 }
