@@ -681,8 +681,10 @@ void MotorFSM::handleConfigMessage(config_msg::ConfigStamped &config_data)
             motor->setConfigWriteFloat(addr, config_data.value_f());
         }
     }
-
-    config_data.set_transmit(false);
+    mod->sendCommands();
+    usleep(3000);
+    mod->receiveFeedback();
+    motor->decodeBasedOnMode();
 }
 
 void MotorFSM::publishConfigMsg(config_msg::ConfigStamped &config_data)
