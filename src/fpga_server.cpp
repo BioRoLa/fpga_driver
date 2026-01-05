@@ -25,10 +25,21 @@ void config_data_cb(config_msg::ConfigStamped config_msg)
     if (config_msg.transmit() == false) {
         return; 
     }
-    
+    LOG_INFO << "CALLBACK RECEIVED";
+    LOG_INFO << "CALLBACK RECEIVED! (Seq = " << config_data.header().seq() << ")";
+    LOG_INFO << "CALLBACK RECEIVED! (Transmit = " << config_data.transmit() << ")";
+    LOG_INFO << "CALLBACK RECEIVED! (Module = " << config_data.module() << ")";
+    LOG_INFO << "CALLBACK RECEIVED! (Motor = " << config_data.motor() << ")";
+    LOG_INFO << "CALLBACK RECEIVED! (Mode = " << config_data.mode() << ")";
+    LOG_INFO << "CALLBACK RECEIVED! (Type = " << config_data.type() << ")";
+    LOG_INFO << "CALLBACK RECEIVED! (Address = " << config_data.address() << ")";
+    LOG_INFO << "CALLBACK RECEIVED! (Value_f = " << config_data.value_f() << ")";
+    LOG_INFO << "CALLBACK RECEIVED! (Value_i = " << config_data.value_i() << ")";
+    LOG_INFO << "CALLBACK RECEIVED! (Error_code = " << config_data.error_code() << ")";
     std::lock_guard<std::mutex> lock(mutex_);
     config_message_updated = 1;
     config_data = config_msg;
+    
 }
 
 // Robot gRPC message callbacks
@@ -198,7 +209,6 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
     motor_msg::MotorStateStamped motor_fb_msg;
     robot_msg::RobotStateStamped robot_fb_msg;
 
-    bool should_reply_config = false;
     {
         std::lock_guard<std::mutex> lock(mutex_);
         
@@ -208,11 +218,6 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
             last_robot_cmd_seq = robot_cmd_data.header().seq();
             robot_cmd_message_updated = 0;
         }
-        
-        if(config_message_updated == 1 && config_data.transmit()) {
-            should_reply_config = true;
-            LOG_INFO << "[Server] Processing Config Req Seq: " << config_data.header().seq();
-        }
 
         // Update error flags and run Robot FSM
         robot_fsm_.setErrorFlags(!NO_CAN_TIMEDOUT_ERROR_, !NO_SWITCH_TIMEDOUT_ERROR_);
@@ -221,7 +226,6 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
         // Run Motor FSM
         motor_fsm_.runFsm(motor_fb_msg, motor_cmd_data, config_data);
         motor_message_updated = 0;    
-        config_message_updated = 0;
         HALL_CALIBRATED_ = motor_fsm_.isHallCalibrated();
     }
 
@@ -236,7 +240,7 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
         robot_fb_msg.mutable_header()->set_seq(seq);
     }
 
-    if (robot_fsm_.getCurrentMode() == RobotMode::MotorConfig && should_reply_config) 
+    if (robot_fsm_.getCurrentMode() == RobotMode::MotorConfig && config_message_updated == 1) 
     {
         LOG_INFO << "[Server] Reply Sent! (Seq = " << config_data.header().seq() << ")";
         LOG_INFO << "[Server] Reply Sent! (Transmit = " << config_data.transmit() << ")";
@@ -251,6 +255,8 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
         LOG_INFO << "[Server] Reply Sent! (Motor_fsm = " << int(motor_fsm_.getCurrentMode()) << ")";
         config_pub_.publish(config_data);
     }
+    std::lock_guard<std::mutex> lock(mutex_);
+    config_message_updated = 0;
 
     state_pub_.publish(motor_fb_msg);
     state_pb_pub_.publish(power_fb_msg);

@@ -682,7 +682,6 @@ void MotorFSM::handleConfigMessage(config_msg::ConfigStamped &config_data)
         }
     }
     mod->sendCommands();
-    usleep(3000);
     mod->receiveFeedback();
     motor->decodeBasedOnMode();
 }
