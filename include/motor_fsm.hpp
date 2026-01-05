@@ -8,6 +8,7 @@
 #include <Eigen/Dense>
 
 #include "leg_module.hpp"
+#include "Logger.h"
 
 #include "Motor.pb.h"
 #include "Power.pb.h"
@@ -20,7 +21,7 @@ class MotorFSM
 {
 public:
   /* Constructor - pass modules vector by reference */
-  MotorFSM(std::vector<LegModule>& module_list, std::vector<bool>& pb_state, double* pb_v);
+  MotorFSM(std::vector<LegModule>& module_list, std::vector<bool>& pb_state, double* pb_v, core::Logger* logger = nullptr);
   MotorFSM() = delete;
   
   // Public interface methods
@@ -47,6 +48,7 @@ public:
   void setMeasureOffset(int offset) { measure_offset_ = offset; }
   void setCalibrationVelocity(double vel) { cal_vel_ = vel; }
   void setCalibrationTolerance(double tol) { cal_tol_ = tol; }
+  void setLogger(core::Logger* logger);  // Set logger after construction
 
 private:
   // State
@@ -84,6 +86,10 @@ private:
   void handleHallCalibrateMode();
   void handleMotorMode(const motor_msg::MotorCmdStamped& motor_cmd_msg);
   void handleConfigMode(config_msg::ConfigStamped &config_msg);
+  
+  // Logger
+  core::Logger* logger_;
+  core::Logger default_logger_;  // Used if no logger provided
 };
 double theta_error(double start_theta, double goal_theta);
 
