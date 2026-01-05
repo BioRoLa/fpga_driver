@@ -162,8 +162,11 @@ void Corgi::interruptHandler(core::Publisher<power_msg::PowerStateStamped>& stat
             }
             if (irqsAsserted & NiFpga_Irq_1)
             {
-                /* Handling CAN-BUS communication */
-                canLoop_();
+                if (robot_fsm_.getCurrentMode() != RobotMode::MotorConfig)
+                {
+                    /* Handling CAN-BUS communication */
+                    canLoop_();
+                }
 
                 // Acknowledge IRQ to begin DMA acquisition
                 NiFpga_MergeStatus(&fpga_.status_, NiFpga_AcknowledgeIrqs(fpga_.session_, irqsAsserted));
