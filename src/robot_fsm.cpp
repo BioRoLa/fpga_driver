@@ -284,7 +284,7 @@ void RobotFSM::handleMotorConfig()
             if (motor_fsm_.getCurrentMode() != FunctionMode::CONFIG)
             {
                 bool is_switch_success = motor_fsm_.switchMode(FunctionMode::CONFIG);
-                //LOG_INFO(*logger_) << "MotorConfig: Switching motors to CONFIG mode: "  << (is_switch_success ? "Success" : "Failed");
+                LOG_INFO(*logger_) << "MotorConfig: Switching motors to CONFIG mode: "  << (is_switch_success ? "Success" : "Failed");
             }   
             break;
     }
