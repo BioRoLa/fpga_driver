@@ -4,7 +4,7 @@
 #include "NiFpga.h"
 #include "NiFpga_FPGA_CANBus_4module_v3_steering.h"
 #include "can_packet.h"
-#include "color.hpp"
+#include "Logger.h"
 #include "msg.hpp"
 
 #include <unistd.h>

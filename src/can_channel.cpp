@@ -1,5 +1,5 @@
 #include "can_channel.hpp"
-#include "color.hpp"
+#include "Logger.h"
 #include <iostream>
 #include <cstring>
 
@@ -136,14 +136,14 @@ void CANChannel::initializeResources()
 
     }
     else {
-        error_message("[CAN Channel] Unknown channel name: " + channel_name_);
+        LOG_ERROR << "[CAN Channel] Unknown channel name: " << channel_name_;
     }
 }
 
 void CANChannel::addMotor(uint32_t can_id, const Motor& config)
 {
     if (motors_.size() >= can_ids_.size()) {
-        error_message("[CAN Channel] Cannot add more motors than hardware supports");
+        LOG_ERROR << "[CAN Channel] Cannot add more motors than hardware supports";
         return;
     }
     motors_.push_back(std::make_unique<CANMotor>(can_id, config));

@@ -3,14 +3,14 @@
 FpgaHandler::FpgaHandler()
 {
     status_ = NiFpga_Initialize();
-    important_message("[FPGA Handler] Fpga Initialized");
+    LOG_INFO << "[FPGA Handler] Fpga Initialized";
 
     NiFpga_MergeStatus(&status_, NiFpga_Open(NiFpga_FPGA_CANBus_4module_v3_steering_Bitfile,
                                              NiFpga_FPGA_CANBus_4module_v3_steering_Signature, "RIO0", 0, &session_));
-    important_message("[FPGA Handler] Session opened");
+    LOG_INFO << "[FPGA Handler] Session opened";
 
     NiFpga_MergeStatus(&status_, NiFpga_ReserveIrqContext(session_, &irqContext_));
-    important_message("[FPGA Handler] IRQ reserved");
+    LOG_INFO << "[FPGA Handler] IRQ reserved";
     
     w_pb_digital_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlBool_Digital;
     w_pb_signal_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlBool_Signal;
@@ -40,10 +40,10 @@ FpgaHandler::~FpgaHandler()
 
     /* Close the session */
     NiFpga_MergeStatus(&status_, NiFpga_Close(session_, 0));
-    important_message("[FPGA Handler] Session Closed");
+    LOG_INFO << "[FPGA Handler] Session Closed";
 
     NiFpga_MergeStatus(&status_, NiFpga_Finalize());
-    important_message("[FPGA Handler] Fpga Finalized");
+    LOG_INFO << "[FPGA Handler] Fpga Finalized";
 }
 
 void FpgaHandler::setIrqPeriod(int main_loop_p, int can_loop_p)

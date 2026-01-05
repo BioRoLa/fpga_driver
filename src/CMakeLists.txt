@@ -8,8 +8,7 @@ if (NOT LOGGER_LIB)
     message(FATAL_ERROR "Not found Logger Library.")
 endif()
 
-add_executable(fpga_driver  color.cpp
-                            console.cpp       
+add_executable(fpga_driver  console.cpp       
                             fpga_handler.cpp
                             main.cpp
                             motor_fsm.cpp
