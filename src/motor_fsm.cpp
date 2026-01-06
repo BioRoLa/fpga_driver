@@ -27,7 +27,7 @@ double theta_error(double start_theta, double goal_theta)
     return theta_err;
 }
 
-void MotorFSM::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg::MotorCmdStamped& motor_cmd_msg, config_msg::ConfigStamped& config_msg)
+void MotorFSM::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_msg::MotorCmdStamped& motor_cmd_msg, config_msg::ConfigStamped& motor_config_reply, const config_msg::ConfigStamped& motor_config_request_data)
 {
     // Publish feedback message at the beginning if not in HALL_CALIBRATE mode
     if (current_mode_ != FunctionMode::HALL_CALIBRATE)
@@ -55,7 +55,7 @@ void MotorFSM::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_ms
             break;
 
         case FunctionMode::CONFIG:
-            handleConfigMode(config_msg);
+            handleConfigMode(motor_config_reply, motor_config_request_data);
             break;
     }
 }
@@ -370,14 +370,14 @@ void MotorFSM::handleMotorMode(const motor_msg::MotorCmdStamped& motor_cmd_msg)
     }
 }
 
-void MotorFSM::handleConfigMode(config_msg::ConfigStamped &motor_config_reply)
+void MotorFSM::handleConfigMode(config_msg::ConfigStamped &motor_config_reply, const config_msg::ConfigStamped& motor_config_request_data)
 {
     // Check if this is a new request (and has transmit flag set)
-    if(motor_config_reply.transmit() == true && motor_config_reply.header().seq() != last_motor_config_seq)
+    if(motor_config_request_data.transmit() == true && motor_config_request_data.header().seq() != last_motor_config_seq)
     {
         // --- Logic: Process motor/config Request ---
-        int mod_index = (int)motor_config_reply.module();
-        int motor_index = (int)motor_config_reply.motor();
+        int mod_index = (int)motor_config_request_data.module();
+        int motor_index = (int)motor_config_request_data.motor();
 
         if (mod_index < 0 || mod_index >= modules_list_.size())
         {
@@ -396,21 +396,21 @@ void MotorFSM::handleConfigMode(config_msg::ConfigStamped &motor_config_reply)
             return;
         }
 
-        uint8_t addr = (uint8_t)motor_config_reply.address();
+        uint8_t addr = (uint8_t)motor_config_request_data.address();
 
-        if(motor_config_reply.mode() == config_msg::ConfigMode::READ) 
+        if(motor_config_request_data.mode() == config_msg::ConfigMode::READ) 
         {
-            motor->setConfigRead((ConfigType)motor_config_reply.type(), addr);
+            motor->setConfigRead((ConfigType)motor_config_request_data.type(), addr);
         }
         else
         {
-            if(motor_config_reply.type() == config_msg::ConfigType::INT) 
+            if(motor_config_request_data.type() == config_msg::ConfigType::INT) 
             {
-                motor->setConfigWriteInt(addr, motor_config_reply.value_i());
+                motor->setConfigWriteInt(addr, motor_config_request_data.value_i());
             }
-            else if(motor_config_reply.type() == config_msg::ConfigType::FLOAT) 
+            else if(motor_config_request_data.type() == config_msg::ConfigType::FLOAT) 
             {
-                motor->setConfigWriteFloat(addr, motor_config_reply.value_f());
+                motor->setConfigWriteFloat(addr, motor_config_request_data.value_f());
             }
         }
         mod->sendCommands();
@@ -442,6 +442,7 @@ void MotorFSM::handleConfigMode(config_msg::ConfigStamped &motor_config_reply)
 
         // Mark request as processed (Update Seq)
         last_motor_config_seq = motor_config_reply.header().seq();
+        motor_config_reply.mutable_header()->set_seq(last_motor_config_seq);
         motor_config_reply.set_transmit(false); // Mark as Reply
     }
     else

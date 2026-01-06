@@ -25,7 +25,7 @@ public:
   MotorFSM() = delete;
   
   // Public interface methods
-  void runFsm(motor_msg::MotorStateStamped &motor_fb_msg, const motor_msg::MotorCmdStamped &motor_cmd_msg, config_msg::ConfigStamped &config_msg);
+  void runFsm(motor_msg::MotorStateStamped &motor_fb_msg, const motor_msg::MotorCmdStamped &motor_cmd_msg, config_msg::ConfigStamped& motor_config_reply, const config_msg::ConfigStamped& motor_config_request_data);
   bool switchMode(FunctionMode next_mode);
   
   // Getters
@@ -82,7 +82,7 @@ private:
   void handleSetZeroMode();
   void handleHallCalibrateMode();
   void handleMotorMode(const motor_msg::MotorCmdStamped& motor_cmd_msg);
-  void handleConfigMode(config_msg::ConfigStamped &motor_config_reply);
+  void handleConfigMode(config_msg::ConfigStamped &motor_config_reply, const config_msg::ConfigStamped& motor_config_request_data);
 };
 double theta_error(double start_theta, double goal_theta);
 

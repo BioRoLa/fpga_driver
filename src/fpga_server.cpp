@@ -19,26 +19,23 @@ void motor_data_cb(motor_msg::MotorCmdStamped motor_msg)
     motor_cmd_data = motor_msg;
 }
 
-config_msg::ConfigStamped motor_config_reply;
+config_msg::ConfigStamped motor_config_request_data;
 void motor_config_cb(config_msg::ConfigStamped motor_config_request)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (motor_config_request.transmit() == false) {
-        return; 
-    }
-    LOG_INFO << "CALLBACK RECEIVED";
-    LOG_INFO << "CALLBACK RECEIVED! (Seq = " << motor_config_request.header().seq() << ")";
-    LOG_INFO << "CALLBACK RECEIVED! (Transmit = " << motor_config_request.transmit() << ")";
-    LOG_INFO << "CALLBACK RECEIVED! (Module = " << motor_config_request.module() << ")";
-    LOG_INFO << "CALLBACK RECEIVED! (Motor = " << motor_config_request.motor() << ")";
-    LOG_INFO << "CALLBACK RECEIVED! (Mode = " << motor_config_request.mode() << ")";
-    LOG_INFO << "CALLBACK RECEIVED! (Type = " << motor_config_request.type() << ")";
-    LOG_INFO << "CALLBACK RECEIVED! (Address = " << motor_config_request.address() << ")";
-    LOG_INFO << "CALLBACK RECEIVED! (Value_f = " << motor_config_request.value_f() << ")";
-    LOG_INFO << "CALLBACK RECEIVED! (Value_i = " << motor_config_request.value_i() << ")";
-    LOG_INFO << "CALLBACK RECEIVED! (Error_code = " << motor_config_request.error_code() << ")";
+    LOG_INFO << "Request received!";
+    LOG_INFO << "Request received! (Seq = " << motor_config_request.header().seq() << ")";
+    LOG_INFO << "Request received! (Transmit = " << motor_config_request.transmit() << ")";
+    LOG_INFO << "Request received! (Module = " << motor_config_request.module() << ")";
+    LOG_INFO << "Request received! (Motor = " << motor_config_request.motor() << ")";
+    LOG_INFO << "Request received! (Mode = " << motor_config_request.mode() << ")";
+    LOG_INFO << "Request received! (Type = " << motor_config_request.type() << ")";
+    LOG_INFO << "Request received! (Address = " << motor_config_request.address() << ")";
+    LOG_INFO << "Request received! (Value_f = " << motor_config_request.value_f() << ")";
+    LOG_INFO << "Request received! (Value_i = " << motor_config_request.value_i() << ")";
+    LOG_INFO << "Request received! (Error_code = " << motor_config_request.error_code() << ")";
     motor_config_message_updated = 1;
-    motor_config_reply = motor_config_request;
+    motor_config_request_data = motor_config_request;
 }
 
 // Robot gRPC message callbacks
@@ -207,6 +204,7 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
     power_msg::PowerStateStamped power_fb_msg;
     motor_msg::MotorStateStamped motor_fb_msg;
     robot_msg::RobotStateStamped robot_fb_msg;
+    config_msg::ConfigStamped motor_config_reply;
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -223,7 +221,7 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
         robot_fsm_.runFsm();
         
         // Run Motor FSM
-        motor_fsm_.runFsm(motor_fb_msg, motor_cmd_data, motor_config_reply);
+        motor_fsm_.runFsm(motor_fb_msg, motor_cmd_data, motor_config_reply, motor_config_request_data);
         motor_message_updated = 0;    
         HALL_CALIBRATED_ = motor_fsm_.isHallCalibrated();
     }
