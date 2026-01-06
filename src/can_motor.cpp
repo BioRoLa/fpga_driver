@@ -121,58 +121,6 @@ void CANMotor::setConfigWriteFloat(uint8_t target_addr, float value)
     encodeConfigCommand();
 }
 
-void CANMotor::encodeRequestState()
-{
-    // Request motor state: first byte = 255, others = 0
-    command_data_raw[0] = 255;
-    for (int i = 1; i < CAN_DATA_LEN; i++) {
-        command_data_raw[i] = 0;
-    }
-}
-
-void CANMotor::encodeConfigCommand()
-{
-    command_data_raw[0] = static_cast<uint8_t>(config_cmd_data_.config_cmd.mode);
-    command_data_raw[1] = static_cast<uint8_t>(config_cmd_data_.config_cmd.type);
-    command_data_raw[2] = config_cmd_data_.config_cmd.target_addr;
-
-    if(config_cmd_data_.config_cmd.mode == ConfigMode::WRITE) {
-        if(config_cmd_data_.config_cmd.type == ConfigType::INT){
-            std::memcpy(&command_data_raw[3], &config_cmd_data_.config_cmd.value.i, 4);
-        }
-        else{
-            std::memcpy(&command_data_raw[3], &config_cmd_data_.config_cmd.value.f, 4);
-        }
-    }
-    else{
-        std::memset(&command_data_raw[3], 0, 4);
-    }
-    command_data_raw[7] = 0; 
-}
-
-
-void CANMotor::decodeConfigFeedback()
-{
-    config_fb_data_.config_fb.state = static_cast<ConfigState>(feedback_data_raw[0]);
-    config_fb_data_.config_fb.type = static_cast<ConfigType>(feedback_data_raw[1]);
-    config_fb_data_.config_fb.target_addr = feedback_data_raw[2];
-
-    if(config_fb_data_.config_fb.type == ConfigType::INT){
-        std::memcpy(&config_fb_data_.config_fb.value.i, &feedback_data_raw[3], 4);
-    }
-    else{
-        std::memcpy(&config_fb_data_.config_fb.value.f, &feedback_data_raw[3], 4);
-    }
-
-    feedback_data_.version = feedback_data_raw[7] >> 4;
-
-    // Map raw motor state to corresponding FunctionMode
-    uint8_t mode_raw = feedback_data_raw[7] & 0x0F;
-    feedback_data_.motor_state = mapMotorStateToFunctionMode(mode_raw);
-    //temporarily disabled since may cause padding problem
-    //std::memcpy(config_fb_data_.raw_data, feedback_data_raw, 8);
-}
-/* temporarily disabled original version
 void CANMotor::encodeConfigCommand()
 {
     // Copy config_cmd_data_ to command_data_raw
@@ -186,7 +134,16 @@ void CANMotor::decodeConfigFeedback()
     // Caller can access decoded data via config_fb_data_.config_fb
     std::memcpy(config_fb_data_.raw_data, feedback_data_raw, CAN_DATA_LEN);
 }
-*/
+
+void CANMotor::encodeRequestState()
+{
+    // Request motor state: first byte = 255, others = 0
+    command_data_raw[0] = 255;
+    for (int i = 1; i < CAN_DATA_LEN; i++) {
+        command_data_raw[i] = 0;
+    }
+}
+
 int CANMotor::float_to_uint(float x, float x_min, float x_max, int bits)
 {
     float span = x_max - x_min;
