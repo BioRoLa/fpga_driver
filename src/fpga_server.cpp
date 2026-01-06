@@ -23,17 +23,6 @@ config_msg::ConfigStamped motor_config_request_data;
 void motor_config_cb(config_msg::ConfigStamped motor_config_request)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    LOG_INFO << "Request received!";
-    LOG_INFO << "Request received! (Seq = " << motor_config_request.header().seq() << ")";
-    LOG_INFO << "Request received! (Transmit = " << motor_config_request.transmit() << ")";
-    LOG_INFO << "Request received! (Module = " << motor_config_request.module() << ")";
-    LOG_INFO << "Request received! (Motor = " << motor_config_request.motor() << ")";
-    LOG_INFO << "Request received! (Mode = " << motor_config_request.mode() << ")";
-    LOG_INFO << "Request received! (Type = " << motor_config_request.type() << ")";
-    LOG_INFO << "Request received! (Address = " << motor_config_request.address() << ")";
-    LOG_INFO << "Request received! (Value_f = " << motor_config_request.value_f() << ")";
-    LOG_INFO << "Request received! (Value_i = " << motor_config_request.value_i() << ")";
-    LOG_INFO << "Request received! (Error_code = " << motor_config_request.error_code() << ")";
     motor_config_message_updated = 1;
     motor_config_request_data = motor_config_request;
 }
@@ -222,8 +211,14 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
         
         // Run Motor FSM
         motor_fsm_.runFsm(motor_fb_msg, motor_cmd_data, motor_config_reply, motor_config_request_data);
-        motor_message_updated = 0;    
+        motor_message_updated = 0;
         HALL_CALIBRATED_ = motor_fsm_.isHallCalibrated();
+
+        if (robot_fsm_.getCurrentMode() == RobotMode::MotorConfig && motor_config_message_updated == 1) 
+        {
+            config_pub_.publish(motor_config_reply);
+        }
+        motor_config_message_updated = 0;
     }
 
     // Communication with Node Architecture
@@ -236,24 +231,6 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
         motor_fb_msg.mutable_header()->set_seq(seq);
         robot_fb_msg.mutable_header()->set_seq(seq);
     }
-
-    if (robot_fsm_.getCurrentMode() == RobotMode::MotorConfig && motor_config_message_updated == 1) 
-    {
-        LOG_INFO << "[Server] Reply Sent! (Seq = " << motor_config_reply.header().seq() << ")";
-        LOG_INFO << "[Server] Reply Sent! (Transmit = " << motor_config_reply.transmit() << ")";
-        LOG_INFO << "[Server] Reply Sent! (Module = " << motor_config_reply.module() << ")";
-        LOG_INFO << "[Server] Reply Sent! (Motor = " << motor_config_reply.motor() << ")";
-        LOG_INFO << "[Server] Reply Sent! (Mode = " << motor_config_reply.mode() << ")";
-        LOG_INFO << "[Server] Reply Sent! (Type = " << motor_config_reply.type() << ")";
-        LOG_INFO << "[Server] Reply Sent! (Address = " << motor_config_reply.address() << ")";
-        LOG_INFO << "[Server] Reply Sent! (Value_f = " << motor_config_reply.value_f() << ")";
-        LOG_INFO << "[Server] Reply Sent! (Value_i = " << motor_config_reply.value_i() << ")";
-        LOG_INFO << "[Server] Reply Sent! (Error_code = " << motor_config_reply.error_code() << ")";
-        LOG_INFO << "[Server] Reply Sent! (Motor_fsm = " << int(motor_fsm_.getCurrentMode()) << ")";
-        config_pub_.publish(motor_config_reply);
-    }
-    std::lock_guard<std::mutex> lock(mutex_);
-    motor_config_message_updated = 0;
 
     state_pub_.publish(motor_fb_msg);
     state_pb_pub_.publish(power_fb_msg);
