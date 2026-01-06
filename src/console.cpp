@@ -65,7 +65,10 @@ void Console::refreshWindow()
 
         p_power_.infoDisplay(fpga_, powerboard_state_->at(0), powerboard_state_->at(1), powerboard_state_->at(2));
         p_robot_.infoDisplay(robot_fsm_->getCurrentMode());
-        p_config_B_.infoDisplayConfig();
+        if(robot_fsm_->getCurrentMode() == RobotMode::MotorConfig)
+        {
+            p_config_B_.infoDisplayConfig();
+        }
         p_modA_.infoDisplay();
         p_modB_.infoDisplay();
         p_modC_.infoDisplay();
