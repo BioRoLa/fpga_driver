@@ -446,10 +446,8 @@ int main(int argc, char* argv[])
     core::Publisher<motor_msg::MotorStateStamped>& motor_pub = nh.advertise<motor_msg::MotorStateStamped>("motor/state");
     core::Subscriber<motor_msg::MotorCmdStamped>& motor_sub = nh.subscribe<motor_msg::MotorCmdStamped>("motor/command", 1000, motor_data_cb);
     
-    std::string config_topic = "motor/config"; 
-    
-    core::Publisher<config_msg::ConfigStamped>& config_pub = nh.advertise<config_msg::ConfigStamped>(config_topic);
-    core::Subscriber<config_msg::ConfigStamped>& config_sub = nh.subscribe<config_msg::ConfigStamped>(config_topic, 1000, motor_config_cb, 10);
+    core::Publisher<config_msg::ConfigStamped>& config_pub = nh.advertise<config_msg::ConfigStamped>("motor/config/reply");
+    core::Subscriber<config_msg::ConfigStamped>& config_sub = nh.subscribe<config_msg::ConfigStamped>("motor/config/request", 1000, motor_config_cb, 10);
 
     // Robot gRPC publishers and subscribers
     core::Publisher<robot_msg::RobotStateStamped>& robot_state_pub = nh.advertise<robot_msg::RobotStateStamped>("robot/state");
