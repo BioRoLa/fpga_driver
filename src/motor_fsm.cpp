@@ -423,6 +423,9 @@ void MotorFSM::handleConfigMode(config_msg::ConfigStamped &motor_config_reply, c
 
         // --- Logic: Prepare motor/config Reply  ---
 
+        motor_config_reply.set_module((config_msg::Module)mod_index);
+        motor_config_reply.set_motor((config_msg::Motor)motor_index);
+
         const auto& motor_fb = motor->getConfigFeedback().config_fb;
 
         motor_config_reply.set_type((config_msg::ConfigType)motor_fb.type);
@@ -441,7 +444,7 @@ void MotorFSM::handleConfigMode(config_msg::ConfigStamped &motor_config_reply, c
         }
 
         // Mark request as processed (Update Seq)
-        last_motor_config_seq = motor_config_reply.header().seq();
+        last_motor_config_seq = motor_config_request_data.header().seq();
         motor_config_reply.mutable_header()->set_seq(last_motor_config_seq);
         motor_config_reply.set_transmit(false); // Mark as Reply
     }
