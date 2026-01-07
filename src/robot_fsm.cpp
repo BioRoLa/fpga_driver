@@ -287,41 +287,41 @@ void RobotFSM::handleMotorConfig()
     // 0-2. Power switch sequence (digital -> signal -> power)
     // 3. Complete configuration
     
-    // Check for emergency stop
-    if (checkEStop())
-    {
-        LOG_ERROR << "Emergency stop detected in MotorConfig, returning to SystemOn";
-        emergencyStop();
-        return;
-    }
     
     switch (config_step_)
     {
         case 0:
         case 1:
         case 2:
-            // Power switch sequence: digital -> signal -> power
-            if (powerSwitchSequence(config_step_, init_counter_))
-            {
-                config_step_++;
-                init_counter_ = 0;
-            }
-            break;
-            
+        // Power switch sequence: digital -> signal -> power
+        if (powerSwitchSequence(config_step_, init_counter_))
+        {
+            config_step_++;
+            init_counter_ = 0;
+        }
+        break;
+        
         case 3:
-            // Ensure motors are in CONFIG mode
-            if (motor_fsm_.getCurrentMode() != FunctionMode::CONFIG)
+        // Ensure motors are in CONFIG mode
+        if (motor_fsm_.getCurrentMode() != FunctionMode::CONFIG)
+        {
+            if (motor_fsm_.switchMode(FunctionMode::CONFIG))
             {
-                if (motor_fsm_.switchMode(FunctionMode::CONFIG))
-                {
-                    LOG_INFO << "Step 3: Motors set to CONFIG mode";
-                }
-                else
-                {
-                    LOG_ERROR_EVERY_N(3) << "Step 3: Failed to set motors to CONFIG mode";
-                }
-            }   
-            break;
+                LOG_INFO << "Step 3: Motors set to CONFIG mode";
+            }
+            else
+            {
+                LOG_ERROR_EVERY_N(3) << "Step 3: Failed to set motors to CONFIG mode";
+            }
+        }   
+        break;
+    }
+    // Check for emergency stop
+    if (checkEStop())
+    {
+        LOG_ERROR << "Emergency stop detected in MotorConfig, returning to SystemOn";
+        emergencyStop();
+        return;
     }
 }
 
