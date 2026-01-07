@@ -65,7 +65,10 @@ void Console::refreshWindow()
 
         p_power_.infoDisplay(fpga_, powerboard_state_->at(0), powerboard_state_->at(1), powerboard_state_->at(2));
         p_robot_.infoDisplay(robot_fsm_->getCurrentMode());
-        p_config_B_.infoDisplayConfig();
+        if(robot_fsm_->getCurrentMode() == RobotMode::MotorConfig)
+        {
+            p_config_B_.infoDisplayConfig();
+        }
         p_modA_.infoDisplay();
         p_modB_.infoDisplay();
         p_modC_.infoDisplay();
@@ -446,30 +449,24 @@ void Panel::infoDisplay(RobotMode robot_mode)
 
 void Panel::infoDisplayConfig()
 {
-    // md_ptr_ 是在建構子傳入的 LegModule 指標 (這裡是 Mod B)
     if (!md_ptr_) return;
 
-    // 取得馬達 (通常是 0 和 1)
     CANMotor* motorR = md_ptr_->getMotor(0);
     CANMotor* motorL = md_ptr_->getMotor(1);
 
     int y = 0;
     
-    // --- Motor 0 (Right) ---
     mvwprintw(win_, y + 1, 1, "Motor_R:");
     if (motorR) {
-        // 讀取底層資料
         const auto& cmd = motorR->getConfigCommandData().config_cmd;
         const auto& fb = motorR->getConfigFeedback().config_fb;
 
-        // 顯示 Command (Driver -> FPGA)
         mvwprintw(win_, y + 2, 1, " CMD: Mode:%d ",cmd.mode);
         mvwprintw(win_, y + 3, 1, "      Type:%d ", cmd.type);
         mvwprintw(win_, y + 4, 1, "      Addr:%d ", cmd.target_addr);
         if (cmd.type == 0) mvwprintw(win_, y + 5, 1, "      Val: %d (I)", cmd.value.i);
         else               mvwprintw(win_, y + 5, 1, "      Val: %f (F)", cmd.value.f);
 
-        // 顯示 Feedback (FPGA -> Driver)
         mvwprintw(win_, y + 2, 20, "  FB: State:%d ",fb.state);
         mvwprintw(win_, y + 3, 20, "      Type:%d ", fb.type);
         mvwprintw(win_, y + 4, 20, "      Addr:%d ", fb.target_addr);
@@ -479,23 +476,19 @@ void Panel::infoDisplayConfig()
     else {
         mvwprintw(win_, y + 2, 1, " Not Connected");
     }
-
     mvwprintw(win_, y + 6, 1, " --------------------------------");
 
-    // --- Motor 1 (Left) ---
     mvwprintw(win_, y + 7, 1, "Motor_L:");
     if (motorL) {
-        // 讀取底層資料
         const auto& cmd = motorL->getConfigCommandData().config_cmd;
         const auto& fb = motorL->getConfigFeedback().config_fb;
 
-        // 顯示 Command (Driver -> FPGA)
         mvwprintw(win_, y + 8, 1, " CMD: Mode:%d ",cmd.mode);
         mvwprintw(win_, y + 9, 1, "      Type:%d ", cmd.type);
         mvwprintw(win_, y + 10, 1, "      Addr:%d ", cmd.target_addr);
         if (cmd.type == 0) mvwprintw(win_, y + 11, 1, "      Val: %d (I)", cmd.value.i);
         else               mvwprintw(win_, y + 11, 1, "      Val: %f (F)", cmd.value.f);
-        // 顯示 Feedback (FPGA -> Driver)
+
         mvwprintw(win_, y + 8, 20, "  FB: State:%d ",fb.state);
         mvwprintw(win_, y + 9, 20, "      Type:%d ", fb.type);
         mvwprintw(win_, y + 10, 20, "      Addr:%d ", fb.target_addr);
@@ -505,7 +498,6 @@ void Panel::infoDisplayConfig()
     else {
         mvwprintw(win_, y + 8, 1, " Not Connected");
     }
-
     wrefresh(win_);
 }
 

@@ -37,6 +37,7 @@ enum ConfigState : uint8_t
     INVALID_CMD = 4
 };
 
+# pragma pack(push, 1)
 union CONFIGData
 {
     struct 
@@ -68,6 +69,7 @@ union CONFIGData
     uint8_t raw_data[8];        // 8 bytes
 
 };
+# pragma pack(pop)
 
 // Union for CAN message data
 class CANMotor {

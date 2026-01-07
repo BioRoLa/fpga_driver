@@ -25,7 +25,7 @@ public:
   MotorFSM() = delete;
   
   // Public interface methods
-  void runFsm(motor_msg::MotorStateStamped &motor_fb_msg, const motor_msg::MotorCmdStamped &motor_cmd_msg, config_msg::ConfigStamped &config_msg);
+  void runFsm(motor_msg::MotorStateStamped &motor_fb_msg, const motor_msg::MotorCmdStamped &motor_cmd_msg, config_msg::ConfigStamped& motor_config_reply, const config_msg::ConfigStamped& motor_config_request_data);
   bool switchMode(FunctionMode next_mode);
   
   // Getters
@@ -66,7 +66,7 @@ private:
   double cal_tol_ = 0.05;
   double cal_dir_[4][2];
   double cal_command[4][2];
-  int last_process_seq = -1;
+  int last_motor_config_seq = -1;
 
   // External flags (managed by Corgi)
   bool* NO_CAN_TIMEDOUT_ERROR_;
@@ -76,15 +76,13 @@ private:
   
   // Private helper methods
   void publishMsg(motor_msg::MotorStateStamped &motor_fb_msg);
-  void handleConfigMessage(config_msg::ConfigStamped &config_data);
-  void publishConfigMsg(config_msg::ConfigStamped &config_data);
   
   // Mode handlers
   void handleRestMode();
   void handleSetZeroMode();
   void handleHallCalibrateMode();
   void handleMotorMode(const motor_msg::MotorCmdStamped& motor_cmd_msg);
-  void handleConfigMode(config_msg::ConfigStamped &config_msg);
+  void handleConfigMode(config_msg::ConfigStamped &motor_config_reply, const config_msg::ConfigStamped& motor_config_request_data);
 };
 double theta_error(double start_theta, double goal_theta);
 
