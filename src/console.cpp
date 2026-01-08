@@ -424,7 +424,6 @@ void Panel::infoDisplay(RobotMode robot_mode)
     }
     else if (robot_mode == RobotMode::Init)
     {
-        mvwprintw(win_, 5, 1, "  :R M D  -> IDLE");
         mvwprintw(win_, 6, 1, "  :R M O  -> SystemOn");
     }
     else if (robot_mode == RobotMode::IDLE)
