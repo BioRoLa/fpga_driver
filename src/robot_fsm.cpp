@@ -219,7 +219,11 @@ void RobotFSM::handleInit()
             {
                 LOG_INFO << "Init Step 6: Motors in MOTOR mode";
                 LOG_INFO << "Init complete, transitioning to IDLE";
-                requestModeTransition(RobotMode::IDLE);
+                // Direct transition to IDLE without request
+                exitMode(current_mode_);
+                previous_mode_ = current_mode_;
+                current_mode_ = RobotMode::IDLE;
+                enterMode(current_mode_);
             }
             break;
     }
@@ -337,7 +341,7 @@ bool RobotFSM::isTransitionAllowed(RobotMode from, RobotMode to) const
                     to == RobotMode::MotorConfig);
             
         case RobotMode::Init:
-            return (to == RobotMode::IDLE || to == RobotMode::SystemOn);
+            return (to == RobotMode::SystemOn);
             
         case RobotMode::IDLE:
             return (to == RobotMode::Standby || 
