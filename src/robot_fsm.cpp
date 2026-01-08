@@ -227,6 +227,33 @@ void RobotFSM::handleInit()
             }
             break;
     }
+
+    if (init_step_ > 3) 
+    { 
+        //after power on, keep checking estop and motor timeout
+        bool has_timeout = false;
+        for (auto& module : modules_list_)
+        {
+            if (module.hasTimeout())
+            {
+                has_timeout = true;
+                LOG_ERROR << "Init Step 3: Module " << module.label_ << " has timeout!";
+                break;
+            }
+        }
+        
+        if (has_timeout)
+        {
+            LOG_FATAL << "Motor timeout detected";
+            emergencyStop();
+        }
+        if (checkEStop())
+        {
+            LOG_ERROR << "Emergency stop detected in Init, returning to SystemOn";
+            emergencyStop();
+            return;
+        }
+    }
 }
 
 void RobotFSM::handleIdle()
