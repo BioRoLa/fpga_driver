@@ -378,17 +378,21 @@ void MotorFSM::handleMotorMode(const motor_msg::MotorCmdStamped& motor_cmd_msg)
 
 void MotorFSM::handleConfigMode(config_msg::ConfigStamped &motor_config_reply, const config_msg::ConfigStamped& motor_config_request_data)
 {
-    // Check if this is a new request (and has transmit flag set)
-    if(motor_config_request_data.transmit() == true && motor_config_request_data.header().seq() != last_motor_config_seq)
+    // Check if this is a new request
+    if(motor_config_request_data.header().seq() != last_motor_config_seq)
     {
         // --- Logic: Process motor/config Request ---
+
+        // Mark request as processed (Update Seq)
+        last_motor_config_seq = motor_config_request_data.header().seq();
+        motor_config_reply.mutable_header()->set_seq(last_motor_config_seq);
+
         int mod_index = (int)motor_config_request_data.module();
         int motor_index = (int)motor_config_request_data.motor();
 
         if (mod_index < 0 || mod_index >= modules_list_.size())
         {
             motor_config_reply.set_error_code(5); // Invalid module index
-            motor_config_reply.set_transmit(false);
             return;
         }
 
@@ -398,7 +402,6 @@ void MotorFSM::handleConfigMode(config_msg::ConfigStamped &motor_config_reply, c
         if(!motor) 
         {
             motor_config_reply.set_error_code(6); // Invalid motor index
-            motor_config_reply.set_transmit(false);
             return;
         }
 
@@ -420,7 +423,7 @@ void MotorFSM::handleConfigMode(config_msg::ConfigStamped &motor_config_reply, c
             }
         }
         mod->sendCommands();
-        // TODO : Test whether usleep is needed to ensure correct decoding
+        
         usleep(1000); // Wait for CAN response 
 
         mod->receiveFeedback();
@@ -448,17 +451,11 @@ void MotorFSM::handleConfigMode(config_msg::ConfigStamped &motor_config_reply, c
             motor_config_reply.set_value_f(motor_fb.value.f);
             motor_config_reply.set_value_i(0); // Clear int field
         }
-
-        // Mark request as processed (Update Seq)
-        last_motor_config_seq = motor_config_request_data.header().seq();
-        motor_config_reply.mutable_header()->set_seq(last_motor_config_seq);
-        motor_config_reply.set_transmit(false); // Mark as Reply
     }
     else
     {
-        // If not a new request, or Sequence number matches last processed,
-        // ensure transmit is false to indicate no action/reply state.
-        motor_config_reply.set_transmit(false);
+        motor_config_reply.set_error_code(7); // Invalid seq - duplicate request
+        return;
     }
 }
 
