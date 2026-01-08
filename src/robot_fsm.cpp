@@ -321,11 +321,14 @@ void RobotFSM::handleMotorConfig()
         break;
     }
     // Check for emergency stop
-    if (checkEStop() && (config_step_ == 3))
+    if (config_step_ == 3)
     {
-        LOG_ERROR << "Emergency stop detected in MotorConfig, returning to SystemOn";
-        emergencyStop();
-        return;
+        if (checkEStop())
+        {
+            LOG_ERROR << "Emergency stop detected in MotorConfig, returning to SystemOn";
+            emergencyStop();
+            return;
+        }
     }
 }
 
