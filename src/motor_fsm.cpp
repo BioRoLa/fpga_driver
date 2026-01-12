@@ -410,6 +410,9 @@ void MotorFSM::handleConfigMode(config_msg::ConfigStamped &motor_config_reply, c
         if(motor_config_request_data.mode() == config_msg::ConfigMode::READ) 
         {
             motor->setConfigRead((ConfigType)motor_config_request_data.type(), addr);
+
+            mod->sendCommands();
+            usleep(1000); // Wait for CAN response 
         }
         else
         {
@@ -421,10 +424,11 @@ void MotorFSM::handleConfigMode(config_msg::ConfigStamped &motor_config_reply, c
             {
                 motor->setConfigWriteFloat(addr, motor_config_request_data.value_f());
             }
+            mod->sendCommands();
+            usleep(5000); // Wait for CAN response and flash write
+            mod->sendCommands();
+            usleep(1000); // Wait for CAN response 
         }
-        mod->sendCommands();
-        
-        usleep(1000); // Wait for CAN response 
 
         mod->receiveFeedback();
 
