@@ -425,7 +425,7 @@ void MotorFSM::handleConfigMode(config_msg::ConfigStamped &motor_config_reply, c
                 motor->setConfigWriteFloat(addr, motor_config_request_data.value_f());
             }
             mod->sendCommands();
-            usleep(5000); // Wait for CAN response and flash write
+            usleep(1000000); // Wait for CAN response and flash write
             mod->sendCommands();
             usleep(1000); // Wait for CAN response 
         }
