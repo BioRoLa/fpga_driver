@@ -440,6 +440,7 @@ void MotorFSM::handleConfigMode(config_msg::ConfigStamped &motor_config_reply, c
         motor_config_reply.set_type((config_msg::ConfigType)motor_fb.type);
         motor_config_reply.set_error_code(motor_fb.state);
         motor_config_reply.set_address(motor_fb.target_addr);
+        motor_config_reply.set_mode(motor_config_request_data.mode());
 
         if(motor_fb.type == ConfigType::INT) 
         {
