@@ -25,7 +25,12 @@ void CANChannel::initializeResources()
         can_id_fcs_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod1CAN0ID1FC);
         tx_buffers_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayU8_Mod1CAN0ID1TX);
         rx_buffers_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorArrayU8_Mod1CAN0ID1RX);
-
+        
+        can_ids_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod1CAN0ID2);
+        can_id_fcs_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod1CAN0ID2FC);
+        tx_buffers_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayU8_Mod1CAN0ID2TX);
+        rx_buffers_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorArrayU8_Mod1CAN0ID2RX);
+        // TODO: fix address duplication
         can_ids_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod1CAN0ID2);
         can_id_fcs_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod1CAN0ID2FC);
         tx_buffers_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayU8_Mod1CAN0ID2TX);
@@ -54,7 +59,12 @@ void CANChannel::initializeResources()
         can_id_fcs_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod1CAN1ID1FC);
         tx_buffers_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayU8_Mod1CAN1ID1TX);
         rx_buffers_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorArrayU8_Mod1CAN1ID1RX);
-
+        
+        can_ids_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod1CAN1ID2);
+        can_id_fcs_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod1CAN1ID2FC);
+        tx_buffers_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayU8_Mod1CAN1ID2TX);
+        rx_buffers_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorArrayU8_Mod1CAN1ID2RX);
+        // TODO: fix address duplication
         can_ids_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod1CAN1ID2);
         can_id_fcs_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod1CAN1ID2FC);
         tx_buffers_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayU8_Mod1CAN1ID2TX);
@@ -83,7 +93,12 @@ void CANChannel::initializeResources()
         can_id_fcs_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod2CAN0ID1FC);
         tx_buffers_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayU8_Mod2CAN0ID1TX);
         rx_buffers_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorArrayU8_Mod2CAN0ID1RX);
-
+        
+        can_ids_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod2CAN0ID2);
+        can_id_fcs_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod2CAN0ID2FC);
+        tx_buffers_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayU8_Mod2CAN0ID2TX);
+        rx_buffers_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorArrayU8_Mod2CAN0ID2RX);
+        // TODO: fix address duplication
         can_ids_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod2CAN0ID2);
         can_id_fcs_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod2CAN0ID2FC);
         tx_buffers_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayU8_Mod2CAN0ID2TX);
@@ -112,7 +127,12 @@ void CANChannel::initializeResources()
         can_id_fcs_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod2CAN1ID1FC);
         tx_buffers_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayU8_Mod2CAN1ID1TX);
         rx_buffers_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorArrayU8_Mod2CAN1ID1RX);
-
+        
+        can_ids_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod2CAN1ID2);
+        can_id_fcs_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod2CAN1ID2FC);
+        tx_buffers_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayU8_Mod2CAN1ID2TX);
+        rx_buffers_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorArrayU8_Mod2CAN1ID2RX);
+        // TODO: fix address duplication
         can_ids_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod2CAN1ID2);
         can_id_fcs_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_Mod2CAN1ID2FC);
         tx_buffers_.push_back(NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayU8_Mod2CAN1ID2TX);
@@ -164,11 +184,12 @@ void CANChannel::setup(uint32_t timeout_us)
         NiFpga_MergeStatus(&status_, 
             NiFpga_WriteU32(session_, can_ids_[i], motors_[i]->getCANID()));
     }
-    
+    // TODO: check neccessity of this part
     // setup port select
-    NiFpga_Bool port_select[2] = {
+    NiFpga_Bool port_select[3] = {
         motors_.size() > 0,
-        motors_.size() > 1
+        motors_.size() > 1,
+        motors_.size() > 2
     };
     NiFpga_MergeStatus(&status_, 
         NiFpga_WriteArrayBool(session_, port_select_, port_select, port_select_size_));
@@ -200,22 +221,6 @@ void CANChannel::sendCommands()
 {
     for (size_t i = 0; i < motors_.size(); ++i) {
         const uint8_t* cmd_data = motors_[i]->getCommandRaw();
-        /* temporarily disable FC-based first byte override
-        // Read function code and check if need to override first byte
-        uint32_t fc = 0;
-        NiFpga_MergeStatus(&status_, NiFpga_ReadU32(session_, can_id_fcs_[i], &fc));
-        
-        if (fc == 1) {  // CONFIG mode - need to modify first byte
-            uint8_t tx_buffer[8];
-            std::memcpy(tx_buffer, cmd_data, 8);
-            tx_buffer[0] = 255;
-            NiFpga_MergeStatus(&status_, 
-                NiFpga_WriteArrayU8(session_, tx_buffers_[i], tx_buffer, tx_buf_size_));
-        } else {
-            NiFpga_MergeStatus(&status_, 
-                NiFpga_WriteArrayU8(session_, tx_buffers_[i], cmd_data, tx_buf_size_));
-        }
-        */
         NiFpga_MergeStatus(&status_, 
             NiFpga_WriteArrayU8(session_, tx_buffers_[i], cmd_data, tx_buf_size_));
     }
