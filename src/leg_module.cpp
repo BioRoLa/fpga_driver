@@ -85,6 +85,32 @@ void LegModule::load_config()
     std::cout << "  Bias: " << linkL_bias << std::endl;
     std::cout << "---------------------------" << std::endl;
 
+    // Motor H setup
+    Motor motor_h;
+    motor_h.fw_version_ = config_[label_]["Motor_H"]["FW_Version"].as<int>();
+    motor_h.CAN_ID_ = config_[label_]["Motor_H"]["CAN_ID"].as<int>();
+    motor_h.kp_ = config_[label_]["Motor_H"]["KP"].as<double>();
+    motor_h.ki_ = config_[label_]["Motor_H"]["KI"].as<double>();
+    motor_h.kd_ = config_[label_]["Motor_H"]["KD"].as<double>();
+    motor_h.kt_ = config_[label_]["Motor_H"]["KT"].as<double>();
+    motor_h.torque_ff_ = config_[label_]["Motor_H"]["Torque_Feedfoward"].as<double>();
+    linkH_bias = config_[label_]["Motor_H"]["Calibration_Bias"].as<double>();
+    motor_h.calibration_bias = linkH_bias;
+
+    // 添加 Motor H 到 channel
+    channel_->addMotor(motor_h.CAN_ID_, motor_h);
+
+    std::cout << "Motor_L: " << std::endl;
+    std::cout << "  FW_Version: " << motor_l.fw_version_ << std::endl;
+    std::cout << "  CAN_ID: " << motor_l.CAN_ID_ << std::endl;
+    std::cout << "  KP: " << motor_l.kp_ << std::endl;
+    std::cout << "  KI: " << motor_l.ki_ << std::endl;
+    std::cout << "  KD: " << motor_l.kd_ << std::endl;
+    std::cout << "  KT: " << motor_l.kt_ << std::endl;
+    std::cout << "  Torque_ff: " << motor_l.torque_ff_ << std::endl;
+    std::cout << "  Bias: " << linkL_bias << std::endl;
+    std::cout << "---------------------------" << std::endl;
+    
     // Setup channel
     channel_->setup(CAN_timeout_us);
 }

@@ -28,6 +28,7 @@ public:
 
   double linkR_bias;
   double linkL_bias;
+  double linkH_bias;
 
   void sendCommands();
   void receiveFeedback();
