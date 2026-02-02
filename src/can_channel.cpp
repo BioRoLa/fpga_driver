@@ -30,11 +30,11 @@ void CANChannel::initializeResources()
         can_id_fcs_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32_Mod1CAN0ID2FC);
         tx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlArrayU8_Mod1CAN0ID2TX);
         rx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU8_Mod1CAN0ID2RX);
-        // TODO: fix address duplication
-        can_ids_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32_Mod1CAN0ID2);
-        can_id_fcs_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32_Mod1CAN0ID2FC);
-        tx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlArrayU8_Mod1CAN0ID2TX);
-        rx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU8_Mod1CAN0ID2RX);
+        
+        can_ids_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32_Mod1CAN0ID3);
+        can_id_fcs_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32_Mod1CAN0ID3FC);
+        tx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlArrayU8_Mod1CAN0ID3TX);
+        rx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU8_Mod1CAN0ID3RX);
 
         tx_buf_size_ = NiFpga_FPGACANBus_4module_steering_ABAD_ControlArrayU8Size_Mod1CAN0ID1TX;
         rx_buf_size_ = NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU8Size_Mod1CAN0ID1RX;
@@ -64,11 +64,11 @@ void CANChannel::initializeResources()
         can_id_fcs_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32_Mod1CAN1ID2FC);
         tx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlArrayU8_Mod1CAN1ID2TX);
         rx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU8_Mod1CAN1ID2RX);
-        // TODO: fix address duplication
-        can_ids_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32_Mod1CAN1ID2);
-        can_id_fcs_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32_Mod1CAN1ID2FC);
-        tx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlArrayU8_Mod1CAN1ID2TX);
-        rx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU8_Mod1CAN1ID2RX);
+        
+        can_ids_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32_Mod1CAN1ID3);
+        can_id_fcs_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32_Mod1CAN1ID3FC);
+        tx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlArrayU8_Mod1CAN1ID3TX);
+        rx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU8_Mod1CAN1ID3RX);
 
         tx_buf_size_ = NiFpga_FPGACANBus_4module_steering_ABAD_ControlArrayU8Size_Mod1CAN1ID1TX;
         rx_buf_size_ = NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU8Size_Mod1CAN1ID1RX;
@@ -98,11 +98,11 @@ void CANChannel::initializeResources()
         can_id_fcs_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32_Mod2CAN0ID2FC);
         tx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlArrayU8_Mod2CAN0ID2TX);
         rx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU8_Mod2CAN0ID2RX);
-        // TODO: fix address duplication
-        can_ids_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32_Mod2CAN0ID2);
-        can_id_fcs_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32_Mod2CAN0ID2FC);
-        tx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlArrayU8_Mod2CAN0ID2TX);
-        rx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU8_Mod2CAN0ID2RX);
+        
+        can_ids_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32_Mod2CAN0ID3);
+        can_id_fcs_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32_Mod2CAN0ID3FC);
+        tx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlArrayU8_Mod2CAN0ID3TX);
+        rx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU8_Mod2CAN0ID3RX);
 
         tx_buf_size_ = NiFpga_FPGACANBus_4module_steering_ABAD_ControlArrayU8Size_Mod2CAN0ID1TX;
         rx_buf_size_ = NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU8Size_Mod2CAN0ID1RX;
@@ -132,11 +132,11 @@ void CANChannel::initializeResources()
         can_id_fcs_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32_Mod2CAN1ID2FC);
         tx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlArrayU8_Mod2CAN1ID2TX);
         rx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU8_Mod2CAN1ID2RX);
-        // TODO: fix address duplication
-        can_ids_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32_Mod2CAN1ID2);
-        can_id_fcs_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32_Mod2CAN1ID2FC);
-        tx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlArrayU8_Mod2CAN1ID2TX);
-        rx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU8_Mod2CAN1ID2RX);
+        
+        can_ids_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32_Mod2CAN1ID3);
+        can_id_fcs_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32_Mod2CAN1ID3FC);
+        tx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_ControlArrayU8_Mod2CAN1ID3TX);
+        rx_buffers_.push_back(NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU8_Mod2CAN1ID3RX);
 
         tx_buf_size_ = NiFpga_FPGACANBus_4module_steering_ABAD_ControlArrayU8Size_Mod2CAN1ID1TX;
         rx_buf_size_ = NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU8Size_Mod2CAN1ID1RX;
@@ -184,7 +184,7 @@ void CANChannel::setup(uint32_t timeout_us)
         NiFpga_MergeStatus(&status_, 
             NiFpga_WriteU32(session_, can_ids_[i], motors_[i]->getCANID()));
     }
-    // TODO: check neccessity of this part
+    
     // setup port select
     NiFpga_Bool port_select[3] = {
         motors_.size() > 0,
