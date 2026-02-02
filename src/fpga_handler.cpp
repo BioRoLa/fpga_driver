@@ -5,26 +5,26 @@ FpgaHandler::FpgaHandler()
     status_ = NiFpga_Initialize();
     LOG_INFO << "[FPGA Handler] Fpga Initialized";
 
-    NiFpga_MergeStatus(&status_, NiFpga_Open(NiFpga_FPGA_CANBus_4module_v3_steering_Bitfile,
-                                             NiFpga_FPGA_CANBus_4module_v3_steering_Signature, "RIO0", 0, &session_));
+    NiFpga_MergeStatus(&status_, NiFpga_Open(NiFpga_FPGACANBus_4module_steering_ABAD_Bitfile,
+                                             NiFpga_FPGACANBus_4module_steering_ABAD_Signature, "RIO0", 0, &session_));
     LOG_INFO << "[FPGA Handler] Session opened";
 
     NiFpga_MergeStatus(&status_, NiFpga_ReserveIrqContext(session_, &irqContext_));
     LOG_INFO << "[FPGA Handler] IRQ reserved";
     
-    w_pb_digital_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlBool_Digital;
-    w_pb_signal_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlBool_Signal;
-    w_pb_power_ = NiFpga_FPGA_CANBus_4module_v3_steering_ControlBool_Power;
+    w_pb_digital_ = NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool_Digital;
+    w_pb_signal_ = NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool_Signal;
+    w_pb_power_ = NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool_Power;
 
-    r_powerboard_data_ = NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorArrayU16_Data;
-    size_powerboard_data_ = NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorArrayU16Size_Data;
+    r_powerboard_data_ = NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU16_Data;
+    size_powerboard_data_ = NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU16Size_Data;
 
-    enable_btn_ =  NiFpga_FPGA_CANBus_4module_v3_steering_ControlBool_EN;
-    hall = NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorBool_Hall_effect;
+    enable_btn_ =  NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool_EN;
+    hall = NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorBool_Hall_effect;
    
-    voltage = NiFpga_FPGA_CANBus_4module_v3_steering_ControlU16_input_voltage;
-    dir = NiFpga_FPGA_CANBus_4module_v3_steering_ControlBool_DIR;
-    encoder = NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorI32_EncoderPosition;
+    voltage = NiFpga_FPGACANBus_4module_steering_ABAD_ControlU16_input_voltage;
+    dir = NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool_DIR;
+    encoder = NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorI32_EncoderPosition;
 
     for (int i = 0; i < 12; i++)
     {
@@ -51,11 +51,11 @@ void FpgaHandler::setIrqPeriod(int main_loop_p, int can_loop_p)
     /* Set up interrupt period (microsecond) */
     /* IRQ 0 */
     NiFpga_MergeStatus(
-        &status_, NiFpga_WriteU32(session_, NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_IRQ0_period_us, main_loop_p));
+        &status_, NiFpga_WriteU32(session_, NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32_IRQ0_period_us, main_loop_p));
 
     /* IRQ 1 */
     NiFpga_MergeStatus(
-        &status_, NiFpga_WriteU32(session_, NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32_IRQ1_period_us, can_loop_p));
+        &status_, NiFpga_WriteU32(session_, NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32_IRQ1_period_us, can_loop_p));
 }
 
 void FpgaHandler::write_powerboard_(std::vector<bool> *powerboard_state_)
@@ -69,7 +69,7 @@ void FpgaHandler::read_powerboard_data_()
 {
     uint16_t rx_arr[24];
     // uint16_t *rx_arr = new uint16_t[24];
-    NiFpga_MergeStatus(&status_, NiFpga_ReadArrayU16(session_, NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorArrayU16_Data, rx_arr, NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorArrayU16Size_Data));
+    NiFpga_MergeStatus(&status_, NiFpga_ReadArrayU16(session_, NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU16_Data, rx_arr, NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU16Size_Data));
 
     for (int i = 0; i < 24; i++)
     {

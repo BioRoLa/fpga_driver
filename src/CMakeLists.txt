@@ -16,7 +16,7 @@ add_executable(fpga_driver  console.cpp
                             leg_module.cpp
                             can_motor.cpp
                             can_channel.cpp
-                            NiFpga_FPGA_CANBus_4module_v3_steering.c
+                            NiFpga_FPGACANBus_4module_steering_ABAD.c
                             NiFpga.c                       
 )
 find_package(yaml-cpp REQUIRED)

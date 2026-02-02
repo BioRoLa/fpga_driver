@@ -137,10 +137,10 @@ void Corgi::interruptHandler(core::Publisher<power_msg::PowerStateStamped>& stat
         uint32_t irq1_cnt;
 
         NiFpga_MergeStatus(&fpga_.status_,
-                           NiFpga_ReadU32(fpga_.session_, NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorI32_IRQ0_cnt, &irq0_cnt));
+                           NiFpga_ReadU32(fpga_.session_, NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorI32_IRQ0_cnt, &irq0_cnt));
 
         NiFpga_MergeStatus(&fpga_.status_,
-                           NiFpga_ReadU32(fpga_.session_, NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorI32_IRQ0_cnt, &irq1_cnt));
+                           NiFpga_ReadU32(fpga_.session_, NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorI32_IRQ0_cnt, &irq1_cnt));
 
         if (TimedOut)
         {

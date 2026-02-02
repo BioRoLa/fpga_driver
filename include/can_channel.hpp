@@ -3,7 +3,7 @@
 
 #include "can_motor.hpp"
 #include "NiFpga.h"
-#include "NiFpga_FPGA_CANBus_4module_v3_steering.h"
+#include "NiFpga_FPGACANBus_4module_steering_ABAD.h"
 #include <vector>
 #include <memory>
 #include <string>
@@ -42,26 +42,26 @@ private:
     
     // FPGA resource addresses (dynamically assigned based on channel_name)
 
-    std::vector<NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32> can_ids_;
-    std::vector<NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32> can_id_fcs_;
-    std::vector<NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayU8> tx_buffers_;
-    std::vector<NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorArrayU8> rx_buffers_;
+    std::vector<NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32> can_ids_;
+    std::vector<NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32> can_id_fcs_;
+    std::vector<NiFpga_FPGACANBus_4module_steering_ABAD_ControlArrayU8> tx_buffers_;
+    std::vector<NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU8> rx_buffers_;
 
-    NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayU8Size tx_buf_size_;
-    NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorArrayU8Size rx_buf_size_;
+    NiFpga_FPGACANBus_4module_steering_ABAD_ControlArrayU8Size tx_buf_size_;
+    NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU8Size rx_buf_size_;
 
-    NiFpga_FPGA_CANBus_4module_v3_steering_ControlBool transmit_;
-    NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorBool complete_;
-    NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorBool success_;
-    NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorI16 complete_counter_;
+    NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool transmit_;
+    NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorBool complete_;
+    NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorBool success_;
+    NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorI16 complete_counter_;
     
-    NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorBool tx_timeout_;
-    NiFpga_FPGA_CANBus_4module_v3_steering_IndicatorBool rx_timeout_;
+    NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorBool tx_timeout_;
+    NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorBool rx_timeout_;
 
-    NiFpga_FPGA_CANBus_4module_v3_steering_ControlU32 timeout_us_;
+    NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32 timeout_us_;
 
-    NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayBool port_select_;
-    NiFpga_FPGA_CANBus_4module_v3_steering_ControlArrayBoolSize port_select_size_;
+    NiFpga_FPGACANBus_4module_steering_ABAD_ControlArrayBool port_select_;
+    NiFpga_FPGACANBus_4module_steering_ABAD_ControlArrayBoolSize port_select_size_;
     
     // Timeout debounce
     mutable uint32_t tx_timeout_counter_us_;
