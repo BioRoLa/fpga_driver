@@ -64,8 +64,8 @@ private:
   double dt_ = 0.001;     // second
   double cal_vel_ = 0.25; // rad/s
   double cal_tol_ = 0.05;
-  double cal_dir_[4][2];
-  double cal_command[4][2];
+  double cal_dir_[4][3];
+  double cal_command[4][3];
   int last_motor_config_seq = -1;
 
   // External flags (managed by Corgi)
