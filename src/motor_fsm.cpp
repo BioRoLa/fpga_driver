@@ -172,6 +172,7 @@ void MotorFSM::handleHallCalibrateMode()
                 {
                     CANMotor* motorR = mod.getMotor(0);
                     CANMotor* motorL = mod.getMotor(1);
+                    CANMotor* motorH = mod.getMotor(2);
                     
                     if (motorR) {
                         motorR->setPositionBias(mod.linkR_bias);
@@ -185,6 +186,14 @@ void MotorFSM::handleHallCalibrateMode()
                         cal_command[mod_index][1] = -mod.linkL_bias;
                         motorL->setCommand(cal_command[mod_index][1], 0, 0, 0, 0);
                         cal_dir_[mod_index][1] = -1;
+                    }
+
+                    if (motorH) {
+                        motorH->setPositionBias(mod.linkH_bias);
+                        cal_command[mod_index][2] = -mod.linkH_bias;
+                        motorH->setCommand(cal_command[mod_index][2], 0, 0, 0, 0);
+                        // TODO: decide direction for H motor
+                        cal_dir_[mod_index][2] = -1;
                     }
                     
                 }
@@ -263,7 +272,7 @@ void MotorFSM::handleMotorMode(const motor_msg::MotorCmdStamped& motor_cmd_msg)
             {
                 // Get theta-beta command based on module index
                 Eigen::Vector2d tb_cmd;
-                float torque_r, torque_l, kp_r, kp_l, ki_r, ki_l, kd_r, kd_l;
+                float gamma, torque_r, torque_l, torque_h, kp_r, kp_l, kp_h, ki_r, ki_l, ki_h, kd_r, kd_l, kd_h;
                 
                 // Only update from gRPC if in Standby or other active modes
                 if (accept_grpc_commands)
@@ -276,15 +285,20 @@ void MotorFSM::handleMotorMode(const motor_msg::MotorCmdStamped& motor_cmd_msg)
                             double theta = motor_cmd_msg.module_a().theta();
                             theta = std::max(17.0*PI/180.0, std::min(160.0*PI/180.0, theta));
                             tb_cmd << theta, motor_cmd_msg.module_a().beta();
+                            gamma = motor_cmd_msg.module_a().gamma();
                             
                             torque_r = motor_cmd_msg.module_a().torque_r();
                             torque_l = motor_cmd_msg.module_a().torque_l();
+                            torque_h = motor_cmd_msg.module_a().torque_h();
                             kp_r = motor_cmd_msg.module_a().kp_r();
                             kp_l = motor_cmd_msg.module_a().kp_l();
+                            kp_h = motor_cmd_msg.module_a().kp_h();
                             ki_r = motor_cmd_msg.module_a().ki_r();
                             ki_l = motor_cmd_msg.module_a().ki_l();
+                            ki_h = motor_cmd_msg.module_a().ki_h();
                             kd_r = motor_cmd_msg.module_a().kd_r();
                             kd_l = motor_cmd_msg.module_a().kd_l();
+                            kd_h = motor_cmd_msg.module_a().kd_h();
                         }
                         break;
                     
@@ -293,15 +307,20 @@ void MotorFSM::handleMotorMode(const motor_msg::MotorCmdStamped& motor_cmd_msg)
                         double theta = motor_cmd_msg.module_b().theta();
                         theta = std::max(17.0*PI/180.0, std::min(160.0*PI/180.0, theta));
                         tb_cmd << theta, motor_cmd_msg.module_b().beta();
+                        gamma = motor_cmd_msg.module_b().gamma();
                         
                         torque_r = motor_cmd_msg.module_b().torque_r();
                         torque_l = motor_cmd_msg.module_b().torque_l();
+                        torque_h = motor_cmd_msg.module_b().torque_h();
                         kp_r = motor_cmd_msg.module_b().kp_r();
                         kp_l = motor_cmd_msg.module_b().kp_l();
+                        kp_h = motor_cmd_msg.module_b().kp_h();
                         ki_r = motor_cmd_msg.module_b().ki_r();
                         ki_l = motor_cmd_msg.module_b().ki_l();
+                        ki_h = motor_cmd_msg.module_b().ki_h();
                         kd_r = motor_cmd_msg.module_b().kd_r();
                         kd_l = motor_cmd_msg.module_b().kd_l();
+                        kd_h = motor_cmd_msg.module_b().kd_h();
                     }
                     break;
                     
@@ -310,15 +329,20 @@ void MotorFSM::handleMotorMode(const motor_msg::MotorCmdStamped& motor_cmd_msg)
                         double theta = motor_cmd_msg.module_c().theta();
                         theta = std::max(17.0*PI/180.0, std::min(160.0*PI/180.0, theta));
                         tb_cmd << theta, motor_cmd_msg.module_c().beta();
+                        gamma = motor_cmd_msg.module_c().gamma();
                         
                         torque_r = motor_cmd_msg.module_c().torque_r();
                         torque_l = motor_cmd_msg.module_c().torque_l();
+                        torque_h = motor_cmd_msg.module_c().torque_h();
                         kp_r = motor_cmd_msg.module_c().kp_r();
                         kp_l = motor_cmd_msg.module_c().kp_l();
+                        kp_h = motor_cmd_msg.module_c().kp_h();
                         ki_r = motor_cmd_msg.module_c().ki_r();
                         ki_l = motor_cmd_msg.module_c().ki_l();
+                        ki_h = motor_cmd_msg.module_c().ki_h();
                         kd_r = motor_cmd_msg.module_c().kd_r();
                         kd_l = motor_cmd_msg.module_c().kd_l();
+                        kd_h = motor_cmd_msg.module_c().kd_h();
                     }
                     break;
                     
@@ -327,15 +351,20 @@ void MotorFSM::handleMotorMode(const motor_msg::MotorCmdStamped& motor_cmd_msg)
                         double theta = motor_cmd_msg.module_d().theta();
                         theta = std::max(17.0*PI/180.0, std::min(160.0*PI/180.0, theta));
                         tb_cmd << theta, motor_cmd_msg.module_d().beta();
+                        gamma = motor_cmd_msg.module_d().gamma();
                         
                         torque_r = motor_cmd_msg.module_d().torque_r();
                         torque_l = motor_cmd_msg.module_d().torque_l();
+                        torque_h = motor_cmd_msg.module_d().torque_h();
                         kp_r = motor_cmd_msg.module_d().kp_r();
                         kp_l = motor_cmd_msg.module_d().kp_l();
+                        kp_h = motor_cmd_msg.module_d().kp_h();
                         ki_r = motor_cmd_msg.module_d().ki_r();
                         ki_l = motor_cmd_msg.module_d().ki_l();
+                        ki_h = motor_cmd_msg.module_d().ki_h();
                         kd_r = motor_cmd_msg.module_d().kd_r();
                         kd_l = motor_cmd_msg.module_d().kd_l();
+                        kd_h = motor_cmd_msg.module_d().kd_h();
                     }
                     break;
                     
@@ -358,16 +387,19 @@ void MotorFSM::handleMotorMode(const motor_msg::MotorCmdStamped& motor_cmd_msg)
                 // Get motors and set commands
                 CANMotor* motorR = mod.getMotor(0);
                 CANMotor* motorL = mod.getMotor(1);
+                CANMotor* motorH = mod.getMotor(2);
                 
-                if (motorR && motorL)
+                if (motorR && motorL && motorH)
                 {
                     // Convert torque using kt (torque constant)
                     float torque_r_motor = torque_r / motorR->getConfig().kt_;
                     float torque_l_motor = torque_l / motorL->getConfig().kt_;
+                    float torque_h_motor = torque_h / motorH->getConfig().kt_;
                     
                     // Set commands (setCommand internally calls encodeControl)
                     motorR->setCommand(phi_cmd[0], torque_r_motor, kp_r, ki_r, kd_r);
                     motorL->setCommand(phi_cmd[1], torque_l_motor, kp_l, ki_l, kd_l);
+                    motorH->setCommand(gamma, torque_h_motor, kp_h, ki_h, kd_h);
                 }
 
             }
@@ -602,18 +634,22 @@ void MotorFSM::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
         {
             CANMotor* motorR = mod.getMotor(0);
             CANMotor* motorL = mod.getMotor(1);
+            CANMotor* motorH = mod.getMotor(2);
             
-            if (!motorR || !motorL) {
+            if (!motorR || !motorL || !motorH) {
                 index++;
                 continue;
             }
             
             float pos_r = motorR->getPosition();
             float pos_l = motorL->getPosition();
+            float pos_h = motorH->getPosition();
             float vel_r = motorR->getVelocity();
             float vel_l = motorL->getVelocity();
+            float vel_h = motorH->getVelocity();
             float torque_r = motorR->getTorque() * motorR->getConfig().kt_;
             float torque_l = motorL->getTorque() * motorL->getConfig().kt_;
+            float torque_h = motorH->getTorque() * motorH->getConfig().kt_;
             
             Eigen::Vector2d phi_(pos_r, pos_l);
             Eigen::Vector2d tb_ = LegModule::phi2tb(phi_);
@@ -624,10 +660,13 @@ void MotorFSM::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
                 {
                     motor_fb_msg.mutable_module_a()->set_velocity_r(vel_r); 
                     motor_fb_msg.mutable_module_a()->set_velocity_l(vel_l); 
+                    motor_fb_msg.mutable_module_a()->set_velocity_h(vel_h); 
                     motor_fb_msg.mutable_module_a()->set_theta(tb_[0]);
                     motor_fb_msg.mutable_module_a()->set_beta(tb_[1]);
+                    motor_fb_msg.mutable_module_a()->set_gamma(pos_h);
                     motor_fb_msg.mutable_module_a()->set_torque_r(torque_r);
                     motor_fb_msg.mutable_module_a()->set_torque_l(torque_l);
+                    motor_fb_msg.mutable_module_a()->set_torque_h(torque_h);
                 }
                 break;
 
@@ -635,32 +674,41 @@ void MotorFSM::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
                 {
                     motor_fb_msg.mutable_module_b()->set_velocity_r(vel_r); 
                     motor_fb_msg.mutable_module_b()->set_velocity_l(vel_l); 
+                    motor_fb_msg.mutable_module_b()->set_velocity_h(vel_h);
                     motor_fb_msg.mutable_module_b()->set_theta(tb_[0]);
                     motor_fb_msg.mutable_module_b()->set_beta(tb_[1]);
+                    motor_fb_msg.mutable_module_b()->set_gamma(pos_h);
                     motor_fb_msg.mutable_module_b()->set_torque_r(torque_r);
                     motor_fb_msg.mutable_module_b()->set_torque_l(torque_l);
+                    motor_fb_msg.mutable_module_b()->set_torque_h(torque_h);
                 }
                 break;
 
                 case 2: // module_c
                 {
                     motor_fb_msg.mutable_module_c()->set_velocity_r(vel_r); 
-                    motor_fb_msg.mutable_module_c()->set_velocity_l(vel_l); 
+                    motor_fb_msg.mutable_module_c()->set_velocity_l(vel_l);
+                    motor_fb_msg.mutable_module_c()->set_velocity_h(vel_h); 
                     motor_fb_msg.mutable_module_c()->set_theta(tb_[0]);
                     motor_fb_msg.mutable_module_c()->set_beta(tb_[1]);
+                    motor_fb_msg.mutable_module_c()->set_gamma(pos_h);
                     motor_fb_msg.mutable_module_c()->set_torque_r(torque_r);
                     motor_fb_msg.mutable_module_c()->set_torque_l(torque_l);
+                    motor_fb_msg.mutable_module_c()->set_torque_h(torque_h);
                 }
                 break;
 
                 case 3: // module_d
                 {
                     motor_fb_msg.mutable_module_d()->set_velocity_r(vel_r); 
-                    motor_fb_msg.mutable_module_d()->set_velocity_l(vel_l); 
+                    motor_fb_msg.mutable_module_d()->set_velocity_l(vel_l);
+                    motor_fb_msg.mutable_module_d()->set_velocity_h(vel_h); 
                     motor_fb_msg.mutable_module_d()->set_theta(tb_[0]);
                     motor_fb_msg.mutable_module_d()->set_beta(tb_[1]);
+                    motor_fb_msg.mutable_module_d()->set_gamma(pos_h);
                     motor_fb_msg.mutable_module_d()->set_torque_r(torque_r);
                     motor_fb_msg.mutable_module_d()->set_torque_l(torque_l);
+                    motor_fb_msg.mutable_module_d()->set_torque_h(torque_h);
                 }
                 break;
             }
@@ -674,10 +722,13 @@ void MotorFSM::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
                     /* Publish feedback data from Motors */
                     motor_fb_msg.mutable_module_a()->set_velocity_r(0); // phi R
                     motor_fb_msg.mutable_module_a()->set_velocity_l(0); // phi L
+                    motor_fb_msg.mutable_module_a()->set_velocity_h(0); // phi H
                     motor_fb_msg.mutable_module_a()->set_theta(0);     // theta
                     motor_fb_msg.mutable_module_a()->set_beta(0);      // beta
+                    motor_fb_msg.mutable_module_a()->set_gamma(0);     // gamma
                     motor_fb_msg.mutable_module_a()->set_torque_r(0); //torque R
                     motor_fb_msg.mutable_module_a()->set_torque_l(0); //torque L
+                    motor_fb_msg.mutable_module_a()->set_torque_h(0); //torque H
                 }
                 break;
 
@@ -686,10 +737,13 @@ void MotorFSM::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
                     /* Publish feedback data from Motors */
                     motor_fb_msg.mutable_module_b()->set_velocity_r(0); // phi R
                     motor_fb_msg.mutable_module_b()->set_velocity_l(0); // phi L
+                    motor_fb_msg.mutable_module_b()->set_velocity_h(0); // phi H
                     motor_fb_msg.mutable_module_b()->set_theta(0);     // theta
                     motor_fb_msg.mutable_module_b()->set_beta(0);      // beta
+                    motor_fb_msg.mutable_module_b()->set_gamma(0);     // gamma
                     motor_fb_msg.mutable_module_b()->set_torque_r(0); //torque R
                     motor_fb_msg.mutable_module_b()->set_torque_l(0); //torque L
+                    motor_fb_msg.mutable_module_b()->set_torque_h(0); //torque H
                 }
                 break;
 
@@ -698,10 +752,13 @@ void MotorFSM::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
                     /* Publish feedback data from Motors */
                     motor_fb_msg.mutable_module_c()->set_velocity_r(0); // phi R
                     motor_fb_msg.mutable_module_c()->set_velocity_l(0); // phi L
+                    motor_fb_msg.mutable_module_c()->set_velocity_h(0); // phi H
                     motor_fb_msg.mutable_module_c()->set_theta(0);     // theta
                     motor_fb_msg.mutable_module_c()->set_beta(0);      // beta
+                    motor_fb_msg.mutable_module_c()->set_gamma(0);     // gamma
                     motor_fb_msg.mutable_module_c()->set_torque_r(0); //torque R
                     motor_fb_msg.mutable_module_c()->set_torque_l(0); //torque L
+                    motor_fb_msg.mutable_module_c()->set_torque_h(0); //torque H
                 }
                 break;
 
@@ -710,10 +767,13 @@ void MotorFSM::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
                     /* Publish feedback data from Motors */
                     motor_fb_msg.mutable_module_d()->set_velocity_r(0); // phi R
                     motor_fb_msg.mutable_module_d()->set_velocity_l(0); // phi L
+                    motor_fb_msg.mutable_module_d()->set_velocity_h(0); // phi H
                     motor_fb_msg.mutable_module_d()->set_theta(0);     // theta
                     motor_fb_msg.mutable_module_d()->set_beta(0);      // beta
+                    motor_fb_msg.mutable_module_d()->set_gamma(0);     // gamma
                     motor_fb_msg.mutable_module_d()->set_torque_r(0); //torque R
                     motor_fb_msg.mutable_module_d()->set_torque_l(0); //torque L
+                    motor_fb_msg.mutable_module_d()->set_torque_h(0); //torque H
                 }
                 break;
             }
