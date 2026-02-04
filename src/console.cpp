@@ -320,6 +320,7 @@ void Panel::infoDisplay()
     // Get motors from the module
     CANMotor* motorR = md_ptr_->getMotor(0);
     CANMotor* motorL = md_ptr_->getMotor(1);
+    CANMotor* motorH = md_ptr_->getMotor(2);
 
     // Motor_R
     mvwprintw(win_, 1, 1, "[F] Motor_R-----------------------------------------------");
@@ -365,6 +366,29 @@ void Panel::infoDisplay()
         mvwprintw(win_, y_org + 14, 30, "[rx] Vel:   %4.5f", motorL->getVelocity());
         mvwprintw(win_, y_org + 15, 30, "[rx] Trq:   %4.5f", motorL->getTorque());
         mvwprintw(win_, y_org + 16, 30, "[rx] Cal:   %7d", (int)motorL->getHallCalibrateState());
+    }
+
+    // Motor H
+    mvwprintw(win_, 19, 1, "[H] Motor_H-----------------------------------------------");
+    if (motorH) {
+        mvwprintw(win_, 20, 1, "[C] [CAN] ID: %9d", motorH->getCANID());
+        mvwprintw(win_, 21, 1, "    [tx] TIMEDOUT: %4d", md_ptr_->channel_->hasTxTimeout() ? 1 : 0);
+        
+        // Command data
+        mvwprintw(win_, y_org + 20, 1, "[A] [tx] Pos: %4.5f", motorH->getCommandPosition());
+        mvwprintw(win_, y_org + 21, 1, "[T] [tx] Trq: %4.5f", motorH->getCommandTorque());
+        mvwprintw(win_, y_org + 22, 1, "[P] [tx] KP:  %4.5f", motorH->getCommandKp());
+        mvwprintw(win_, y_org + 23, 1, "[I] [tx] KI:  %4.5f", motorH->getCommandKi());
+        mvwprintw(win_, y_org + 24, 1, "[D] [tx] KD:  %4.5f", motorH->getCommandKd());
+        
+        // Feedback data
+        mvwprintw(win_, 21, 30, "[rx] TIMEDOUT: %4d", md_ptr_->channel_->hasRxTimeout() ? 1 : 0);
+        mvwprintw(win_, y_org + 20, 30, "[rx] Ver:   %7d", (int)motorH->getVersion());
+        mvwprintw(win_, y_org + 21, 30, "[rx] FunctionMode:  %7d", (int)motorH->getModeState());
+        mvwprintw(win_, y_org + 22, 30, "[rx] Pos:   %4.5f", motorH->getPosition());
+        mvwprintw(win_, y_org + 23, 30, "[rx] Vel:   %4.5f", motorH->getVelocity());
+        mvwprintw(win_, y_org + 24, 30, "[rx] Trq:   %4.5f", motorH->getTorque());
+        mvwprintw(win_, y_org + 25, 30, "[rx] Cal:   %7d", (int)motorH->getHallCalibrateState());
     }
     
     wrefresh(win_);
