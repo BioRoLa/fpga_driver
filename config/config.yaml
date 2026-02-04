@@ -39,7 +39,8 @@ LF_Module:
   Motor_H:
     FW_Version: 3
     CAN_ID: 3
-    Calibration_Bias: -0.85281
+    # TODO: Update Calibration Bias,KP,KI,KD,KT,Torque_Feedfoward
+    Calibration_Bias: 0
     KP: 85
     KI: 0
     KD: 1.75
@@ -71,7 +72,8 @@ RF_Module:
   Motor_H:
     FW_Version: 3
     CAN_ID: 3
-    Calibration_Bias: -0.85281
+    # TODO: Update Calibration Bias,KP,KI,KD,KT,Torque_Feedfoward
+    Calibration_Bias: 0
     KP: 85
     KI: 0
     KD: 1.75
@@ -103,7 +105,8 @@ RH_Module:
   Motor_H:
     FW_Version: 3
     CAN_ID: 3
-    Calibration_Bias: -0.85281
+    # TODO: Update Calibration Bias,KP,KI,KD,KT,Torque_Feedfoward
+    Calibration_Bias: 0
     KP: 85
     KI: 0
     KD: 1.75
@@ -135,7 +138,8 @@ LH_Module:
   Motor_H:
     FW_Version: 3
     CAN_ID: 3
-    Calibration_Bias: -0.85281
+    # TODO: Update Calibration Bias,KP,KI,KD,KT,Torque_Feedfoward
+    Calibration_Bias: 0
     KP: 85
     KI: 0
     KD: 1.75
