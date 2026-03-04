@@ -16,7 +16,7 @@ Hall_calibration_tol: 0.005
 
 # MOD A Bias represented in radian
 LF_Module:
-  Enable: 1
+  Enable: 0
   CAN_PORT: "MOD1CAN0"
   Motor_R:
     FW_Version: 3
@@ -49,7 +49,7 @@ LF_Module:
 
 # MOD B
 RF_Module:
-  Enable: 1
+  Enable: 0
   CAN_PORT: "MOD1CAN1"
   Motor_R:
     FW_Version: 3
@@ -82,7 +82,7 @@ RF_Module:
 
 # MOD C
 RH_Module:
-  Enable: 1
+  Enable: 0
   CAN_PORT: "MOD2CAN0"
   Motor_R:
     FW_Version: 3
