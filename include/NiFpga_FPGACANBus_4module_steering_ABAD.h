@@ -23,7 +23,7 @@
 /**
  * The signature of the FPGA bitfile.
  */
-static const char* const NiFpga_FPGACANBus_4module_steering_ABAD_Signature = "99FF0F9B8EA2261DCD4CDD200A67AC31";
+static const char* const NiFpga_FPGACANBus_4module_steering_ABAD_Signature = "9BE7404B0B702848474092753A586963";
 
 #if NiFpga_Cpp
 extern "C"
