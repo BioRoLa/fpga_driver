@@ -18,7 +18,7 @@
  *
  *    static const char* const Bitfile = "C:\\" NiFpga_FPGACANBus_4module_steering_ABAD_Bitfile;
  */
-#define NiFpga_FPGACANBus_4module_steering_ABAD_Bitfile "NiFpga_FPGACANBus_4module_steering_ABAD.lvbitx"
+#define NiFpga_FPGA_CANBus_4module_v3_steering_Bitfile "/home/admin/corgi_ws/fpga_driver/fpga_bitfile/NiFpga_FPGACANBus_4module_steering_ABAD.lvbitx"
 
 /**
  * The signature of the FPGA bitfile.
