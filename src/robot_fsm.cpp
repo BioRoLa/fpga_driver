@@ -152,37 +152,39 @@ void RobotFSM::handleInit()
             break;
             
         case 3:
-            // Check motor timeout and emergency stop
+            // Check emergency stop and motor timeout
             {
-                bool has_timeout = false;
-                for (auto& module : modules_list_)
+                // Check EStop first: EStop cuts power to motors, causing timeout.
+                // Checking EStop first gives the correct root cause.
+                if (checkEStop())
                 {
-                    if (module.hasTimeout())
-                    {
-                        has_timeout = true;
-                        LOG_ERROR << "Init Step 3: Module " << module.label_ << " has timeout!";
-                        break;
-                    }
-                }
-                
-                if (has_timeout)
-                {
-                    LOG_FATAL << "Init failed: Motor timeout detected";
+                    LOG_ERROR << "Init failed: Emergency stop is pressed!";
+                    LOG_ERROR << "Please release emergency stop button and ensure power output is normal.";
                     emergencyStop();
                 }
                 else
                 {
-                    LOG_INFO << "Init Step 3: All motors responsive";
+                    LOG_INFO << "Init Step 3: Emergency stop check passed, power output normal";
                     
-                    if (checkEStop())
+                    bool has_timeout = false;
+                    for (auto& module : modules_list_)
                     {
-                        LOG_ERROR << "Init failed: Emergency stop is pressed!";
-                        LOG_ERROR << "Please release emergency stop button and ensure power output is normal.";
+                        if (module.hasTimeout())
+                        {
+                            has_timeout = true;
+                            LOG_ERROR << "Init Step 3: Module " << module.label_ << " has timeout!";
+                            break;
+                        }
+                    }
+                    
+                    if (has_timeout)
+                    {
+                        LOG_FATAL << "Init failed: Motor timeout detected";
                         emergencyStop();
                     }
                     else
                     {
-                        LOG_INFO << "Init Step 3: Emergency stop check passed, power output normal";
+                        LOG_INFO << "Init Step 3: All motors responsive";
                         init_step_++;
                     }
                 }
@@ -232,14 +234,22 @@ void RobotFSM::handleInit()
 
     if (init_step_ > 3) 
     { 
-        //after power on, keep checking estop and motor timeout
+        // After power on, keep checking estop and motor timeout.
+        // Check EStop first: EStop cuts power to motors, causing timeout.
+        if (checkEStop())
+        {
+            LOG_ERROR << "Emergency stop detected in Init, returning to SystemOn";
+            emergencyStop();
+            return;
+        }
+
         bool has_timeout = false;
         for (auto& module : modules_list_)
         {
             if (module.hasTimeout())
             {
                 has_timeout = true;
-                LOG_ERROR << "Init Step 3: Module " << module.label_ << " has timeout!";
+                LOG_ERROR << "Module " << module.label_ << " has timeout!";
                 break;
             }
         }
@@ -248,12 +258,6 @@ void RobotFSM::handleInit()
         {
             LOG_FATAL << "Motor timeout detected";
             emergencyStop();
-        }
-        if (checkEStop())
-        {
-            LOG_ERROR << "Emergency stop detected in Init, returning to SystemOn";
-            emergencyStop();
-            return;
         }
     }
 }
