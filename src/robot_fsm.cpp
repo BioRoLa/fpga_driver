@@ -191,14 +191,14 @@ void RobotFSM::handleInit()
             }
             break;
             
-        case 4:
+        /*case 4:
             // Set motor FSM to SET_ZERO mode
             LOG_INFO << "Init Step 4: Setting motors to SET_ZERO...";
             motor_fsm_.switchMode(FunctionMode::SET_ZERO);
             init_step_++;
             break;
         
-        /*
+        
         case 5:
             // Set motor FSM to HALL_CALIBRATE mode and wait for calibration to complete
             if (motor_fsm_.getCurrentMode() != FunctionMode::HALL_CALIBRATE)
@@ -221,7 +221,7 @@ void RobotFSM::handleInit()
             // Wait for HALL_CALIBRATE to complete and motor FSM to enter MOTOR mode
             if (motor_fsm_.getCurrentMode() == FunctionMode::MOTOR)
             {
-                LOG_INFO << "Init Step 6: Motors in MOTOR mode";
+                LOG_INFO << "Init Step 5: Motors in MOTOR mode";
                 LOG_INFO << "Init complete, transitioning to IDLE";
                 // Direct transition to IDLE without request
                 exitMode(current_mode_);
