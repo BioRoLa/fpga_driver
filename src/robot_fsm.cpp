@@ -220,6 +220,7 @@ void RobotFSM::handleInit()
         case 5:
             // Wait for HALL_CALIBRATE to complete and motor FSM to enter MOTOR mode
             LOG_INFO << "Init Step 5: Entering step 5";
+            motor_fsm_.switchMode(FunctionMode::MOTOR);
             if (motor_fsm_.getCurrentMode() == FunctionMode::MOTOR)
             {
                 LOG_INFO << "Init Step 5: Motors in MOTOR mode";
