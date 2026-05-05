@@ -25,7 +25,8 @@ public:
      * @param powerboard_voltage Pointer to powerboard voltage array [0-11]
      */
     RobotFSM(MotorFSM& motor_fsm, std::vector<LegModule>& modules_list,
-             std::vector<bool>& powerboard_state, double* powerboard_voltage);
+             std::vector<bool>& powerboard1_state, std::vector<bool>& powerboard2_state,
+             double* powerboard1_voltage, double* powerboard2_voltage);
     
     RobotFSM() = delete;
     
@@ -49,8 +50,10 @@ private:
     // References to lower-level components
     MotorFSM& motor_fsm_;
     std::vector<LegModule>& modules_list_;
-    std::vector<bool>& powerboard_state_;
-    double* powerboard_voltage_;
+    std::vector<bool>& powerboard1_state_;
+    std::vector<bool>& powerboard2_state_;
+    double* powerboard1_voltage_;
+    double* powerboard2_voltage_;
     
     // Error flags
     bool has_can_error_;

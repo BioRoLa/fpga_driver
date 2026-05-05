@@ -4,11 +4,14 @@
 #include <sys/time.h>
 
 RobotFSM::RobotFSM(MotorFSM& motor_fsm, std::vector<LegModule>& modules_list, 
-                   std::vector<bool>& powerboard_state, double* powerboard_voltage)
+                   std::vector<bool>& powerboard1_state, std::vector<bool>& powerboard2_state, 
+                   double* powerboard1_voltage, double* powerboard2_voltage)
     : motor_fsm_(motor_fsm)
     , modules_list_(modules_list)
-    , powerboard_state_(powerboard_state)
-    , powerboard_voltage_(powerboard_voltage)
+    , powerboard1_state_(powerboard1_state)
+    , powerboard2_state_(powerboard2_state)
+    , powerboard1_voltage_(powerboard1_voltage)
+    , powerboard2_voltage_(powerboard2_voltage)
     , current_mode_(RobotMode::SystemOn)
     , previous_mode_(RobotMode::SystemOn)
     , has_can_error_(false)
@@ -118,11 +121,17 @@ void RobotFSM::handleSystemOn()
     }
     
     // Ensure all power switches are OFF
-    if (powerboard_state_.at(0) != false || powerboard_state_.at(1) != false || powerboard_state_.at(2) != false)
+    if (powerboard1_state_.at(0) != false || powerboard1_state_.at(1) != false || powerboard1_state_.at(2) != false)
     {
-        powerboard_state_.at(0) = false;  // Digital OFF
-        powerboard_state_.at(1) = false;  // Signal OFF
-        powerboard_state_.at(2) = false;  // Power OFF
+        powerboard1_state_.at(0) = false;  // Digital OFF
+        powerboard1_state_.at(1) = false;  // Signal OFF
+        powerboard1_state_.at(2) = false;  // Power OFF
+    }
+    if (powerboard2_state_.at(0) != false || powerboard2_state_.at(1) != false || powerboard2_state_.at(2) != false)
+    {
+        powerboard2_state_.at(0) = false;  // Digital OFF
+        powerboard2_state_.at(1) = false;  // Signal OFF
+        powerboard2_state_.at(2) = false;  // Power OFF
     }
 }
 
@@ -466,17 +475,30 @@ bool RobotFSM::powerSwitchSequence(int& step_counter, int& cycle_counter)
     if (cycle_counter == 0)
     {
         // Check if switch is already on
-        if (powerboard_state_.at(switch_index))
+        if (powerboard1_state_.at(switch_index))
         {
-            LOG_DEBUG << "Step " << switch_index << ": " << switch_names[switch_index] 
+            LOG_DEBUG << "Step " << switch_index << ": PB1 " << switch_names[switch_index] 
                                 << " switch already ON, skipping wait";
             return true;  // Already on, no need to wait
         }
         
         // Turn on the switch
-        LOG_INFO << "Step " << switch_index << ": Turning " 
+        LOG_INFO << "Step " << switch_index << ": Turning PB1 " 
                            << switch_names[switch_index] << " switch ON...";
-        powerboard_state_.at(switch_index) = true;
+        powerboard1_state_.at(switch_index) = true;
+
+        // Check if switch is already on
+        if (powerboard2_state_.at(switch_index))
+        {
+            LOG_DEBUG << "Step " << switch_index << ": PB2 " << switch_names[switch_index] 
+                                << " switch already ON, skipping wait";
+            return true;  // Already on, no need to wait
+        }
+        
+        // Turn on the switch
+        LOG_INFO << "Step " << switch_index << ": Turning PB2 " 
+                           << switch_names[switch_index] << " switch ON...";
+        powerboard2_state_.at(switch_index) = true;
     }
     
     cycle_counter++;
@@ -495,15 +517,29 @@ bool RobotFSM::powerSwitchSequence(int& step_counter, int& cycle_counter)
 bool RobotFSM::checkEStop()
 {
     
-    if (!powerboard_voltage_) {
-        LOG_ERROR << "Powerboard voltage pointer is null!";
+    if (!powerboard1_voltage_) {
+        LOG_ERROR << "Powerboard1 voltage pointer is null!";
         return false;
     }
-    
-    for (int i = 2; i <= 11; i++) {
-        if (powerboard_voltage_[i] < ESTOP_VOLTAGE_THRESHOLD) {
+
+    if (!powerboard2_voltage_) {
+        LOG_ERROR << "Powerboard2 voltage pointer is null!";
+        return false;
+    }
+    // TODO: Check why starting from index 2, and add comments about powerboard voltage indexing
+    for (int i = 2; i <= 7; i++) {
+        if (powerboard1_voltage_[i] < ESTOP_VOLTAGE_THRESHOLD) {
             LOG_WARN << "EStop detected: Power[" << i 
-                     << "] voltage = " << powerboard_voltage_[i] 
+                     << "] voltage = " << powerboard1_voltage_[i] 
+                     << "V (threshold: " << ESTOP_VOLTAGE_THRESHOLD << "V)";
+            return true;
+        }
+    }
+
+    for (int i = 2; i <= 7; i++) {
+        if (powerboard2_voltage_[i] < ESTOP_VOLTAGE_THRESHOLD) {
+            LOG_WARN << "EStop detected: Power[" << i 
+                     << "] voltage = " << powerboard2_voltage_[i] 
                      << "V (threshold: " << ESTOP_VOLTAGE_THRESHOLD << "V)";
             return true;
         }

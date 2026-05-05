@@ -5,11 +5,13 @@
 // External flag from main.cpp - indicates if a new motor command has been received
 extern std::atomic<int> motor_message_updated;
 
-MotorFSM::MotorFSM(std::vector<LegModule>& _modules, std::vector<bool>& _pb_state, double* pb_v)
+MotorFSM::MotorFSM(std::vector<LegModule>& _modules, std::vector<bool>& _pb1_state, std::vector<bool>& _pb2_state, double* pb1_v, double* pb2_v)
     : modules_list_(_modules)
-    , pb_state_(_pb_state)
+    , pb1_state_(_pb1_state)
+    , pb2_state_(_pb2_state)
     , current_mode_(FunctionMode::REST)
-    , powerboard_voltage(pb_v)
+    , powerboard1_voltage(pb1_v)
+    , powerboard2_voltage(pb2_v)
     , hall_calibrated_(false)
     , hall_calibrate_status_(0)
     , robot_fsm_(nullptr)
@@ -66,7 +68,7 @@ void MotorFSM::runFsm(motor_msg::MotorStateStamped& motor_fb_msg, const motor_ms
 
 void MotorFSM::handleRestMode()
 {
-    if (pb_state_.at(2) == true)
+    if (pb1_state_.at(2) == true && pb2_state_.at(2) == true)
     {
         for (auto& mod : modules_list_)
         {
@@ -86,7 +88,7 @@ void MotorFSM::handleRestMode()
 
 void MotorFSM::handleSetZeroMode()
 {
-    if (pb_state_.at(2) == true)
+    if (pb1_state_.at(2) == true && pb2_state_.at(2) == true)
     {
         for (auto& mod : modules_list_)
         {

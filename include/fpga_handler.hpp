@@ -31,16 +31,22 @@ public:
   // Fpga interrupt request
   NiFpga_IrqContext irqContext_;
 
-  // powerboard
-  NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool w_pb_digital_;
-  NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool w_pb_signal_;
-  NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool w_pb_power_;
+  // powerboard 1
+  NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool w_pb_digital_PB1_;
+  NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool w_pb_signal_PB1_;
+  NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool w_pb_power_PB1_;
+  // powerboard 2
+  NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool w_pb_digital_PB2_;
+  NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool w_pb_signal_PB2_;
+  NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool w_pb_power_PB2_;
 
-  NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU16 r_powerboard_data_;
-  NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU16Size size_powerboard_data_;
+  NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU16 r_powerboard_data_PB1_;
+  NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU16 r_powerboard_data_PB2_;
+  NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU16Size size_powerboard_data_PB1_;
+  NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU16Size size_powerboard_data_PB2_;
 
   void setIrqPeriod(int main_loop_period, int can_loop_period);
-  void write_powerboard_(std::vector<bool> *powerboard_state_);
+  void write_powerboard_(std::vector<bool> *powerboard1_state_, std::vector<bool> *powerboard2_state_);
 
   // *********************** Unused Functions ************************ //
   // steering
@@ -58,11 +64,16 @@ public:
 
   void read_powerboard_data_();
 
-  double powerboard_Ifactor[12];
-  double powerboard_Vfactor[12];
+  double powerboard1_Ifactor[8];
+  double powerboard1_Vfactor[8];
+  double powerboard2_Ifactor[8];
+  double powerboard2_Vfactor[8];
+ 
 
-  double powerboard_I_list_[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  double powerboard_V_list_[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  double powerboard1_I_list_[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  double powerboard1_V_list_[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  double powerboard2_I_list_[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  double powerboard2_V_list_[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 };
 
 

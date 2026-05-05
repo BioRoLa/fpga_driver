@@ -40,8 +40,8 @@ void robot_cmd_data_cb(robot_msg::RobotCmdStamped robot_cmd_msg)
 }
 
 Corgi::Corgi()
-    : motor_fsm_(modules_list_, powerboard_state_, fpga_.powerboard_V_list_)
-    , robot_fsm_(motor_fsm_, modules_list_, powerboard_state_, fpga_.powerboard_V_list_)
+    : motor_fsm_(modules_list_, powerboard1_state_, powerboard2_state_, fpga_.powerboard1_V_list_, fpga_.powerboard2_V_list_)
+    , robot_fsm_(motor_fsm_, modules_list_, powerboard1_state_, powerboard2_state_, fpga_.powerboard1_V_list_, fpga_.powerboard2_V_list_)
 {
     /* default value of interrupt*/
     main_irq_period_us_ = 500;
@@ -51,7 +51,7 @@ Corgi::Corgi()
     /* initialize robot mode - handled by robot_fsm_ initialization */
     robot_message_updated_ = 0;
 
-    /* powerboard_state_ is already initialized to {false, false, false} in header */
+    /* powerboard1_state_ && powerboard2_state_ are already initialized to {false, false, false} in header */
     NO_CAN_TIMEDOUT_ERROR_ = true;
     NO_SWITCH_TIMEDOUT_ERROR_ = true;
     HALL_CALIBRATED_ = false;
@@ -63,7 +63,7 @@ Corgi::Corgi()
 
     load_config_();
 
-    console_.init(&fpga_, &modules_list_, &powerboard_state_, &motor_fsm_, &robot_fsm_, &main_mtx_);
+    console_.init(&fpga_, &modules_list_, &powerboard1_state_, &powerboard2_state_, &motor_fsm_, &robot_fsm_, &main_mtx_);
 
     fpga_.setIrqPeriod(main_irq_period_us_, can_irq_period_us_);
 }
@@ -95,13 +95,25 @@ void Corgi::load_config_()
     YAML::Node Factors_node_ = yaml_node_["Powerboard_Scaling_Factor"];
     int idx_ = 0;
 
-    LOG_INFO << "PowerBoard Scaling Factor";
+    LOG_INFO << "PowerBoard1 Scaling Factor";
     for (auto f : Factors_node_)
     {
-        fpga_.powerboard_Ifactor[idx_] = f["Current_Factor"].as<double>();
-        fpga_.powerboard_Vfactor[idx_] = f["Voltage_Factor"].as<double>();
-        LOG_INFO << "Index " << idx_ << " Current Factor: " << fpga_.powerboard_Ifactor[idx_]
-                           << ", Voltage Factor: " << fpga_.powerboard_Vfactor[idx_];
+        fpga_.powerboard1_Ifactor[idx_] = f["Current_Factor"].as<double>();
+        fpga_.powerboard1_Vfactor[idx_] = f["Voltage_Factor"].as<double>();
+        LOG_INFO << "Index " << idx_ << " Current Factor: " << fpga_.powerboard1_Ifactor[idx_]
+                           << ", Voltage Factor: " << fpga_.powerboard1_Vfactor[idx_];
+        idx_++;
+    }
+
+    LOG_INFO << "PowerBoard2 Scaling Factor";
+    Factors_node_ = yaml_node_["Powerboard2_Scaling_Factor"];
+    idx_ = 0;
+    for (auto f : Factors_node_)
+    {
+        fpga_.powerboard2_Ifactor[idx_] = f["Current_Factor"].as<double>();
+        fpga_.powerboard2_Vfactor[idx_] = f["Voltage_Factor"].as<double>();
+        LOG_INFO << "Index " << idx_ << " Current Factor: " << fpga_.powerboard2_Ifactor[idx_]
+                           << ", Voltage Factor: " << fpga_.powerboard2_Vfactor[idx_];
         idx_++;
     }
 }
@@ -185,7 +197,7 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
                       core::Publisher<robot_msg::RobotStateStamped>& robot_state_pub_,
                       core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub_)
 {
-    fpga_.write_powerboard_(&powerboard_state_);
+    fpga_.write_powerboard_(&powerboard1_state_, &powerboard2_state_);
     fpga_.read_powerboard_data_();
 
     core::spinOnce();
@@ -244,7 +256,7 @@ void Corgi::canLoop_()
     
     for (int i = 0; i < 4; i++)
     {
-        if (modules_list_[i].enable_ && powerboard_state_.at(2) == true)
+        if (modules_list_[i].enable_ && powerboard1_state_.at(2) == true && powerboard2_state_.at(2) == true)
         {
             // Receive feedback from FPGA (stores to feedback_data_raw)
             modules_list_[i].receiveFeedback();
@@ -280,48 +292,63 @@ void Corgi::powerboardPack(power_msg::PowerStateStamped&power_dashboard_reply)
     power_dashboard_reply.mutable_header()->mutable_stamp()->set_usec(t_stamp.tv_usec);
 
     // Send individual switch states
-    power_dashboard_reply.set_digital(powerboard_state_.at(0));
-    power_dashboard_reply.set_signal(powerboard_state_.at(1));
-    power_dashboard_reply.set_power(powerboard_state_.at(2));
+    power_dashboard_reply.set_pb1_digital(powerboard1_state_.at(0));
+    power_dashboard_reply.set_pb1_signal(powerboard1_state_.at(1));
+    power_dashboard_reply.set_pb1_power(powerboard1_state_.at(2));
+    power_dashboard_reply.set_pb2_digital(powerboard2_state_.at(0));
+    power_dashboard_reply.set_pb2_signal(powerboard2_state_.at(1));
+    power_dashboard_reply.set_pb2_power(powerboard2_state_.at(2));
 
     if (motor_fsm_.isHallCalibrated() == true && NO_SWITCH_TIMEDOUT_ERROR_==true && NO_CAN_TIMEDOUT_ERROR_==true) power_dashboard_reply.set_clean(true);
     else power_dashboard_reply.set_clean(false);
 
-    power_dashboard_reply.set_v_0(fpga_.powerboard_V_list_[0]);
-    power_dashboard_reply.set_i_0(fpga_.powerboard_I_list_[0]);
+    power_dashboard_reply.set_pb1_v_0(fpga_.powerboard1_V_list_[0]);
+    power_dashboard_reply.set_pb1_i_0(fpga_.powerboard1_I_list_[0]);
 
-    power_dashboard_reply.set_v_1(fpga_.powerboard_V_list_[1]);
-    power_dashboard_reply.set_i_1(fpga_.powerboard_I_list_[1]);
+    power_dashboard_reply.set_pb1_v_1(fpga_.powerboard1_V_list_[1]);
+    power_dashboard_reply.set_pb1_i_1(fpga_.powerboard1_I_list_[1]);
 
-    power_dashboard_reply.set_v_2(fpga_.powerboard_V_list_[2]);
-    power_dashboard_reply.set_i_2(fpga_.powerboard_I_list_[2]);
+    power_dashboard_reply.set_pb1_v_2(fpga_.powerboard1_V_list_[2]);
+    power_dashboard_reply.set_pb1_i_2(fpga_.powerboard1_I_list_[2]);
 
-    power_dashboard_reply.set_v_3(fpga_.powerboard_V_list_[3]);
-    power_dashboard_reply.set_i_3(fpga_.powerboard_I_list_[3]);
+    power_dashboard_reply.set_pb1_v_3(fpga_.powerboard1_V_list_[3]);
+    power_dashboard_reply.set_pb1_i_3(fpga_.powerboard1_I_list_[3]);
 
-    power_dashboard_reply.set_v_4(fpga_.powerboard_V_list_[4]);
-    power_dashboard_reply.set_i_4(fpga_.powerboard_I_list_[4]);
+    power_dashboard_reply.set_pb1_v_4(fpga_.powerboard1_V_list_[4]);
+    power_dashboard_reply.set_pb1_i_4(fpga_.powerboard1_I_list_[4]);
 
-    power_dashboard_reply.set_v_5(fpga_.powerboard_V_list_[5]);
-    power_dashboard_reply.set_i_5(fpga_.powerboard_I_list_[5]);
+    power_dashboard_reply.set_pb1_v_5(fpga_.powerboard1_V_list_[5]);
+    power_dashboard_reply.set_pb1_i_5(fpga_.powerboard1_I_list_[5]);
 
-    power_dashboard_reply.set_v_6(fpga_.powerboard_V_list_[6]);
-    power_dashboard_reply.set_i_6(fpga_.powerboard_I_list_[6]);
+    power_dashboard_reply.set_pb1_v_6(fpga_.powerboard1_V_list_[6]);
+    power_dashboard_reply.set_pb1_i_6(fpga_.powerboard1_I_list_[6]);
 
-    power_dashboard_reply.set_v_7(fpga_.powerboard_V_list_[7]);
-    power_dashboard_reply.set_i_7(fpga_.powerboard_I_list_[7]);
+    power_dashboard_reply.set_pb1_v_7(fpga_.powerboard1_V_list_[7]);
+    power_dashboard_reply.set_pb1_i_7(fpga_.powerboard1_I_list_[7]);
 
-    power_dashboard_reply.set_v_8(fpga_.powerboard_V_list_[8]);
-    power_dashboard_reply.set_i_8(fpga_.powerboard_I_list_[8]);
+    power_dashboard_reply.set_pb2_v_0(fpga_.powerboard2_V_list_[0]);
+    power_dashboard_reply.set_pb2_i_0(fpga_.powerboard2_I_list_[0]);
 
-    power_dashboard_reply.set_v_9(fpga_.powerboard_V_list_[9]);
-    power_dashboard_reply.set_i_9(fpga_.powerboard_I_list_[9]);
+    power_dashboard_reply.set_pb2_v_1(fpga_.powerboard2_V_list_[1]);
+    power_dashboard_reply.set_pb2_i_1(fpga_.powerboard2_I_list_[1]);
 
-    power_dashboard_reply.set_v_10(fpga_.powerboard_V_list_[10]);
-    power_dashboard_reply.set_i_10(fpga_.powerboard_I_list_[10]);
+    power_dashboard_reply.set_pb2_v_2(fpga_.powerboard2_V_list_[2]);
+    power_dashboard_reply.set_pb2_i_2(fpga_.powerboard2_I_list_[2]);
 
-    power_dashboard_reply.set_v_11(fpga_.powerboard_V_list_[11]);
-    power_dashboard_reply.set_i_11(fpga_.powerboard_I_list_[11]);
+    power_dashboard_reply.set_pb2_v_3(fpga_.powerboard2_V_list_[3]);
+    power_dashboard_reply.set_pb2_i_3(fpga_.powerboard2_I_list_[3]);
+
+    power_dashboard_reply.set_pb2_v_4(fpga_.powerboard2_V_list_[4]);
+    power_dashboard_reply.set_pb2_i_4(fpga_.powerboard2_I_list_[4]);
+
+    power_dashboard_reply.set_pb2_v_5(fpga_.powerboard2_V_list_[5]);
+    power_dashboard_reply.set_pb2_i_5(fpga_.powerboard2_I_list_[5]);
+
+    power_dashboard_reply.set_pb2_v_6(fpga_.powerboard2_V_list_[6]);
+    power_dashboard_reply.set_pb2_i_6(fpga_.powerboard2_I_list_[6]);
+
+    power_dashboard_reply.set_pb2_v_7(fpga_.powerboard2_V_list_[7]);
+    power_dashboard_reply.set_pb2_i_7(fpga_.powerboard2_I_list_[7]);
 }
 
 void Corgi::handleRobotCommand(const robot_msg::RobotCmdStamped& robot_cmd)
@@ -355,12 +382,15 @@ void Corgi::safeShutdown()
         
         // Step 1: Turn off all power states
         LOG_INFO << "[FPGA Server] Turning off power board...";
-        powerboard_state_[0] = false;  // digital
-        powerboard_state_[1] = false;  // signal
-        powerboard_state_[2] = false;  // power
+        powerboard1_state_[0] = false;  // PB1 digital
+        powerboard1_state_[1] = false;  // PB1 signal
+        powerboard1_state_[2] = false;  // PB1 power
+        powerboard2_state_[0] = false;  // PB2 digital
+        powerboard2_state_[1] = false;  // PB2 signal
+        powerboard2_state_[2] = false;  // PB2 power
         
         // Write power off command to FPGA
-        fpga_.write_powerboard_(&powerboard_state_);
+        fpga_.write_powerboard_(&powerboard1_state_, &powerboard2_state_);
     }
     
     // Step 2: Wait 0.5 seconds for power down to complete

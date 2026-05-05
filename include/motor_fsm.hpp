@@ -21,7 +21,7 @@ class MotorFSM
 {
 public:
   /* Constructor - pass modules vector by reference */
-  MotorFSM(std::vector<LegModule>& module_list, std::vector<bool>& pb_state, double* pb_v);
+  MotorFSM(std::vector<LegModule>& module_list, std::vector<bool>& pb1_state, std::vector<bool>& pb2_state, double* pb1_v, double* pb2_v);
   MotorFSM() = delete;
   
   // Public interface methods
@@ -53,7 +53,8 @@ private:
   // State
   FunctionMode current_mode_;
   std::vector<LegModule>& modules_list_;
-  std::vector<bool>& pb_state_;
+  std::vector<bool>& pb1_state_;
+  std::vector<bool>& pb2_state_;
 
   // Calibration state
   bool hall_calibrated_;
@@ -71,7 +72,8 @@ private:
   // External flags (managed by Corgi)
   bool* NO_CAN_TIMEDOUT_ERROR_;
   bool* NO_SWITCH_TIMEDOUT_ERROR_;
-  double* powerboard_voltage;
+  double* powerboard1_voltage;
+  double* powerboard2_voltage;
   RobotFSM* robot_fsm_;  // Pointer to RobotFSM for mode checking
   
   // Private helper methods

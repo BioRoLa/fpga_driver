@@ -39,8 +39,9 @@ class Corgi
     Console console_;
 
     std::vector<LegModule> modules_list_;
-    std::vector<bool> powerboard_state_{false, false, false};  // [digital, signal, power] - Must be before motor_fsm_ and robot_fsm_
-    
+    std::vector<bool> powerboard1_state_{false, false, false};  // [digital, signal, power] - Must be before motor_fsm_ and robot_fsm_
+    std::vector<bool> powerboard2_state_{false, false, false};  // [digital, signal, power] - Must be before motor_fsm_ and robot_fsm_
+
     MotorFSM motor_fsm_;
     RobotFSM robot_fsm_;
     std::mutex main_mtx_;

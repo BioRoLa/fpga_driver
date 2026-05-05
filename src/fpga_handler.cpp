@@ -12,12 +12,18 @@ FpgaHandler::FpgaHandler()
     NiFpga_MergeStatus(&status_, NiFpga_ReserveIrqContext(session_, &irqContext_));
     LOG_INFO << "[FPGA Handler] IRQ reserved";
     
-    w_pb_digital_ = NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool_Digital;
-    w_pb_signal_ = NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool_Signal;
-    w_pb_power_ = NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool_Power;
+    w_pb_digital_PB1_ = NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool_Digital_PB1;
+    w_pb_signal_PB1_ = NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool_Signal_PB1;
+    w_pb_power_PB1_ = NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool_Power_PB1;
 
-    r_powerboard_data_ = NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU16_Data;
-    size_powerboard_data_ = NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU16Size_Data;
+    w_pb_digital_PB2_ = NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool_Digital_PB2;
+    w_pb_signal_PB2_ = NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool_Signal_PB2;
+    w_pb_power_PB2_ = NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool_Power_PB2;
+
+    r_powerboard_data_PB1_ = NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU16_Data_PB1;
+    r_powerboard_data_PB2_ = NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU16_Data_PB2;
+    size_powerboard_data_PB1_ = NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU16Size_Data_PB1;
+    size_powerboard_data_PB2_ = NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU16Size_Data_PB2;
 
     enable_btn_ =  NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool_EN;
     hall = NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorBool_Hall_effect;
@@ -26,10 +32,12 @@ FpgaHandler::FpgaHandler()
     dir = NiFpga_FPGACANBus_4module_steering_ABAD_ControlBool_DIR;
     encoder = NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorI32_EncoderPosition;
 
-    for (int i = 0; i < 12; i++)
+    for (int i = 0; i < 8; i++)
     {
-        powerboard_V_list_[i] = 0;
-        powerboard_I_list_[i] = 0;
+        powerboard1_V_list_[i] = 0;
+        powerboard1_I_list_[i] = 0;
+        powerboard2_V_list_[i] = 0;
+        powerboard2_I_list_[i] = 0;
     }
 }
 
@@ -58,23 +66,32 @@ void FpgaHandler::setIrqPeriod(int main_loop_p, int can_loop_p)
         &status_, NiFpga_WriteU32(session_, NiFpga_FPGACANBus_4module_steering_ABAD_ControlU32_IRQ1_period_us, can_loop_p));
 }
 
-void FpgaHandler::write_powerboard_(std::vector<bool> *powerboard_state_)
+void FpgaHandler::write_powerboard_(std::vector<bool> *powerboard1_state_, std::vector<bool> *powerboard2_state_)
 {
-    NiFpga_MergeStatus(&status_, NiFpga_WriteBool(session_, w_pb_digital_, powerboard_state_->at(0)));
-    NiFpga_MergeStatus(&status_, NiFpga_WriteBool(session_, w_pb_signal_, powerboard_state_->at(1)));
-    NiFpga_MergeStatus(&status_, NiFpga_WriteBool(session_, w_pb_power_, powerboard_state_->at(2)));
+    /* PB1 */
+    NiFpga_MergeStatus(&status_, NiFpga_WriteBool(session_, w_pb_digital_PB1_, powerboard1_state_->at(0)));
+    NiFpga_MergeStatus(&status_, NiFpga_WriteBool(session_, w_pb_signal_PB1_, powerboard1_state_->at(1)));
+    NiFpga_MergeStatus(&status_, NiFpga_WriteBool(session_, w_pb_power_PB1_, powerboard1_state_->at(2)));
+    /* PB2 */
+    NiFpga_MergeStatus(&status_, NiFpga_WriteBool(session_, w_pb_digital_PB2_, powerboard2_state_->at(0)));
+    NiFpga_MergeStatus(&status_, NiFpga_WriteBool(session_, w_pb_signal_PB2_, powerboard2_state_->at(1)));
+    NiFpga_MergeStatus(&status_, NiFpga_WriteBool(session_, w_pb_power_PB2_, powerboard2_state_->at(2)));
 }
 
 void FpgaHandler::read_powerboard_data_()
 {
-    uint16_t rx_arr[24];
+    uint16_t rx_arr_1[16];
+    uint16_t rx_arr_2[16];
     // uint16_t *rx_arr = new uint16_t[24];
-    NiFpga_MergeStatus(&status_, NiFpga_ReadArrayU16(session_, NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU16_Data, rx_arr, NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU16Size_Data));
+    NiFpga_MergeStatus(&status_, NiFpga_ReadArrayU16(session_, NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU16_Data_PB1, rx_arr_1, NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU16Size_Data_PB1));
+    NiFpga_MergeStatus(&status_, NiFpga_ReadArrayU16(session_, NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU16_Data_PB2, rx_arr_2, NiFpga_FPGACANBus_4module_steering_ABAD_IndicatorArrayU16Size_Data_PB2));
 
-    for (int i = 0; i < 24; i++)
+    for (int i = 0; i < 16; i++)
     {
-        if (i % 2 == 0)powerboard_I_list_[i / 2] = rx_arr[i] * powerboard_Ifactor[i / 2];
-        if (i % 2 == 1)powerboard_V_list_[(i - 1) / 2] = rx_arr[i] * powerboard_Vfactor[(i - 1) / 2];
+        if (i % 2 == 0)powerboard1_I_list_[i / 2] = rx_arr_1[i] * powerboard1_Ifactor[i / 2];
+        if (i % 2 == 0)powerboard2_I_list_[i / 2] = rx_arr_2[i] * powerboard2_Ifactor[i / 2];
+        if (i % 2 == 1)powerboard1_V_list_[(i - 1) / 2] = rx_arr_1[i] * powerboard1_Vfactor[(i - 1) / 2];
+        if (i % 2 == 1)powerboard2_V_list_[(i - 1) / 2] = rx_arr_2[i] * powerboard2_Vfactor[(i - 1) / 2];
     }
 }
 

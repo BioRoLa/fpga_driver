@@ -45,13 +45,15 @@ public:
 
   LegModule *md_ptr_;
   std::mutex *main_mtx_;
-  std::vector<bool> *powerboard_state_;
+  std::vector<bool> *powerboard1_state_;
+  std::vector<bool> *powerboard2_state_;
   MotorFSM *fsm_;
   RobotFSM *robot_fsm_;
 
   mutex mutex_;
   void infoDisplay();
-  void infoDisplay(FpgaHandler *fpga, bool power_switch, bool signal_switch, bool digital_switch);
+  void infoDisplay(FpgaHandler *fpga, bool pb1_digital_switch, bool pb1_signal_switch, bool pb1_power_switch, 
+                                      bool pb2_digital_switch, bool pb2_signal_switch, bool pb2_power_switch);
   void infoDisplay(RobotMode robot_mode);
   void infoDisplayConfig();
   void resetPanel();
@@ -82,7 +84,8 @@ public:
 
   bool *if_resetPanel;
   std::mutex *main_mtx_;
-  std::vector<bool> *powerboard_state_;
+  std::vector<bool> *powerboard1_state_;
+  std::vector<bool> *powerboard2_state_;
   MotorFSM *fsm_;
   RobotFSM *robot_fsm_;
 
@@ -97,7 +100,7 @@ public:
   {
   }
 
-  void init(FpgaHandler *fpga_, vector<LegModule> *mods_, std::vector<bool> *pb_state_, MotorFSM *fsm_, RobotFSM *robot_fsm_, std::mutex *mtx_);
+  void init(FpgaHandler *fpga_, vector<LegModule> *mods_, std::vector<bool> *pb1_state_, std::vector<bool> *pb2_state_, MotorFSM *fsm_, RobotFSM *robot_fsm_, std::mutex *mtx_);
   void refreshWindow();
 
   int term_max_x_;
@@ -120,7 +123,8 @@ public:
   LegModule *modD_ptr_;
 
   std::mutex *main_mtx_;
-  std::vector<bool> *powerboard_state_;
+  std::vector<bool> *powerboard1_state_;
+  std::vector<bool> *powerboard2_state_;
   MotorFSM *fsm_;
   RobotFSM *robot_fsm_;
 
