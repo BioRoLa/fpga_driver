@@ -65,7 +65,7 @@ void CANMotor::decodeMotorFeedback()
     int torque_raw = ((int)(feedback_data_raw[4]) << 8) | feedback_data_raw[5];
 
     feedback_data_.position = -uint_to_float(pos_raw, P_FB_MIN, P_FB_MAX, 16); // Negate to match system coordinate convention
-    feedback_data_.velocity = uint_to_float(vel_raw, V_MIN, V_MAX, 16);
+    feedback_data_.velocity = -uint_to_float(vel_raw, V_MIN, V_MAX, 16);
     feedback_data_.torque = -uint_to_float(torque_raw, T_MIN, T_MAX, 16);
     feedback_data_.version = feedback_data_raw[7] >> 4;
     feedback_data_.hall_cal_state = feedback_data_raw[6] & 0x0F;
