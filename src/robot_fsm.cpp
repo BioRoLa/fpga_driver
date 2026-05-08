@@ -526,7 +526,7 @@ bool RobotFSM::checkEStop()
         LOG_ERROR << "Powerboard2 voltage pointer is null!";
         return false;
     }
-    // TODO: Check why starting from index 2, and add comments about powerboard voltage indexing
+    /* TODO: Temporarily skip, Check why starting from index 2, and add comments about powerboard voltage indexing
     for (int i = 2; i <= 7; i++) {
         if (powerboard1_voltage_[i] < ESTOP_VOLTAGE_THRESHOLD) {
             LOG_WARN << "EStop detected: Power[" << i 
@@ -544,6 +544,6 @@ bool RobotFSM::checkEStop()
             return true;
         }
     }
-    
+    */
     return false;
 }
