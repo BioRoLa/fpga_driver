@@ -157,51 +157,83 @@ Modules_list:
 Powerboard1_Scaling_Factor:
   - # 1 Power Battery
     Current_Factor: 1
+    Current_Offset: 0
     Voltage_Factor: 1
+    Voltage_Offset: 0
   - # 2 CPU SBRIO, ORIN
     Current_Factor: 1
+    Current_Offset: 0
     Voltage_Factor: 1
+    Voltage_Offset: 0
   - # 3 SPARE 1
     Current_Factor: 1
+    Current_Offset: 0
     Voltage_Factor: 1
+    Voltage_Offset: 0
   - # 4 SPARE 2
     Current_Factor: 1
+    Current_Offset: 0
     Voltage_Factor: 1
+    Voltage_Offset: 0
   - # 5 Module 1
     Current_Factor: 1
+    Current_Offset: 0
     Voltage_Factor: 1
+    Voltage_Offset: 0
   - # 6 Module 2
     Current_Factor: 1
+    Current_Offset: 0
     Voltage_Factor: 1
+    Voltage_Offset: 0
   - # 7 Module 3
     Current_Factor: 1
+    Current_Offset: 0
     Voltage_Factor: 1
+    Voltage_Offset: 0
   - # 8 Module 4
-    Current_Factor: 1
+    Current_Factor: 1    
+    Current_Offset: 0
     Voltage_Factor: 1
+    Voltage_Offset: 0
 # TODO: Test new powerboard scaling factor values and update the yaml file accordingly
 Powerboard2_Scaling_Factor:
   - # 1 Power Battery
     Current_Factor: 1
+    Current_Offset: 0
     Voltage_Factor: 1
+    Voltage_Offset: 0
   - # 2 CPU SBRIO, ORIN
     Current_Factor: 1
+    Current_Offset: 0
     Voltage_Factor: 1
+    Voltage_Offset: 0
   - # 3 SPARE 1
     Current_Factor: 1
+    Current_Offset: 0
     Voltage_Factor: 1
+    Voltage_Offset: 0
   - # 4 SPARE 2
     Current_Factor: 1
+    Current_Offset: 0
     Voltage_Factor: 1
+    Voltage_Offset: 0
   - # 5 Module 1
     Current_Factor: 1
+    Current_Offset: 0
     Voltage_Factor: 1
+    Voltage_Offset: 0
   - # 6 Module 2
     Current_Factor: 1
+    Current_Offset: 0
     Voltage_Factor: 1
+    Voltage_Offset: 0
   - # 7 Module 3
     Current_Factor: 1
+    Current_Offset: 0
     Voltage_Factor: 1
+    Voltage_Offset: 0
   - # 8 Module 4
-    Current_Factor: 1
+    Current_Factor: 1    
+    Current_Offset: 0
     Voltage_Factor: 1
+    Voltage_Offset: 0

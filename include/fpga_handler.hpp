@@ -68,8 +68,12 @@ public:
   double powerboard1_Vfactor[8];
   double powerboard2_Ifactor[8];
   double powerboard2_Vfactor[8];
- 
 
+  double powerboard1_Ioffset[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  double powerboard1_Voffset[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  double powerboard2_Ioffset[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  double powerboard2_Voffset[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+ 
   double powerboard1_I_list_[8] = {0, 0, 0, 0, 0, 0, 0, 0};
   double powerboard1_V_list_[8] = {0, 0, 0, 0, 0, 0, 0, 0};
   double powerboard2_I_list_[8] = {0, 0, 0, 0, 0, 0, 0, 0};

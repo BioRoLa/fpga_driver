@@ -93,28 +93,36 @@ void Corgi::load_config_()
     }
 
     YAML::Node Factors_node1_ = yaml_node_["Powerboard1_Scaling_Factor"];
-    int idx_ = 0;
+    int idx1_ = 0;
 
     LOG_INFO << "PowerBoard1 Scaling Factor";
     for (auto f : Factors_node1_)
     {
-        fpga_.powerboard1_Ifactor[idx_] = f["Current_Factor"].as<double>();
-        fpga_.powerboard1_Vfactor[idx_] = f["Voltage_Factor"].as<double>();
-        LOG_INFO << "Index " << idx_ << " Current Factor: " << fpga_.powerboard1_Ifactor[idx_]
-                           << ", Voltage Factor: " << fpga_.powerboard1_Vfactor[idx_];
-        idx_++;
+        fpga_.powerboard1_Ifactor[idx1_] = f["Current_Factor"].as<double>();
+        fpga_.powerboard1_Ioffset[idx1_] = f["Current_Offset"].as<double>();
+        fpga_.powerboard1_Vfactor[idx1_] = f["Voltage_Factor"].as<double>();
+        fpga_.powerboard1_Voffset[idx1_] = f["Voltage_Offset"].as<double>();
+        LOG_INFO << "Index " << idx1_ << " Current Factor: " << fpga_.powerboard1_Ifactor[idx1_]
+                           << ", Current Offset: " << fpga_.powerboard1_Ioffset[idx1_]
+                           << ", Voltage Factor: " << fpga_.powerboard1_Vfactor[idx1_]
+                           << ", Voltage Offset: " << fpga_.powerboard1_Voffset[idx1_];
+        idx1_++;
     }
 
     LOG_INFO << "PowerBoard2 Scaling Factor";
     YAML::Node Factors_node2_ = yaml_node_["Powerboard2_Scaling_Factor"];
-    idx_ = 0;
+    int idx2_ = 0;
     for (auto f : Factors_node2_)
     {
-        fpga_.powerboard2_Ifactor[idx_] = f["Current_Factor"].as<double>();
-        fpga_.powerboard2_Vfactor[idx_] = f["Voltage_Factor"].as<double>();
-        LOG_INFO << "Index " << idx_ << " Current Factor: " << fpga_.powerboard2_Ifactor[idx_]
-                           << ", Voltage Factor: " << fpga_.powerboard2_Vfactor[idx_];
-        idx_++;
+        fpga_.powerboard2_Ifactor[idx2_] = f["Current_Factor"].as<double>();
+        fpga_.powerboard2_Ioffset[idx2_] = f["Current_Offset"].as<double>();
+        fpga_.powerboard2_Vfactor[idx2_] = f["Voltage_Factor"].as<double>();
+        fpga_.powerboard2_Voffset[idx2_] = f["Voltage_Offset"].as<double>();
+        LOG_INFO << "Index " << idx2_ << " Current Factor: " << fpga_.powerboard2_Ifactor[idx2_]
+                           << ", Current Offset: " << fpga_.powerboard2_Ioffset[idx2_]
+                           << ", Voltage Factor: " << fpga_.powerboard2_Vfactor[idx2_]
+                           << ", Voltage Offset: " << fpga_.powerboard2_Voffset[idx2_];
+        idx2_++;
     }
 }
 

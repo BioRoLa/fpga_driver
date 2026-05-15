@@ -88,10 +88,10 @@ void FpgaHandler::read_powerboard_data_()
 
     for (int i = 0; i < 16; i++)
     {
-        if (i % 2 == 0)powerboard1_I_list_[i / 2] = rx_arr_1[i] * powerboard1_Ifactor[i / 2];
-        if (i % 2 == 0)powerboard2_I_list_[i / 2] = rx_arr_2[i] * powerboard2_Ifactor[i / 2];
-        if (i % 2 == 1)powerboard1_V_list_[(i - 1) / 2] = rx_arr_1[i] * powerboard1_Vfactor[(i - 1) / 2];
-        if (i % 2 == 1)powerboard2_V_list_[(i - 1) / 2] = rx_arr_2[i] * powerboard2_Vfactor[(i - 1) / 2];
+        if (i % 2 == 0)powerboard1_I_list_[i / 2] = rx_arr_1[i] * powerboard1_Ifactor[i / 2] + powerboard1_Ioffset[i / 2];
+        if (i % 2 == 0)powerboard2_I_list_[i / 2] = rx_arr_2[i] * powerboard2_Ifactor[i / 2] + powerboard2_Ioffset[i / 2];
+        if (i % 2 == 1)powerboard1_V_list_[(i - 1) / 2] = rx_arr_1[i] * powerboard1_Vfactor[(i - 1) / 2] + powerboard1_Voffset[(i - 1) / 2];
+        if (i % 2 == 1)powerboard2_V_list_[(i - 1) / 2] = rx_arr_2[i] * powerboard2_Vfactor[(i - 1) / 2] + powerboard2_Voffset[(i - 1) / 2];
     }
 }
 
