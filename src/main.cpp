@@ -92,11 +92,11 @@ void Corgi::load_config_()
         modules_list_.emplace_back(label, yaml_node_, fpga_.status_, fpga_.session_);
     }
 
-    YAML::Node Factors_node_ = yaml_node_["Powerboard_Scaling_Factor"];
+    YAML::Node Factors_node1_ = yaml_node_["Powerboard1_Scaling_Factor"];
     int idx_ = 0;
 
     LOG_INFO << "PowerBoard1 Scaling Factor";
-    for (auto f : Factors_node_)
+    for (auto f : Factors_node1_)
     {
         fpga_.powerboard1_Ifactor[idx_] = f["Current_Factor"].as<double>();
         fpga_.powerboard1_Vfactor[idx_] = f["Voltage_Factor"].as<double>();
@@ -106,9 +106,9 @@ void Corgi::load_config_()
     }
 
     LOG_INFO << "PowerBoard2 Scaling Factor";
-    Factors_node_ = yaml_node_["Powerboard2_Scaling_Factor"];
+    YAML::Node Factors_node2_ = yaml_node_["Powerboard2_Scaling_Factor"];
     idx_ = 0;
-    for (auto f : Factors_node_)
+    for (auto f : Factors_node2_)
     {
         fpga_.powerboard2_Ifactor[idx_] = f["Current_Factor"].as<double>();
         fpga_.powerboard2_Vfactor[idx_] = f["Voltage_Factor"].as<double>();
