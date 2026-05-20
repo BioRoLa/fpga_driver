@@ -153,87 +153,87 @@ Modules_list:
   1: RF_Module
   2: RH_Module
   3: LH_Module
-# TODO: Test new powerboard scaling factor values and update the yaml file accordingly
+# TODO: Test CH1 powerboard scaling factor values and update the yaml file accordingly
 Powerboard1_Scaling_Factor:
   - # 1 Power Battery
-    Current_Factor: 1
-    Current_Offset: 0
-    Voltage_Factor: 1
-    Voltage_Offset: 0
+    Current_Factor: 0.0051
+    Current_Offset: -2.5371
+    Voltage_Factor: 0.0155
+    Voltage_Offset: 0.9189
   - # 2 CPU SBRIO, ORIN
-    Current_Factor: 1
-    Current_Offset: 0
-    Voltage_Factor: 1
-    Voltage_Offset: 0
+    Current_Factor: 0.0051
+    Current_Offset: -2.5371
+    Voltage_Factor: 0.0155
+    Voltage_Offset: 0.1208
   - # 3 SPARE 1
-    Current_Factor: 1
-    Current_Offset: 0
-    Voltage_Factor: 1
-    Voltage_Offset: 0
+    Current_Factor: 0.005
+    Current_Offset: -2.4846
+    Voltage_Factor: 0.0154
+    Voltage_Offset: 0.097
   - # 4 SPARE 2
-    Current_Factor: 1
-    Current_Offset: 0
-    Voltage_Factor: 1
-    Voltage_Offset: 0
+    Current_Factor: 0.005
+    Current_Offset: -2.5005
+    Voltage_Factor: 0.0154
+    Voltage_Offset: 0.0432
   - # 5 Module 1
-    Current_Factor: 1
-    Current_Offset: 0
-    Voltage_Factor: 1
-    Voltage_Offset: 0
+    Current_Factor: 0.005
+    Current_Offset: -2.4557
+    Voltage_Factor: 0.0154
+    Voltage_Offset: 0.0999
   - # 6 Module 2
-    Current_Factor: 1
-    Current_Offset: 0
-    Voltage_Factor: 1
-    Voltage_Offset: 0
+    Current_Factor: 0.005
+    Current_Offset: -2.484
+    Voltage_Factor: 0.0154
+    Voltage_Offset: 0.0602
   - # 7 Module 3
-    Current_Factor: 1
-    Current_Offset: 0
-    Voltage_Factor: 1
-    Voltage_Offset: 0
+    Current_Factor: 0.0051
+    Current_Offset: -2.5123
+    Voltage_Factor: 0.0153
+    Voltage_Offset: 0.1868
   - # 8 Module 4
-    Current_Factor: 1    
-    Current_Offset: 0
-    Voltage_Factor: 1
-    Voltage_Offset: 0
-# TODO: Test new powerboard scaling factor values and update the yaml file accordingly
+    Current_Factor: 0.005
+    Current_Offset: -2.4624
+    Voltage_Factor: 0.0154
+    Voltage_Offset: 0.0462
+# TODO: Test CH1 powerboard scaling factor values and update the yaml file accordingly
 Powerboard2_Scaling_Factor:
   - # 1 Power Battery
-    Current_Factor: 1
-    Current_Offset: 0
-    Voltage_Factor: 1
-    Voltage_Offset: 0
+    Current_Factor: 0.005
+    Current_Offset: -2.4829
+    Voltage_Factor: 0.0155
+    Voltage_Offset: 0.9364
   - # 2 CPU SBRIO, ORIN
-    Current_Factor: 1
-    Current_Offset: 0
-    Voltage_Factor: 1
-    Voltage_Offset: 0
+    Current_Factor: 0.005
+    Current_Offset: -2.4829
+    Voltage_Factor: 0.0156
+    Voltage_Offset: 0.2937
   - # 3 SPARE 1
-    Current_Factor: 1
-    Current_Offset: 0
-    Voltage_Factor: 1
-    Voltage_Offset: 0
+    Current_Factor: 0.0048
+    Current_Offset: -2.3876
+    Voltage_Factor: 0.0155
+    Voltage_Offset: 0.2787
   - # 4 SPARE 2
-    Current_Factor: 1
-    Current_Offset: 0
-    Voltage_Factor: 1
-    Voltage_Offset: 0
+    Current_Factor: 0.0049
+    Current_Offset: -2.4423
+    Voltage_Factor: 0.0155
+    Voltage_Offset: 0.2941
   - # 5 Module 1
-    Current_Factor: 1
-    Current_Offset: 0
-    Voltage_Factor: 1
-    Voltage_Offset: 0
+    Current_Factor: 0.005
+    Current_Offset: -2.4694
+    Voltage_Factor: 0.0152
+    Voltage_Offset: 0.1799
   - # 6 Module 2
-    Current_Factor: 1
-    Current_Offset: 0
-    Voltage_Factor: 1
-    Voltage_Offset: 0
+    Current_Factor: 0.005
+    Current_Offset: -2.4797
+    Voltage_Factor: 0.0155
+    Voltage_Offset: 0.1714
   - # 7 Module 3
-    Current_Factor: 1
-    Current_Offset: 0
-    Voltage_Factor: 1
-    Voltage_Offset: 0
+    Current_Factor: 0.005
+    Current_Offset: -2.5045
+    Voltage_Factor: 0.0154
+    Voltage_Offset: 0.2708
   - # 8 Module 4
-    Current_Factor: 1    
-    Current_Offset: 0
-    Voltage_Factor: 1
-    Voltage_Offset: 0
+    Current_Factor: 0.005
+    Current_Offset: -2.4955
+    Voltage_Factor: 0.0153
+    Voltage_Offset: 0.2677

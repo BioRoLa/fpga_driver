@@ -17,7 +17,7 @@ RobotFSM::RobotFSM(MotorFSM& motor_fsm, std::vector<LegModule>& modules_list,
     , has_can_error_(false)
     , has_switch_error_(false)
     , loop_period_us_(500)  // Default 500us
-    , init_step_(2)
+    , init_step_(0)
     , init_counter_(0)
     , config_step_(0)
 {
@@ -413,7 +413,7 @@ void RobotFSM::enterMode(RobotMode new_mode)
     switch (new_mode)
     {
         case RobotMode::Init:
-            init_step_ = 2;
+            init_step_ = 0;
             init_counter_ = 0;
             break;
             
