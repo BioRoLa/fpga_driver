@@ -238,9 +238,9 @@ void RobotFSM::handleInit()
                 current_mode_ = RobotMode::IDLE;
                 enterMode(current_mode_);
             }
-            break;
+            break;*/
     }
-
+    /*
     if (init_step_ > 3) 
     { 
         // After power on, keep checking estop and motor timeout.
