@@ -160,7 +160,7 @@ void RobotFSM::handleInit()
             }
             break;
             
-        case 3:
+        /*case 3:
             // Check emergency stop and motor timeout
             {
                 // Check EStop first: EStop cuts power to motors, causing timeout.
@@ -268,7 +268,7 @@ void RobotFSM::handleInit()
             LOG_FATAL << "Motor timeout detected";
             emergencyStop();
         }
-    }
+    }*/
 }
 
 void RobotFSM::handleIdle()
