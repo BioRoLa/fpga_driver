@@ -41,6 +41,7 @@ public:
 private:
     // Constants
     static constexpr int POWER_SWITCH_STABILIZATION_TIME_US = 500000;
+    static constexpr int MOTOR_POWER_ON_BOOT_TIME_US = 1000000;
     static constexpr double ESTOP_VOLTAGE_THRESHOLD = 10.0;
     
     // Current state
@@ -66,6 +67,7 @@ private:
     int init_step_;
     int init_counter_;  // Counter for timing in init sequence
     int config_step_;
+    int config_counter_;
     
     // Private state handler methods
     void handleSystemOn();
@@ -81,6 +83,8 @@ private:
     void enterMode(RobotMode new_mode);
     void exitMode(RobotMode old_mode);
     bool powerSwitchSequence(int& step_counter, int& cycle_counter);
+    bool waitAfterMotorPowerOn(int& cycle_counter);
+    bool shouldUpdateTimeoutDebounce() const;
     bool checkEStop();
     
     // Convert RobotMode to string

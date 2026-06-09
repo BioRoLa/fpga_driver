@@ -20,6 +20,7 @@ RobotFSM::RobotFSM(MotorFSM& motor_fsm, std::vector<LegModule>& modules_list,
     , init_step_(0)
     , init_counter_(0)
     , config_step_(0)
+    , config_counter_(0)
 {
     LOG_INFO << "Initialized in SystemOn mode";
 }
@@ -38,10 +39,12 @@ const char* RobotFSM::modeToString(RobotMode mode) const
 
 void RobotFSM::runFsm()
 {
-    // Update timeout debounce for all modules
-    for (auto& module : modules_list_)
+    if (shouldUpdateTimeoutDebounce())
     {
-        module.updateTimeoutDebounce(loop_period_us_);
+        for (auto& module : modules_list_)
+        {
+            module.updateTimeoutDebounce(loop_period_us_);
+        }
     }
     
     // Execute behavior for current mode
@@ -139,13 +142,13 @@ void RobotFSM::handleInit()
 {
     // Init: System initialization sequence
     // Steps:
-    // 0. Turn on digital switch and wait 1 second
-    // 1. Turn on signal switch and wait 1 second
-    // 2. Turn on power switch and wait 1 second
-    // 3. Check motor timeout
-    // 4. Set motor FSM to SET_ZERO
-    // 5. Set motor FSM to HALL_CALIBRATE
-    // 6. Check motor FSM in MOTOR mode, then transition to IDLE
+    // 0. Turn on digital switch and wait for stabilization
+    // 1. Turn on signal switch and wait for stabilization
+    // 2. Turn on power switch and wait for stabilization
+    // 3. Wait for motors to boot after power is applied
+    // 4. Check motor timeout
+    // 5. Set motor FSM to SET_ZERO
+    // 6. Set motor FSM to MOTOR, then transition to IDLE
     
     switch (init_step_)
     {
@@ -161,6 +164,14 @@ void RobotFSM::handleInit()
             break;
             
         case 3:
+            if (waitAfterMotorPowerOn(init_counter_))
+            {
+                init_step_++;
+                init_counter_ = 0;
+            }
+            break;
+
+        case 4:
             // Check emergency stop and motor timeout
             {
                 // Check EStop first: EStop cuts power to motors, causing timeout.
@@ -173,7 +184,7 @@ void RobotFSM::handleInit()
                 }
                 else
                 {
-                    LOG_INFO << "Init Step 3: Emergency stop check passed, power output normal";
+                    LOG_INFO << "Init Step 4: Emergency stop check passed, power output normal";
                     
                     bool has_timeout = false;
                     for (auto& module : modules_list_)
@@ -181,7 +192,7 @@ void RobotFSM::handleInit()
                         if (module.hasTimeout())
                         {
                             has_timeout = true;
-                            LOG_ERROR << "Init Step 3: Module " << module.label_ << " has timeout!";
+                            LOG_ERROR << "Init Step 4: Module " << module.label_ << " has timeout!";
                             break;
                         }
                     }
@@ -193,16 +204,16 @@ void RobotFSM::handleInit()
                     }
                     else
                     {
-                        LOG_INFO << "Init Step 3: All motors responsive";
+                        LOG_INFO << "Init Step 4: All motors responsive";
                         init_step_++;
                     }
                 }
             }
             break;
             
-        case 4:
+        case 5:
             // Set motor FSM to SET_ZERO mode
-            LOG_INFO << "Init Step 4: Setting motors to SET_ZERO...";
+            LOG_INFO << "Init Step 5: Setting motors to SET_ZERO...";
             motor_fsm_.switchMode(FunctionMode::SET_ZERO);
             init_step_++;
             break;
@@ -225,7 +236,7 @@ void RobotFSM::handleInit()
             
             break;
         */
-        case 5:
+        case 6:
             // Wait for HALL_CALIBRATE to complete and motor FSM to enter MOTOR mode
             motor_fsm_.switchMode(FunctionMode::MOTOR);
             if (motor_fsm_.getCurrentMode() == FunctionMode::MOTOR)
@@ -241,7 +252,7 @@ void RobotFSM::handleInit()
             break;
     }
     
-    if (init_step_ > 3) 
+    if (init_step_ > 4) 
     { 
         // After power on, keep checking estop and motor timeout.
         // Check EStop first: EStop cuts power to motors, causing timeout.
@@ -331,7 +342,8 @@ void RobotFSM::handleMotorConfig()
     // MotorConfig: Motor configuration
     // Steps:
     // 0-2. Power switch sequence (digital -> signal -> power)
-    // 3. Complete configuration
+    // 3. Wait for motors to boot after power is applied
+    // 4. Complete configuration
     
     
     switch (config_step_)
@@ -340,30 +352,38 @@ void RobotFSM::handleMotorConfig()
         case 1:
         case 2:
         // Power switch sequence: digital -> signal -> power
-        if (powerSwitchSequence(config_step_, init_counter_))
+        if (powerSwitchSequence(config_step_, config_counter_))
         {
             config_step_++;
-            init_counter_ = 0;
+            config_counter_ = 0;
         }
         break;
         
         case 3:
+        if (waitAfterMotorPowerOn(config_counter_))
+        {
+            config_step_++;
+            config_counter_ = 0;
+        }
+        break;
+
+        case 4:
         // Ensure motors are in CONFIG mode
         if (motor_fsm_.getCurrentMode() != FunctionMode::CONFIG)
         {
             if (motor_fsm_.switchMode(FunctionMode::CONFIG))
             {
-                LOG_INFO << "Step 3: Motors set to CONFIG mode";
+                LOG_INFO << "Step 4: Motors set to CONFIG mode";
             }
             else
             {
-                LOG_ERROR_EVERY_N(3) << "Step 3: Failed to set motors to CONFIG mode";
+                LOG_ERROR_EVERY_N(3) << "Step 4: Failed to set motors to CONFIG mode";
             }
         }   
         break;
     }
     // Check for emergency stop
-    if (config_step_ == 3)
+    if (config_step_ >= 4)
     {
         if (checkEStop())
         {
@@ -419,6 +439,7 @@ void RobotFSM::enterMode(RobotMode new_mode)
             
         case RobotMode::MotorConfig:
             config_step_ = 0;
+            config_counter_ = 0;
             break;
             
         default:
@@ -459,8 +480,7 @@ void RobotFSM::setLoopPeriod(int period_us)
 bool RobotFSM::powerSwitchSequence(int& step_counter, int& cycle_counter)
 {
     // Power switch sequence: digital (step 0) -> signal (step 1) -> power (step 2)
-    // Each step waits for 1 second before moving to the next
-    // Returns true when the current step is complete
+    // Returns true when the current step is complete.
     
     const char* switch_names[] = {"digital", "signal", "power"};
     int switch_index = step_counter;
@@ -468,37 +488,34 @@ bool RobotFSM::powerSwitchSequence(int& step_counter, int& cycle_counter)
     if (switch_index < 0 || switch_index > 2)
     {
         LOG_ERROR << "Invalid power switch step: " << switch_index;
-        return true;  // Skip invalid step
+        return true;
     }
     
-    // On first cycle, check if switch is already on and turn it on if not
     if (cycle_counter == 0)
     {
-        // Check if switch is already on
-        if (powerboard1_state_.at(switch_index))
+        if (!powerboard1_state_.at(switch_index))
+        {
+            LOG_INFO << "Step " << switch_index << ": Turning PB1 " 
+                               << switch_names[switch_index] << " switch ON...";
+            powerboard1_state_.at(switch_index) = true;
+        }
+        else
         {
             LOG_DEBUG << "Step " << switch_index << ": PB1 " << switch_names[switch_index] 
-                                << " switch already ON, skipping wait";
-            return true;  // Already on, no need to wait
+                                << " switch already ON";
         }
-        
-        // Turn on the switch
-        LOG_INFO << "Step " << switch_index << ": Turning PB1 " 
-                           << switch_names[switch_index] << " switch ON...";
-        powerboard1_state_.at(switch_index) = true;
 
-        // Check if switch is already on
-        if (powerboard2_state_.at(switch_index))
+        if (!powerboard2_state_.at(switch_index))
+        {
+            LOG_INFO << "Step " << switch_index << ": Turning PB2 " 
+                               << switch_names[switch_index] << " switch ON...";
+            powerboard2_state_.at(switch_index) = true;
+        }
+        else
         {
             LOG_DEBUG << "Step " << switch_index << ": PB2 " << switch_names[switch_index] 
-                                << " switch already ON, skipping wait";
-            return true;  // Already on, no need to wait
+                                << " switch already ON";
         }
-        
-        // Turn on the switch
-        LOG_INFO << "Step " << switch_index << ": Turning PB2 " 
-                           << switch_names[switch_index] << " switch ON...";
-        powerboard2_state_.at(switch_index) = true;
     }
     
     cycle_counter++;
@@ -508,10 +525,44 @@ bool RobotFSM::powerSwitchSequence(int& step_counter, int& cycle_counter)
     {
         LOG_INFO << "Step " << switch_index << ": " 
                            << switch_names[switch_index] << " switch stabilized";
-        return true;  // Step complete
+        return true;
     }
     
-    return false;  // Still waiting
+    return false;
+}
+
+bool RobotFSM::waitAfterMotorPowerOn(int& cycle_counter)
+{
+    if (cycle_counter == 0)
+    {
+        LOG_INFO << "Waiting for motors to boot after power switch ON...";
+    }
+
+    cycle_counter++;
+    int required_cycles = MOTOR_POWER_ON_BOOT_TIME_US / loop_period_us_;
+
+    if (cycle_counter >= required_cycles)
+    {
+        LOG_INFO << "Motor power-on boot wait complete";
+        return true;
+    }
+
+    return false;
+}
+
+bool RobotFSM::shouldUpdateTimeoutDebounce() const
+{
+    if (current_mode_ == RobotMode::Init)
+    {
+        return init_step_ >= 4;
+    }
+
+    if (current_mode_ == RobotMode::MotorConfig)
+    {
+        return config_step_ >= 4;
+    }
+
+    return current_mode_ == RobotMode::IDLE || current_mode_ == RobotMode::Standby;
 }
 
 bool RobotFSM::checkEStop()
