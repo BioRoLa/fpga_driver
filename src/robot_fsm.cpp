@@ -160,7 +160,7 @@ void RobotFSM::handleInit()
             }
             break;
             
-        /*case 3:
+        case 3:
             // Check emergency stop and motor timeout
             {
                 // Check EStop first: EStop cuts power to motors, causing timeout.
@@ -208,7 +208,7 @@ void RobotFSM::handleInit()
             break;
             
         
-        case 5:
+        /*case 5:
             // Set motor FSM to HALL_CALIBRATE mode and wait for calibration to complete
             if (motor_fsm_.getCurrentMode() != FunctionMode::HALL_CALIBRATE)
             {
@@ -224,8 +224,8 @@ void RobotFSM::handleInit()
             }
             
             break;
-        
-        case 6:
+        */
+        case 5:
             // Wait for HALL_CALIBRATE to complete and motor FSM to enter MOTOR mode
             motor_fsm_.switchMode(FunctionMode::MOTOR);
             if (motor_fsm_.getCurrentMode() == FunctionMode::MOTOR)
@@ -238,9 +238,9 @@ void RobotFSM::handleInit()
                 current_mode_ = RobotMode::IDLE;
                 enterMode(current_mode_);
             }
-            break;*/
+            break;
     }
-    /*
+    
     if (init_step_ > 3) 
     { 
         // After power on, keep checking estop and motor timeout.
@@ -268,7 +268,7 @@ void RobotFSM::handleInit()
             LOG_FATAL << "Motor timeout detected";
             emergencyStop();
         }
-    }*/
+    }
 }
 
 void RobotFSM::handleIdle()
