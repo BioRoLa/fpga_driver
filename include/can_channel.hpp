@@ -21,6 +21,7 @@ public:
     // Setup and configuration
     void setup(uint32_t timeout_us);
     void setMode(FunctionMode mode);
+    void setMotorMode(size_t index, FunctionMode mode);
     void setConfigSubMode(ConfigSubMode sub_mode);
     
     // CAN communication

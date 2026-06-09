@@ -110,7 +110,6 @@ void MotorFSM::handleSetZeroMode()
 void MotorFSM::handleHallCalibrateMode()
 {
     int module_enabled = 0;
-    int total_motors = 0;
     
     // Set all motor command to zero initially
     for (auto& mod : modules_list_)
@@ -122,12 +121,62 @@ void MotorFSM::handleHallCalibrateMode()
                 CANMotor* motor = mod.getMotor(j);
                 if (motor) {
                     motor->setCommand(0, 0, 0, 0, 0);
-                    total_motors++;
                 }
             }
             module_enabled++;
         }
     }
+
+    auto start_hall_stage = [&](const std::vector<size_t>& motor_indices) {
+        for (auto& mod : modules_list_)
+        {
+            if (!mod.enable_) continue;
+
+            for (size_t j = 0; j < mod.getMotorCount(); j++)
+            {
+                mod.setMotorMode(j, FunctionMode::REST);
+            }
+
+            for (size_t motor_index : motor_indices)
+            {
+                if (motor_index < mod.getMotorCount())
+                {
+                    mod.setMotorMode(motor_index, FunctionMode::HALL_CALIBRATE);
+                }
+            }
+
+            mod.sendCommands();
+        }
+    };
+
+    auto selected_motors_calibrated = [&](const std::vector<size_t>& motor_indices) {
+        int calibrated_modules = 0;
+
+        for (auto& mod : modules_list_)
+        {
+            if (!mod.enable_) continue;
+
+            bool module_calibrated = true;
+            for (size_t motor_index : motor_indices)
+            {
+                CANMotor* motor = mod.getMotor(motor_index);
+                if (!motor) {
+                    module_calibrated = false;
+                    break;
+                }
+
+                motor->encodeRequestState();
+                if (motor->getHallCalibrateState() != 2) {
+                    module_calibrated = false;
+                    break;
+                }
+            }
+
+            if (module_calibrated) calibrated_modules++;
+        }
+
+        return module_enabled > 0 && calibrated_modules == module_enabled;
+    };
 
     switch (hall_calibrate_status_)
     {
@@ -137,35 +186,34 @@ void MotorFSM::handleHallCalibrateMode()
         break;
     
         case 0:{
-            // check calibration finished
-            int cal_cnt = 0;
-            for (auto& mod : modules_list_)
-            {
-                if (mod.enable_) {
-                    bool all_calibrated = true;
-                    for (size_t j = 0; j < mod.getMotorCount(); j++)
-                    {
-                        CANMotor* motor = mod.getMotor(j);
-                        if (motor) {
-                            // Check hall_cal_state status
-                            motor -> encodeRequestState();
-                            if (motor->getHallCalibrateState() != 2) {
-                                all_calibrated = false;
-                                break;
-                            }
-                        }
-                    }
-                    
-                    if (all_calibrated) cal_cnt++;
-                }
-            }
-            
-            if (cal_cnt == module_enabled && measure_offset_ == 0) hall_calibrate_status_++;
-            else if (cal_cnt == module_enabled && measure_offset_ == 1) hall_calibrate_status_ = -1;
+            LOG_INFO << "Hall calibration stage 1: CAN3 Motor_H";
+            start_hall_stage({2});
+            hall_calibrate_status_++;
         }
         break;
 
         case 1:{
+            if (selected_motors_calibrated({2})) hall_calibrate_status_++;
+        }
+        break;
+
+        case 2:{
+            LOG_INFO << "Hall calibration stage 2: CAN1/CAN2 Motor_R/Motor_L";
+            start_hall_stage({0, 1});
+            hall_calibrate_status_++;
+        }
+        break;
+
+        case 3:{
+            if (selected_motors_calibrated({0, 1}))
+            {
+                if (measure_offset_ == 0) hall_calibrate_status_++;
+                else if (measure_offset_ == 1) hall_calibrate_status_ = -1;
+            }
+        }
+        break;
+
+        case 4:{
             // set initial calibration command
             int mod_index = 0;
             for (auto& mod : modules_list_)
@@ -197,19 +245,21 @@ void MotorFSM::handleHallCalibrateMode()
         }
         break;
 
-        case 2:{
+        case 5:{
             // move to calibration position
             int finish_cnt = 0;
+            int target_motor_cnt = 0;
             int mod_index = 0;
             
             for (auto& mod : modules_list_)
             {
                 if (mod.enable_){
-                    //TODO: change j to 3 after confirming H motor calibration process
                     for (size_t j = 0; j < mod.getMotorCount() && j < 2; j++)
                     {
                         CANMotor* motor = mod.getMotor(j);
                         if (!motor) continue;
+
+                        target_motor_cnt++;
                         
                         double errj = theta_error(cal_command[mod_index][j], 0);
 
@@ -229,11 +279,11 @@ void MotorFSM::handleHallCalibrateMode()
                 }
                 mod_index++;
             }
-            if (finish_cnt == total_motors) hall_calibrate_status_++;
+            if (target_motor_cnt > 0 && finish_cnt == target_motor_cnt) hall_calibrate_status_++;
         }
         break;
 
-        case 3:{
+        case 6:{
             hall_calibrated_ = true;
             hall_calibrate_status_ = 0;
             switchMode(FunctionMode::MOTOR);
@@ -501,6 +551,30 @@ bool MotorFSM::switchMode(FunctionMode next_mode)
     for (auto& mod : modules_list_)
     {
         if (mod.enable_) module_enabled++;
+    }
+
+    if (next_mode_switch == FunctionMode::HALL_CALIBRATE)
+    {
+        for (auto& mod : modules_list_)
+        {
+            if (!mod.enable_) continue;
+
+            for (size_t i = 0; i < mod.getMotorCount(); i++)
+            {
+                mod.setMotorMode(i, FunctionMode::REST);
+                CANMotor* motor = mod.getMotor(i);
+                if (motor) {
+                    motor->setCommand(0, 0, 0, 0, 0);
+                }
+            }
+
+            mod.sendCommands();
+        }
+
+        hall_calibrated_ = false;
+        hall_calibrate_status_ = 0;
+        current_mode_ = next_mode_switch;
+        return true;
     }
 
     double time_elapsed = 0;
@@ -777,4 +851,3 @@ void MotorFSM::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
     }
 
 }
-

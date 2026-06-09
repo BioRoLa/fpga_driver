@@ -136,6 +136,13 @@ void LegModule::setMode(FunctionMode mode)
     }
 }
 
+void LegModule::setMotorMode(size_t index, FunctionMode mode)
+{
+    if (channel_) {
+        channel_->setMotorMode(index, mode);
+    }
+}
+
 void LegModule::setConfigSubMode(ConfigSubMode sub_mode)
 {
     if (channel_) {
