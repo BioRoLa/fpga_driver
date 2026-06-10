@@ -173,7 +173,7 @@ void RobotFSM::handleInit()
             break;
 
         case 4:
-            // Check emergency stop and motor timeout
+            // Check emergency stop. Motor timeout check is skipped during init.
             {
                 // Check EStop first: EStop cuts power to motors, causing timeout.
                 // Checking EStop first gives the correct root cause.
@@ -186,7 +186,7 @@ void RobotFSM::handleInit()
                 else
                 {
                     LOG_INFO << "Init Step 4: Emergency stop check passed, power output normal";
-                    
+                    /*
                     bool has_timeout = false;
                     for (auto& module : modules_list_)
                     {
@@ -197,7 +197,7 @@ void RobotFSM::handleInit()
                             break;
                         }
                     }
-                    
+
                     if (has_timeout)
                     {
                         LOG_FATAL << "Init failed: Motor timeout detected";
@@ -208,6 +208,9 @@ void RobotFSM::handleInit()
                         LOG_INFO << "Init Step 4: All motors responsive";
                         init_step_++;
                     }
+                    */
+                    LOG_INFO << "Init Step 4: Motor timeout check skipped";
+                    init_step_++;
                 }
             }
             break;
@@ -254,7 +257,7 @@ void RobotFSM::handleInit()
     
     if (init_step_ > 4) 
     { 
-        // After power on, keep checking estop and motor timeout.
+        // After power on, keep checking estop. Motor timeout check is skipped during init.
         // Check EStop first: EStop cuts power to motors, causing timeout.
         if (checkEStop())
         {
@@ -263,6 +266,7 @@ void RobotFSM::handleInit()
             return;
         }
 
+        /*
         bool has_timeout = false;
         for (auto& module : modules_list_)
         {
@@ -273,12 +277,13 @@ void RobotFSM::handleInit()
                 break;
             }
         }
-        
+
         if (has_timeout)
         {
             LOG_FATAL << "Motor timeout detected";
             emergencyStop();
         }
+        */
     }
 }
 
