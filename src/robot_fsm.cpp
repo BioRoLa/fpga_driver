@@ -173,7 +173,7 @@ void RobotFSM::handleInit()
             break;
 
         case 4:
-            // Check emergency stop. Motor timeout check is skipped during init.
+            // Check emergency stop and motor timeout
             {
                 // Check EStop first: EStop cuts power to motors, causing timeout.
                 // Checking EStop first gives the correct root cause.
@@ -186,7 +186,7 @@ void RobotFSM::handleInit()
                 else
                 {
                     LOG_INFO << "Init Step 4: Emergency stop check passed, power output normal";
-                    /*
+
                     bool has_timeout = false;
                     for (auto& module : modules_list_)
                     {
@@ -208,9 +208,6 @@ void RobotFSM::handleInit()
                         LOG_INFO << "Init Step 4: All motors responsive";
                         init_step_++;
                     }
-                    */
-                    LOG_INFO << "Init Step 4: Motor timeout check skipped";
-                    init_step_++;
                 }
             }
             break;
@@ -222,7 +219,7 @@ void RobotFSM::handleInit()
             init_step_++;
             break;
 
-        /*case 6:
+        case 6:
             // Set motor FSM to HALL_CALIBRATE mode and wait for calibration to complete
             if (motor_fsm_.getCurrentMode() != FunctionMode::HALL_CALIBRATE)
             {
@@ -238,8 +235,8 @@ void RobotFSM::handleInit()
             }
             
             break;
-        */
-        case 6:
+
+        case 7:
             // Set motor FSM to MOTOR mode and transition to IDLE
             motor_fsm_.switchMode(FunctionMode::MOTOR);
             if (motor_fsm_.getCurrentMode() == FunctionMode::MOTOR)
@@ -257,7 +254,7 @@ void RobotFSM::handleInit()
     
     if (init_step_ > 4) 
     { 
-        // After power on, keep checking estop. Motor timeout check is skipped during init.
+        // After power on, keep checking estop and motor timeout.
         // Check EStop first: EStop cuts power to motors, causing timeout.
         if (checkEStop())
         {
@@ -266,7 +263,6 @@ void RobotFSM::handleInit()
             return;
         }
 
-        /*
         bool has_timeout = false;
         for (auto& module : modules_list_)
         {
@@ -283,7 +279,6 @@ void RobotFSM::handleInit()
             LOG_FATAL << "Motor timeout detected";
             emergencyStop();
         }
-        */
     }
 }
 
