@@ -19,6 +19,7 @@ RobotFSM::RobotFSM(MotorFSM& motor_fsm, std::vector<LegModule>& modules_list,
     , loop_period_us_(500)  // Default 500us
     , init_step_(0)
     , init_counter_(0)
+    , hall_calibrate_requested_(false)
     , config_step_(0)
     , config_counter_(0)
 {
@@ -221,10 +222,16 @@ void RobotFSM::handleInit()
         
         case 6:
             // Set motor FSM to HALL_CALIBRATE mode and wait for calibration to complete
-            if (motor_fsm_.getCurrentMode() != FunctionMode::HALL_CALIBRATE)
+            if (!hall_calibrate_requested_)
             {
                 LOG_INFO << "Init Step 6: Starting HALL_CALIBRATE...";
-                motor_fsm_.switchMode(FunctionMode::HALL_CALIBRATE);
+                hall_calibrate_requested_ = true;
+                if (!motor_fsm_.switchMode(FunctionMode::HALL_CALIBRATE))
+                {
+                    LOG_FATAL << "Init failed: unable to switch motors to HALL_CALIBRATE";
+                    emergencyStop();
+                    return;
+                }
             }
             
             // Wait until calibration is complete
@@ -238,7 +245,6 @@ void RobotFSM::handleInit()
         
         case 7:
             // Wait for HALL_CALIBRATE to complete and motor FSM to enter MOTOR mode
-            motor_fsm_.switchMode(FunctionMode::MOTOR);
             if (motor_fsm_.getCurrentMode() == FunctionMode::MOTOR)
             {
                 LOG_INFO << "Init Step 7: Motors in MOTOR mode";
@@ -435,6 +441,7 @@ void RobotFSM::enterMode(RobotMode new_mode)
         case RobotMode::Init:
             init_step_ = 0;
             init_counter_ = 0;
+            hall_calibrate_requested_ = false;
             break;
             
         case RobotMode::MotorConfig:

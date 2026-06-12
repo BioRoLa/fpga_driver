@@ -66,6 +66,7 @@ private:
     // State counters for initialization sequences
     int init_step_;
     int init_counter_;  // Counter for timing in init sequence
+    bool hall_calibrate_requested_;
     int config_step_;
     int config_counter_;
     
