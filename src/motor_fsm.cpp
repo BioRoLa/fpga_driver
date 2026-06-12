@@ -207,7 +207,6 @@ void MotorFSM::handleHallCalibrateMode()
             for (auto& mod : modules_list_)
             {
                 if (mod.enable_){
-                    //TODO: change j to 3 after confirming H motor calibration process
                     for (size_t j = 0; j < mod.getMotorCount() && j < 2; j++)
                     {
                         CANMotor* motor = mod.getMotor(j);
@@ -570,12 +569,11 @@ bool MotorFSM::switchMode(FunctionMode next_mode)
             }
         };
 
-        // Uncomment these lines to calibrate Motor_H first, then Motor_R/L.
         success = switch_hall_stage({2});
-        if (success) success = switch_hall_stage({0, 1});
-
-        success = switch_hall_stage({0, 1});
-
+        if (success) {
+            success = switch_hall_stage({0, 1});
+        }
+        // success = switch_hall_stage({0, 1});
         if (success)
         {
             current_mode_ = next_mode_switch;
