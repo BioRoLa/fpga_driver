@@ -215,7 +215,12 @@ void RobotFSM::handleInit()
         case 5:
             // Set motor FSM to SET_ZERO mode
             LOG_INFO << "Init Step 5: Setting motors to SET_ZERO...";
-            motor_fsm_.switchMode(FunctionMode::SET_ZERO);
+            if (!motor_fsm_.switchMode(FunctionMode::SET_ZERO)) 
+            {
+                LOG_FATAL << "Init failed: unable to set motors zero";
+                emergencyStop();
+                return;
+            }
             init_step_++;
             break;
             
