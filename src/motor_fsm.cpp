@@ -117,7 +117,8 @@ void MotorFSM::handleHallCalibrateMode()
     {
         if (mod.enable_)
         {
-            for (size_t j = 0; j < mod.getMotorCount(); j++)
+            //TODO: change j to 3 after confirming H motor calibration process
+            for (size_t j = 0; j < mod.getMotorCount() && j < 2; j++)
             {
                 CANMotor* motor = mod.getMotor(j);
                 if (motor) {
