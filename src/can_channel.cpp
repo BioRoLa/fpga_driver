@@ -210,6 +210,18 @@ void CANChannel::setMode(FunctionMode mode)
     }
 }
 
+void CANChannel::setMotorMode(size_t index, FunctionMode mode)
+{
+    if (index >= motors_.size() || index >= can_id_fcs_.size()) {
+        LOG_ERROR << "[CAN Channel] Invalid motor index for mode switch: " << index;
+        return;
+    }
+
+    uint32_t mode_val = static_cast<uint32_t>(mode);
+    NiFpga_MergeStatus(&status_, NiFpga_WriteU32(session_, can_id_fcs_[index], mode_val));
+    motors_[index]->setMode(mode);
+}
+
 void CANChannel::setConfigSubMode(ConfigSubMode sub_mode)
 {
     for (size_t i = 0; i < motors_.size(); ++i) {

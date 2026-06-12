@@ -143,7 +143,7 @@ void MotorFSM::handleHallCalibrateMode()
             {
                 if (mod.enable_) {
                     bool all_calibrated = true;
-                    for (size_t j = 0; j < mod.getMotorCount(); j++)
+                    for (size_t j = 0; j < mod.getMotorCount() && j < 2; j++)
                     {
                         CANMotor* motor = mod.getMotor(j);
                         if (motor) {
@@ -503,100 +503,175 @@ bool MotorFSM::switchMode(FunctionMode next_mode)
         if (mod.enable_) module_enabled++;
     }
 
-    double time_elapsed = 0;
-    while (1)
+    if (next_mode_switch == FunctionMode::HALL_CALIBRATE)
     {
-        if (mode_switched_cnt == module_enabled)
+        hall_calibrated_ = false;
+        hall_calibrate_status_ = 0;
+
+        auto switch_hall_stage = [&](const std::vector<size_t>& motor_indices) {
+            double time_elapsed = 0;
+            while (1)
+            {
+                mode_switched_cnt = 0;
+
+                for (auto& mod : modules_list_)
+                {
+                    if (!mod.enable_) continue;
+
+                    for (size_t motor_index : motor_indices)
+                    {
+                        if (motor_index < mod.getMotorCount())
+                        {
+                            mod.setMotorMode(motor_index, next_mode_switch);
+                        }
+                    }
+
+                    mod.sendCommands();
+                    mod.receiveFeedback();
+
+                    bool selected_motors_switched = true;
+                    for (size_t motor_index : motor_indices)
+                    {
+                        CANMotor* motor = mod.getMotor(motor_index);
+                        if (!motor)
+                        {
+                            selected_motors_switched = false;
+                            break;
+                        }
+
+                        motor->decodeBasedOnMode();
+                        if (motor->getModeState() != (uint8_t)next_mode_switch)
+                        {
+                            selected_motors_switched = false;
+                            break;
+                        }
+                    }
+
+                    if (selected_motors_switched)
+                    {
+                        mode_switched_cnt++;
+                    }
+                }
+
+                if (mode_switched_cnt == module_enabled)
+                {
+                    return true;
+                }
+
+                if (time_elapsed > 3)
+                {
+                    return false;
+                }
+
+                time_elapsed += 0.01;
+                usleep(1e4);
+            }
+        };
+
+        success = switch_hall_stage({0, 1});
+
+        if (success)
         {
             current_mode_ = next_mode_switch;
-            success = true;
-            break;
         }
-        else if (time_elapsed > 3)
+    }
+    else
+    {
+        double time_elapsed = 0;
+        while (1)
         {
-            /* Timeout */
-            success = false;
-            break;
-        }
-        else mode_switched_cnt = 0;
-
-        for (auto& mod : modules_list_)
-        {
-            if (mod.enable_)
+            if (mode_switched_cnt == module_enabled)
             {
-                if (next_mode_switch == FunctionMode::CONFIG)
+                current_mode_ = next_mode_switch;
+                success = true;
+                break;
+            }
+            else if (time_elapsed > 3)
+            {
+                /* Timeout */
+                success = false;
+                break;
+            }
+            else mode_switched_cnt = 0;
+
+            for (auto& mod : modules_list_)
+            {
+                if (mod.enable_)
                 {
-                    mod.setMode(FunctionMode::REST);
-                }
-                else 
-                {
-                    mod.setMode(next_mode_switch);
-                }
-                
-                // For SET_ZERO mode, prepare the motors before sending
-                if (next_mode_switch == FunctionMode::SET_ZERO)
-                {
+                    if (next_mode_switch == FunctionMode::CONFIG)
+                    {
+                        mod.setMode(FunctionMode::REST);
+                    }
+                    else 
+                    {
+                        mod.setMode(next_mode_switch);
+                    }
+                    
+                    // For SET_ZERO mode, prepare the motors before sending
+                    if (next_mode_switch == FunctionMode::SET_ZERO)
+                    {
+                        for (size_t i = 0; i < mod.getMotorCount(); i++)
+                        {
+                            CANMotor* motor = mod.getMotor(i);
+                            if (motor) {
+                                motor->setPositionBias(0);
+                                motor->setCommand(P_CMD_MAX, 0, 0, 0, 0);
+                            }
+                        }
+                    }
+                    
+                    mod.sendCommands();
+                    
+                    mod.receiveFeedback();
+                    
+                    bool all_motors_switched = true;
                     for (size_t i = 0; i < mod.getMotorCount(); i++)
                     {
                         CANMotor* motor = mod.getMotor(i);
-                        if (motor) {
-                            motor->setPositionBias(0);
-                            motor->setCommand(P_CMD_MAX, 0, 0, 0, 0);
+                        if (!motor) {
+                            all_motors_switched = false;
+                            break;
                         }
-                    }
-                }
-                
-                mod.sendCommands();
-                
-                mod.receiveFeedback();
-                
-                bool all_motors_switched = true;
-                for (size_t i = 0; i < mod.getMotorCount(); i++)
-                {
-                    CANMotor* motor = mod.getMotor(i);
-                    if (!motor) {
-                        all_motors_switched = false;
-                        break;
+                        
+                        motor->decodeBasedOnMode();
+                        
+                        // SET_ZERO mode special processing
+                        if (next_mode_switch == FunctionMode::SET_ZERO)
+                        {
+                            // Check raw position (motor should report near-zero after SET_ZERO)
+                            float raw_pos = motor->getRawPosition();
+                            if (fabs(raw_pos) > 0.01) {
+                                all_motors_switched = false;
+                                break;
+                            }
+                        }
+                        else if (next_mode_switch == FunctionMode::CONFIG)
+                        {
+                            if (motor->getModeState() != (uint8_t)FunctionMode::REST) 
+                            {
+                                all_motors_switched = false;
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            if (motor->getModeState() != (uint8_t)next_mode_switch) 
+                            {
+                                all_motors_switched = false;
+                                break;
+                            }
+                        }
                     }
                     
-                    motor->decodeBasedOnMode();
-                    
-                    // SET_ZERO mode special processing
-                    if (next_mode_switch == FunctionMode::SET_ZERO)
-                    {
-                        // Check raw position (motor should report near-zero after SET_ZERO)
-                        float raw_pos = motor->getRawPosition();
-                        if (fabs(raw_pos) > 0.01) {
-                            all_motors_switched = false;
-                            break;
-                        }
+                    if (all_motors_switched) {
+                        mode_switched_cnt++;
                     }
-                    else if (next_mode_switch == FunctionMode::CONFIG)
-                    {
-                        if (motor->getModeState() != (uint8_t)FunctionMode::REST) 
-                        {
-                            all_motors_switched = false;
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        if (motor->getModeState() != (uint8_t)next_mode_switch) 
-                        {
-                            all_motors_switched = false;
-                            break;
-                        }
-                    }
-                }
-                
-                if (all_motors_switched) {
-                    mode_switched_cnt++;
                 }
             }
+            
+            time_elapsed += 0.01;
+            usleep(1e4);
         }
-        
-        time_elapsed += 0.01;
-        usleep(1e4);
     }
 
     for (auto& mod : modules_list_)
@@ -777,4 +852,3 @@ void MotorFSM::publishMsg(motor_msg::MotorStateStamped& motor_fb_msg)
     }
 
 }
-
