@@ -548,6 +548,9 @@ bool MotorFSM::switchMode(FunctionMode next_mode)
                         motor->decodeBasedOnMode();
                         if (motor->getModeState() != (uint8_t)next_mode_switch)
                         {
+                            LOG_ERROR << "HALL_CALIBRATE: module " << mod.label_ << " motor index " << motor_index
+                                      << " mode_state=" << motor->getModeState()
+                                      << " (expected " << (int)next_mode_switch << ")";
                             selected_motors_switched = false;
                             break;
                         }
