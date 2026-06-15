@@ -548,9 +548,6 @@ bool MotorFSM::switchMode(FunctionMode next_mode)
                         motor->decodeBasedOnMode();
                         if (motor->getModeState() != (uint8_t)next_mode_switch)
                         {
-                            LOG_ERROR << "HALL_CALIBRATE: module " << mod.label_ << " motor index " << motor_index
-                                      << " mode_state=" << motor->getModeState()
-                                      << " (expected " << (int)next_mode_switch << ")";
                             selected_motors_switched = false;
                             break;
                         }
@@ -580,8 +577,11 @@ bool MotorFSM::switchMode(FunctionMode next_mode)
                             CANMotor* motor = mod.getMotor(motor_index);
                             if (motor)
                             {
+                                const uint8_t* feedback_raw = motor->getFeedbackRaw();
+                                const uint8_t raw_state = feedback_raw[7] & 0x0F;
                                 LOG_ERROR << "  module[" << mod_idx << "] motor[" << motor_index
-                                          << "] mode_state=" << motor->getModeState()
+                                          << "] mode_state=" << (int)motor->getModeState()
+                                          << ", raw_state=" << (int)raw_state
                                           << " (expected " << (int)next_mode_switch << ")";
                             }
                             else
