@@ -511,6 +511,10 @@ bool MotorFSM::switchMode(FunctionMode next_mode)
 
         auto switch_hall_stage = [&](const std::vector<size_t>& motor_indices) {
             double time_elapsed = 0;
+            std::string stage_indices;
+            for (size_t i : motor_indices) stage_indices += std::to_string(i) + " ";
+            LOG_INFO << "HALL_CALIBRATE: switching motor indices [" << stage_indices
+                     << "] across " << module_enabled << " enabled module(s)";
             while (1)
             {
                 mode_switched_cnt = 0;
@@ -536,6 +540,7 @@ bool MotorFSM::switchMode(FunctionMode next_mode)
                         CANMotor* motor = mod.getMotor(motor_index);
                         if (!motor)
                         {
+                            LOG_ERROR << "HALL_CALIBRATE: motor index " << motor_index << " is null";
                             selected_motors_switched = false;
                             break;
                         }
@@ -561,6 +566,28 @@ bool MotorFSM::switchMode(FunctionMode next_mode)
 
                 if (time_elapsed > 3)
                 {
+                    LOG_ERROR << "HALL_CALIBRATE: timeout — only " << mode_switched_cnt
+                              << "/" << module_enabled << " modules switched";
+                    size_t mod_idx = 0;
+                    for (auto& mod : modules_list_)
+                    {
+                        if (!mod.enable_) { mod_idx++; continue; }
+                        for (size_t motor_index : motor_indices)
+                        {
+                            CANMotor* motor = mod.getMotor(motor_index);
+                            if (motor)
+                            {
+                                LOG_ERROR << "  module[" << mod_idx << "] motor[" << motor_index
+                                          << "] mode_state=" << (int)motor->getModeState()
+                                          << " (expected " << (int)next_mode_switch << ")";
+                            }
+                            else
+                            {
+                                LOG_ERROR << "  module[" << mod_idx << "] motor[" << motor_index << "] is null";
+                            }
+                        }
+                        mod_idx++;
+                    }
                     return false;
                 }
 
