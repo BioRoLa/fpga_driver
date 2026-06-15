@@ -578,7 +578,7 @@ bool MotorFSM::switchMode(FunctionMode next_mode)
                             if (motor)
                             {
                                 LOG_ERROR << "  module[" << mod_idx << "] motor[" << motor_index
-                                          << "] mode_state=" << (uint8_t)mapMotorStateToFunctionMode(motor->getModeState())
+                                          << "] mode_state=" << motor->getModeState()
                                           << " (expected " << (int)next_mode_switch << ")";
                             }
                             else
