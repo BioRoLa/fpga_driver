@@ -546,7 +546,7 @@ bool MotorFSM::switchMode(FunctionMode next_mode)
                         }
 
                         motor->decodeBasedOnMode();
-                        if (motor->getModeState() != (uint8_t)next_mode_switch)
+                        if (motor->getModeState() != (uint8_t)FunctionMode::MOTOR)  // During HALL_CALIBRATE, motor should report MOTOR mode state
                         {
                             selected_motors_switched = false;
                             break;
