@@ -176,7 +176,7 @@ void MotorFSM::handleHallCalibrateMode()
                 {
                     CANMotor* motorR = mod.getMotor(0);
                     CANMotor* motorL = mod.getMotor(1);
-                    
+                    CANMotor* motorH = mod.getMotor(2);
                     if (motorR) {
                         motorR->setPositionBias(mod.linkR_bias);
                         cal_command[mod_index][0] = -mod.linkR_bias;
@@ -189,6 +189,10 @@ void MotorFSM::handleHallCalibrateMode()
                         cal_command[mod_index][1] = -mod.linkL_bias;
                         motorL->setCommand(cal_command[mod_index][1], 0, 0, 0, 0);
                         cal_dir_[mod_index][1] = -1;
+                    }
+                    if(motorH) {
+                        motorH->setCommand(0, 0, 0, 0, 0);
+
                     }
 
                     
