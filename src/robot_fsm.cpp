@@ -212,7 +212,7 @@ void RobotFSM::handleInit()
             }
             break;
             
-        case 5:
+        /*case 5:
             // Set motor FSM to SET_ZERO mode
             LOG_INFO << "Init Step 5: Setting motors to SET_ZERO...";
             if (!motor_fsm_.switchMode(FunctionMode::SET_ZERO)) 
@@ -223,13 +223,13 @@ void RobotFSM::handleInit()
             }
             init_step_++;
             break;
-            
+        */  
         
-        case 6:
+        case 5:
             // Set motor FSM to HALL_CALIBRATE mode and wait for calibration to complete
             if (!hall_calibrate_requested_)
             {
-                LOG_INFO << "Init Step 6: Starting HALL_CALIBRATE...";
+                LOG_INFO << "Init Step 5: Starting HALL_CALIBRATE...";
                 hall_calibrate_requested_ = true;
                 if (!motor_fsm_.switchMode(FunctionMode::HALL_CALIBRATE))
                 {
@@ -242,17 +242,17 @@ void RobotFSM::handleInit()
             // Wait until calibration is complete
             if (motor_fsm_.isHallCalibrated())
             {
-                LOG_INFO << "Init Step 6: Hall calibration complete";
+                LOG_INFO << "Init Step 5: Hall calibration complete";
                 init_step_++;
             }
             
             break;
         
-        case 7:
+        case 6:
             // Wait for HALL_CALIBRATE to complete and motor FSM to enter MOTOR mode
             if (motor_fsm_.getCurrentMode() == FunctionMode::MOTOR)
             {
-                LOG_INFO << "Init Step 7: Motors in MOTOR mode";
+                LOG_INFO << "Init Step 6: Motors in MOTOR mode";
                 LOG_INFO << "Init complete, transitioning to IDLE";
                 // Direct transition to IDLE without request
                 exitMode(current_mode_);
@@ -263,7 +263,7 @@ void RobotFSM::handleInit()
             break;
     }
     
-    if (init_step_ > 4) 
+    if (init_step_ > 3) 
     { 
         // After power on, keep checking estop and motor timeout.
         // Check EStop first: EStop cuts power to motors, causing timeout.
