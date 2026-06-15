@@ -546,7 +546,7 @@ bool MotorFSM::switchMode(FunctionMode next_mode)
                         }
 
                         motor->decodeBasedOnMode();
-                        if ((uint8_t)mapMotorStateToFunctionMode(motor->getModeState()) != (uint8_t)next_mode_switch)
+                        if (motor->getModeState() != (uint8_t)next_mode_switch)
                         {
                             selected_motors_switched = false;
                             break;
@@ -564,7 +564,7 @@ bool MotorFSM::switchMode(FunctionMode next_mode)
                     return true;
                 }
 
-                if (time_elapsed > 10)
+                if (time_elapsed > 30)
                 {
                     LOG_ERROR << "HALL_CALIBRATE: timeout — only " << mode_switched_cnt
                               << "/" << module_enabled << " modules switched";
