@@ -192,8 +192,6 @@ void MotorFSM::handleHallCalibrateMode()
                         //For the H motor, overwrite the command after encodeRequestState() to prevent the torque value from being encoded as T_MIN = -20Nm 
                         motorH->setCommand(0, 0, 5, 0, 1);
                     }
-
-                    
                 }
                 mod_index++;
             }
@@ -209,6 +207,12 @@ void MotorFSM::handleHallCalibrateMode()
             for (auto& mod : modules_list_)
             {
                 if (mod.enable_){
+                    // For the H motor, dont need to move to calibration position
+                    CANMotor* motorH = mod.getMotor(2);
+                    if(motorH) {
+                        motorH->setCommand(0, 0, 5, 0, 1);
+                        finish_cnt++;
+                    }
                     // For the R and L motor, need to move to the calibration position additionally
                     for (size_t j = 0; j < mod.getMotorCount() && j < 2; j++)
                     {
@@ -228,11 +232,6 @@ void MotorFSM::handleHallCalibrateMode()
                             cal_command[mod_index][j] += cal_dir_[mod_index][j] * cal_vel_ * dt_;
                             motor->setCommand(cal_command[mod_index][j], 0, 50, 0, 1.5);
                         }
-                    }
-                    // For the H motor, dont need to move to calibration position
-                    CANMotor* motorH = mod.getMotor(2);
-                    if(motorH) {
-                        finish_cnt++;
                     }
                 }
                 mod_index++;
