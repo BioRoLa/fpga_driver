@@ -84,7 +84,6 @@ public:
     // Command data (for MOTOR mode)
     void setCommand(float position, float torque, float kp, float ki, float kd);
     void encodeMotorControl();                          // control_data_ -> command_data_raw (for motor control)
-    void encodeRequestState();                          // Encode request state command (first byte = 255)
     const uint8_t* getCommandRaw() const { return command_data_raw; }
     
     // Command data getters

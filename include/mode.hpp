@@ -16,6 +16,7 @@ enum class FunctionMode : uint8_t
     HALL_CALIBRATE = 3,
     MOTOR = 4,
     CONTROL = 5,
+    GET_STATE = 6,   // read-only state poll (FC_GET_STATE)
 };
 
 // Motor states returned from motor firmware

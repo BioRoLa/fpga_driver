@@ -149,8 +149,10 @@ void MotorFSM::handleHallCalibrateMode()
                     {
                         CANMotor* motor = mod.getMotor(j);
                         if (motor) {
-                            // Check hall_cal_state status
-                            motor -> encodeRequestState();
+                            // Poll with the read-only FC. Unlike the old path (which left
+                            // FC at FC_HALL_CAL and re-issued HALL_CAL_CMD every cycle), this
+                            // cannot restart calibration or otherwise change firmware state.
+                            mod.setMotorMode(j, FunctionMode::GET_STATE);
                             if (motor->getHallCalibrateState() != 2) {
                                 all_calibrated = false;
                                 break;

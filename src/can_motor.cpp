@@ -135,15 +135,6 @@ void CANMotor::decodeConfigFeedback()
     std::memcpy(config_fb_data_.raw_data, feedback_data_raw, CAN_DATA_LEN);
 }
 
-void CANMotor::encodeRequestState()
-{
-    // Request motor state: first byte = 255, others = 0
-    command_data_raw[0] = 255;
-    for (int i = 1; i < CAN_DATA_LEN; i++) {
-        command_data_raw[i] = 0;
-    }
-}
-
 int CANMotor::float_to_uint(float x, float x_min, float x_max, int bits)
 {
     float span = x_max - x_min;
