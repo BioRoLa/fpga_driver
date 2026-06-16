@@ -117,8 +117,7 @@ void MotorFSM::handleHallCalibrateMode()
     {
         if (mod.enable_)
         {
-            //TODO: change j to 3 after confirming H motor calibration process
-            for (size_t j = 0; j < mod.getMotorCount() && j < 2; j++)
+            for (size_t j = 0; j < mod.getMotorCount() && j < 3; j++)
             {
                 CANMotor* motor = mod.getMotor(j);
                 if (motor) {
@@ -144,7 +143,6 @@ void MotorFSM::handleHallCalibrateMode()
             {
                 if (mod.enable_) {
                     bool all_calibrated = true;
-                    // Change j < 2 to j < 3 when Motor_H hall calibration is enabled.
                     for (size_t j = 0; j < mod.getMotorCount() && j < 3; j++)
                     {
                         CANMotor* motor = mod.getMotor(j);
@@ -191,8 +189,8 @@ void MotorFSM::handleHallCalibrateMode()
                         cal_dir_[mod_index][1] = -1;
                     }
                     if(motorH) {
+                        //For the H motor, overwrite the command after encodeRequestState() to prevent the torque value from being encoded as T_MIN = -20Nm 
                         motorH->setCommand(0, 0, 0, 0, 0);
-
                     }
 
                     
@@ -211,6 +209,7 @@ void MotorFSM::handleHallCalibrateMode()
             for (auto& mod : modules_list_)
             {
                 if (mod.enable_){
+                    // For the R and L motor, need to move to the calibration position additionally
                     for (size_t j = 0; j < mod.getMotorCount() && j < 2; j++)
                     {
                         CANMotor* motor = mod.getMotor(j);
@@ -230,7 +229,11 @@ void MotorFSM::handleHallCalibrateMode()
                             motor->setCommand(cal_command[mod_index][j], 0, 50, 0, 1.5);
                         }
                     }
-                    
+                    // For the H motor, dont need to move to calibration position
+                    CANMotor* motorH = mod.getMotor(2);
+                    if(motorH) {
+                        finish_cnt++;
+                    }
                 }
                 mod_index++;
             }
