@@ -190,7 +190,7 @@ void MotorFSM::handleHallCalibrateMode()
                     }
                     if(motorH) {
                         //For the H motor, overwrite the command after encodeRequestState() to prevent the torque value from being encoded as T_MIN = -20Nm 
-                        motorH->setCommand(0, 0, 0, 0, 0);
+                        motorH->setCommand(0, 0, 5, 0, 1);
                     }
 
                     
