@@ -92,6 +92,36 @@ void Corgi::load_config_()
         modules_list_.emplace_back(label, yaml_node_, fpga_.status_, fpga_.session_);
     }
 
+    // CAN-channel-sharing grouping pass: modules whose CAN_PORT string resolves to
+    // the same value share that physical channel's 3 hardware slots, time-multiplexed
+    // by canLoop_()'s round-robin gate. This is purely config-driven - no leg names or
+    // group sizes are hardcoded here, so future topology changes (a broken port gets
+    // repaired, or a different port fails) only require editing config.yaml.
+    {
+        std::map<std::string, std::vector<LegModule*>> port_groups;
+        for (auto& mod : modules_list_) {
+            if (mod.enable_) port_groups[mod.getCanPort()].push_back(&mod);
+        }
+
+        for (auto& [port, group] : port_groups) {
+            for (size_t k = 0; k < group.size(); ++k) {
+                group[k]->is_owner_   = (k == 0);
+                group[k]->rr_slot_    = k;
+                group[k]->group_size_ = group.size();
+                if (k > 0) {
+                    // Sharer borrows the owner's channel; its own owned_channel_
+                    // (constructed in LegModule::load_config()) goes unused.
+                    group[k]->channel_ = group[0]->channel_;
+                }
+            }
+            if (group.size() > 1) {
+                LOG_INFO << "[CAN Sharing] Port \"" << port << "\" shared by "
+                         << group.size() << " modules:";
+                for (auto* mod : group) LOG_INFO << "  - " << mod->label_;
+            }
+        }
+    }
+
     YAML::Node Factors_node1_ = yaml_node_["Powerboard1_Scaling_Factor"];
     int idx1_ = 0;
 
@@ -261,31 +291,51 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
 void Corgi::canLoop_()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    
+    can_rr_tick_++;
+
     for (int i = 0; i < 4; i++)
     {
-        if (modules_list_[i].enable_ && powerboard1_state_.at(2) == true && powerboard2_state_.at(2) == true)
-        {
-            // Receive feedback from FPGA (stores to feedback_data_raw)
-            modules_list_[i].receiveFeedback();
-            
-            for (size_t j = 0; j < modules_list_[i].getMotorCount(); j++)
-            {
-                CANMotor* motor = modules_list_[i].getMotor(j);
-                if (motor) {
-                    motor->decodeBasedOnMode();
-                }
-            }
+        LegModule& mod = modules_list_[i];
 
-            if (!modules_list_[i].hasTimeout())
-            {
-                modules_list_[i].sendCommands();
-                NO_CAN_TIMEDOUT_ERROR_ = true;
+        if (!(mod.enable_ && powerboard1_state_.at(2) == true && powerboard2_state_.at(2) == true))
+            continue;
+
+        // Round-robin gate: for modules with group_size_ == 1 (today's normal case
+        // for every leg), this is always 0 == rr_slot_(=0), i.e. always this
+        // module's turn - behavior is unchanged from before this feature existed.
+        // For modules sharing a channel (group_size_ > 1), only one of the group
+        // fires per tick, cycling through the group in order.
+        if (can_rr_tick_ % mod.group_size_ != mod.rr_slot_)
+            continue;
+
+        if (mod.group_size_ > 1)
+        {
+            // Rebind the shared channel's 3 hardware slots to this module's own
+            // (persistent) motors before using it this tick.
+            std::vector<CANMotor*> attach_group;
+            for (size_t j = 0; j < mod.getMotorCount(); j++) attach_group.push_back(mod.getMotor(j));
+            mod.channel_->attachMotorGroup(attach_group);
+        }
+
+        // Receive feedback from FPGA (stores to feedback_data_raw)
+        mod.receiveFeedback();
+
+        for (size_t j = 0; j < mod.getMotorCount(); j++)
+        {
+            CANMotor* motor = mod.getMotor(j);
+            if (motor) {
+                motor->decodeBasedOnMode();
             }
-            else
-            {
-                NO_CAN_TIMEDOUT_ERROR_ = false;
-            }
+        }
+
+        if (!mod.hasTimeout())
+        {
+            mod.sendCommands();
+            NO_CAN_TIMEDOUT_ERROR_ = true;
+        }
+        else
+        {
+            NO_CAN_TIMEDOUT_ERROR_ = false;
         }
     }
 }

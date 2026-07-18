@@ -1,3 +1,26 @@
+# --- CAN channel sharing ---
+# Each physical CAN channel (CAN_PORT value below) has a hard FPGA-bitfile limit
+# of 3 motor ID slots. If two (or more) *_Module entries below are given the
+# *same* CAN_PORT string, the driver automatically time-shares that channel's
+# 3 slots between them, one module per CANLoop_period_us tick (round-robin).
+# This is fully config-driven - no code changes are needed to merge/un-merge a
+# port; see fpga_driver's LegModule/CANChannel port-grouping logic.
+#
+# Requirements when sharing a port:
+#   1. CAN_ID values must be globally unique across every module sharing that
+#      port (e.g. one leg uses 1,2,3 and the other uses 4,5,6 - not 1,2,3 on
+#      both). Reassign the losing leg's motor Node IDs via a CAN config frame
+#      BEFORE physically rewiring it onto the surviving leg's bus - if both
+#      legs still answer to 1/2/3 while physically on the same wire, they will
+#      collide the moment they're merged.
+#   2. Physically move the merged leg's 120 ohm bus termination resistor to the
+#      new true end of the daisy chain; the old termination point becomes a
+#      mid-bus node once merged.
+#   3. Each motor's effective CAN update rate becomes
+#      CANLoop_period_us / (number of modules sharing the port) - e.g. 2 legs
+#      sharing one port at the default 1000 us tick -> 2000 us (500 Hz) per leg.
+#      Legs that do NOT share a port are unaffected and keep the full tick rate.
+#
 # Interrupt Setup, Triggered By FPGA IRQ
 # IRQ 0
 # Loop Period (type int) of the main loop, where controllers were implemented

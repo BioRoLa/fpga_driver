@@ -30,8 +30,15 @@ void LegModule::load_config()
         return;
     }
 
-    // CAN Channel setup - using make_unique
-    channel_ = std::make_unique<CANChannel>(status_, session_, CAN_port_);
+    // CAN Channel setup. Every module constructs its own channel here regardless of
+    // whether it will end up sharing one (owner/sharer roles are only known after all
+    // LegModules are built - see Corgi::load_config_()'s port-grouping pass in
+    // main.cpp). If this module turns out to be a sharer, its channel_ pointer gets
+    // reassigned to the group owner's channel afterwards; this module's own
+    // owned_channel_ then simply goes unused (harmless - it targets the same FPGA
+    // resource addresses as the owner's, but nothing calls through it again).
+    owned_channel_ = std::make_unique<CANChannel>(status_, session_, CAN_port_);
+    channel_ = owned_channel_.get();
 
     // Motor R setup
     Motor motor_r;
@@ -45,8 +52,8 @@ void LegModule::load_config()
     linkR_bias = config_[label_]["Motor_R"]["Calibration_Bias"].as<double>();
     motor_r.calibration_bias = linkR_bias;
 
-    // 添加 Motor R 到 channel
-    channel_->addMotor(motor_r.CAN_ID_, motor_r);
+    // Motor R 由 LegModule 自己持有（持續存在，不受 round-robin 換手影響）
+    own_motors_.push_back(std::make_unique<CANMotor>(motor_r.CAN_ID_, motor_r));
 
     std::cout << "Motor_R: " << std::endl;
     std::cout << "  FW_Version: " << motor_r.fw_version_ << std::endl;
@@ -71,8 +78,8 @@ void LegModule::load_config()
     linkL_bias = config_[label_]["Motor_L"]["Calibration_Bias"].as<double>();
     motor_l.calibration_bias = linkL_bias;
 
-    // 添加 Motor L 到 channel
-    channel_->addMotor(motor_l.CAN_ID_, motor_l);
+    // Motor L 由 LegModule 自己持有（持續存在，不受 round-robin 換手影響）
+    own_motors_.push_back(std::make_unique<CANMotor>(motor_l.CAN_ID_, motor_l));
 
     std::cout << "Motor_L: " << std::endl;
     std::cout << "  FW_Version: " << motor_l.fw_version_ << std::endl;
@@ -97,8 +104,8 @@ void LegModule::load_config()
     linkH_bias = config_[label_]["Motor_H"]["Calibration_Bias"].as<double>();
     motor_h.calibration_bias = linkH_bias;
 
-    // 添加 Motor H 到 channel
-    channel_->addMotor(motor_h.CAN_ID_, motor_h);
+    // Motor H 由 LegModule 自己持有（持續存在，不受 round-robin 換手影響）
+    own_motors_.push_back(std::make_unique<CANMotor>(motor_h.CAN_ID_, motor_h));
 
     std::cout << "Motor_L: " << std::endl;
     std::cout << "  FW_Version: " << motor_l.fw_version_ << std::endl;
@@ -111,7 +118,16 @@ void LegModule::load_config()
     std::cout << "  Bias: " << linkL_bias << std::endl;
     std::cout << "---------------------------" << std::endl;
     
-    // Setup channel
+    // Initial slot binding: attach this module's own 3 motors to its own channel.
+    // If Corgi::load_config_()'s port-grouping pass later determines this module
+    // shares its port with another, canLoop_()'s round-robin gate will re-run
+    // attachMotorGroup() with the appropriate motor set on every hand-off; this
+    // initial call just brings the channel up in a known-good state immediately.
+    std::vector<CANMotor*> initial_group;
+    for (auto& m : own_motors_) initial_group.push_back(m.get());
+    channel_->attachMotorGroup(initial_group);
+
+    // Setup channel (RX timeout only - see CANChannel::setup())
     channel_->setup(CAN_timeout_us);
 }
 
@@ -164,12 +180,12 @@ bool LegModule::hasTimeout() const
 
 CANMotor* LegModule::getMotor(size_t index)
 {
-    return channel_ ? channel_->getMotor(index) : nullptr;
+    return index < own_motors_.size() ? own_motors_[index].get() : nullptr;
 }
 
 size_t LegModule::getMotorCount() const
 {
-    return channel_ ? channel_->getMotorCount() : 0;
+    return own_motors_.size();
 }
 
 double LegModule::deg2rad(double deg)

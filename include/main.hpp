@@ -16,6 +16,7 @@
 #include <yaml.h>
 #include <string>
 #include <vector>
+#include <map>
 #include <mutex>
 #include <atomic>
 #include <Robot.pb.h>
@@ -52,6 +53,11 @@ class Corgi
 
     int main_irq_period_us_;
     int can_irq_period_us_;
+
+    // Free-running CAN-loop tick counter used by canLoop_()'s round-robin gate for
+    // modules that share a physical CAN channel (LegModule::group_size_ > 1). Unused
+    // (modulo always evaluates to "always my turn") for modules with group_size_ == 1.
+    uint32_t can_rr_tick_ = 0;
 
     bool NO_SWITCH_TIMEDOUT_ERROR_;
     bool NO_CAN_TIMEDOUT_ERROR_;

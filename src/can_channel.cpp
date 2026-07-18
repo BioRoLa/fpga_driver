@@ -160,42 +160,51 @@ void CANChannel::initializeResources()
     }
 }
 
-void CANChannel::addMotor(uint32_t can_id, const Motor& config)
+void CANChannel::attachMotorGroup(const std::vector<CANMotor*>& motor_group)
 {
-    if (motors_.size() >= can_ids_.size()) {
-        LOG_ERROR << "[CAN Channel] Cannot add more motors than hardware supports";
+    if (motor_group.size() > can_ids_.size()) {
+        LOG_ERROR << "[CAN Channel] attachMotorGroup: " << motor_group.size()
+                  << " motors exceeds " << can_ids_.size() << " hardware slots on "
+                  << channel_name_;
         return;
     }
-    motors_.push_back(std::make_unique<CANMotor>(can_id, config));
+
+    motors_ = motor_group;
+
+    // Rebind slot address (CAN ID) and slot mode (FC) together with the pointer swap,
+    // so a slot's on-wire identity and its data source/sink always change atomically.
+    for (size_t i = 0; i < motors_.size(); ++i) {
+        NiFpga_MergeStatus(&status_,
+            NiFpga_WriteU32(session_, can_ids_[i], motors_[i]->getCANID()));
+        NiFpga_MergeStatus(&status_,
+            NiFpga_WriteU32(session_, can_id_fcs_[i],
+                            static_cast<uint32_t>(motors_[i]->getFunctionMode())));
+    }
+
+    // port select reflects how many of the 3 hardware slots are currently in use
+    NiFpga_Bool port_select[3] = {
+        motors_.size() > 0,
+        motors_.size() > 1,
+        motors_.size() > 2
+    };
+    NiFpga_MergeStatus(&status_,
+        NiFpga_WriteArrayBool(session_, port_select_, port_select, port_select_size_));
 }
 
 CANMotor* CANChannel::getMotor(size_t index)
 {
     if (index < motors_.size()) {
-        return motors_[index].get();
+        return motors_[index];
     }
     return nullptr;
 }
 
 void CANChannel::setup(uint32_t timeout_us)
 {
-    // setup CAN IDs
-    for (size_t i = 0; i < motors_.size(); ++i) {
-        NiFpga_MergeStatus(&status_, 
-            NiFpga_WriteU32(session_, can_ids_[i], motors_[i]->getCANID()));
-    }
-    
-    // setup port select
-    NiFpga_Bool port_select[3] = {
-        motors_.size() > 0,
-        motors_.size() > 1,
-        motors_.size() > 2
-    };
-    NiFpga_MergeStatus(&status_, 
-        NiFpga_WriteArrayBool(session_, port_select_, port_select, port_select_size_));
-    
-    // setup timeout
-    NiFpga_MergeStatus(&status_, 
+    // Motor ID/FC/port-select binding now happens in attachMotorGroup(), which is
+    // called both at initial bring-up and on every round-robin hand-off. setup()
+    // is left only for the one-time FPGA RX timeout configuration.
+    NiFpga_MergeStatus(&status_,
         NiFpga_WriteU32(session_, timeout_us_, timeout_us));
 }
 

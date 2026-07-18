@@ -14,7 +14,11 @@ public:
                const std::string& channel_name);
     
     // Motor management
-    void addMotor(uint32_t can_id, const Motor& config);
+    // Rewrites all (or fewer) FPGA slots to point at the given motors, in order.
+    // Ownership of the CANMotor objects stays with the caller (typically LegModule);
+    // this only rebinds which motors this channel's fixed hardware slots currently serve.
+    // motor_group.size() must be <= can_ids_.size() (hardware slot count for this channel).
+    void attachMotorGroup(const std::vector<CANMotor*>& motor_group);
     CANMotor* getMotor(size_t index);
     size_t getMotorCount() const { return motors_.size(); }
     
@@ -39,7 +43,10 @@ private:
     NiFpga_Session session_;
     std::string channel_name_;
     
-    std::vector<std::unique_ptr<CANMotor>> motors_;
+    // Non-owning: the CANMotor objects live in LegModule (own_motors_) and persist
+    // across round-robin hand-offs. This vector only tracks which motors currently
+    // occupy this channel's fixed hardware slots.
+    std::vector<CANMotor*> motors_;
     
     // FPGA resource addresses (dynamically assigned based on channel_name)
 
