@@ -24,14 +24,24 @@ public:
     
     // Setup and configuration
     void setup(uint32_t timeout_us);
-    void setMode(FunctionMode mode);
-    void setMotorMode(size_t index, FunctionMode mode);
-    void setConfigSubMode(ConfigSubMode sub_mode);
-    
+    // Mode changes (setMode/setMotorMode/setConfigSubMode) are handled at the
+    // LegModule level now, not here - CANChannel just holds hardware slot
+    // resources and moves whatever CANMotor state attachMotorGroup() gives it.
+
     // CAN communication
     void sendCommands();
     void receiveFeedback();
-    
+
+    // Blocks (bounded) until the FPGA reports the last triggered transmit as
+    // complete. Required before a second module sharing this channel is allowed
+    // to attachMotorGroup()+sendCommands() again - the existing complete_/success_
+    // indicators exist for exactly this but were previously unread anywhere in
+    // this driver (the non-shared design relied on the ~1ms CAN-loop tick period
+    // as an implicit settle time instead). Returns false if the poll budget is
+    // exhausted before completion, without blocking indefinitely.
+    bool waitForTransmitComplete(uint32_t max_polls = 2000);
+
+
     // Timeout Checks (with debounce)
     void updateTimeoutDebounce(uint32_t loop_period_us);
     bool hasTxTimeout() const;

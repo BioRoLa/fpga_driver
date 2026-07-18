@@ -208,36 +208,6 @@ void CANChannel::setup(uint32_t timeout_us)
         NiFpga_WriteU32(session_, timeout_us_, timeout_us));
 }
 
-void CANChannel::setMode(FunctionMode mode)
-{
-    uint32_t mode_val = static_cast<uint32_t>(mode);
-    
-    for (size_t i = 0; i < motors_.size(); ++i) {
-        NiFpga_MergeStatus(&status_, 
-            NiFpga_WriteU32(session_, can_id_fcs_[i], mode_val));
-        motors_[i]->setMode(mode);
-    }
-}
-
-void CANChannel::setMotorMode(size_t index, FunctionMode mode)
-{
-    if (index >= motors_.size() || index >= can_id_fcs_.size()) {
-        LOG_ERROR << "[CAN Channel] Invalid motor index for mode switch: " << index;
-        return;
-    }
-
-    uint32_t mode_val = static_cast<uint32_t>(mode);
-    NiFpga_MergeStatus(&status_, NiFpga_WriteU32(session_, can_id_fcs_[index], mode_val));
-    motors_[index]->setMode(mode);
-}
-
-void CANChannel::setConfigSubMode(ConfigSubMode sub_mode)
-{
-    for (size_t i = 0; i < motors_.size(); ++i) {
-        motors_[i]->setConfigSubMode(sub_mode);
-    }
-}
-
 void CANChannel::sendCommands()
 {
     for (size_t i = 0; i < motors_.size(); ++i) {
@@ -254,10 +224,23 @@ void CANChannel::receiveFeedback()
 {
     for (size_t i = 0; i < motors_.size(); ++i) {
         uint8_t rx_buffer[8] = {0};
-        NiFpga_MergeStatus(&status_, 
+        NiFpga_MergeStatus(&status_,
             NiFpga_ReadArrayU8(session_, rx_buffers_[i], rx_buffer, rx_buf_size_));
         motors_[i]->parseFeedback(rx_buffer);
     }
+}
+
+bool CANChannel::waitForTransmitComplete(uint32_t max_polls)
+{
+    NiFpga_Bool done = false;
+    for (uint32_t i = 0; i < max_polls; ++i) {
+        NiFpga_MergeStatus(&status_, NiFpga_ReadBool(session_, complete_, &done));
+        if (done) return true;
+    }
+    LOG_ERROR << "[CAN Channel] " << channel_name_
+              << " transmit did not complete within poll budget ("
+              << max_polls << " polls)";
+    return false;
 }
 
 void CANChannel::updateTimeoutDebounce(uint32_t loop_period_us)

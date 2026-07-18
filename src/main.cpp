@@ -310,14 +310,39 @@ void Corgi::canLoop_()
 
         if (mod.group_size_ > 1)
         {
-            // Rebind the shared channel's 3 hardware slots to this module's own
-            // (persistent) motors before using it this tick.
-            std::vector<CANMotor*> attach_group;
-            for (size_t j = 0; j < mod.getMotorCount(); j++) attach_group.push_back(mod.getMotor(j));
-            mod.channel_->attachMotorGroup(attach_group);
+            // Shared channel: this module's turn is a self-contained
+            // request/response transaction. sendCommands() attaches this
+            // module's own motors to the channel's hardware slots, triggers
+            // transmit, and blocks (bounded) until it completes - so by the
+            // time receiveFeedback() runs, the reply in the RX buffers
+            // belongs to this module, not whichever module used the channel
+            // last. This intentionally differs from the pipelined
+            // receive-old-then-send-new pattern used below for exclusive
+            // channels, because that pattern relies on the same motors
+            // staying bound to the channel across consecutive ticks, which
+            // is no longer true once a second module can take the channel
+            // away in between.
+            if (!mod.hasTimeout())
+            {
+                mod.sendCommands();
+                mod.receiveFeedback();
+                for (size_t j = 0; j < mod.getMotorCount(); j++)
+                {
+                    CANMotor* motor = mod.getMotor(j);
+                    if (motor) motor->decodeBasedOnMode();
+                }
+                NO_CAN_TIMEDOUT_ERROR_ = true;
+            }
+            else
+            {
+                NO_CAN_TIMEDOUT_ERROR_ = false;
+            }
+            continue;
         }
 
-        // Receive feedback from FPGA (stores to feedback_data_raw)
+        // Exclusive channel (group_size_ == 1, today's behavior for every leg):
+        // unchanged pipelined pattern - read the reply to last tick's request,
+        // decode it, then issue this tick's new request.
         mod.receiveFeedback();
 
         for (size_t j = 0; j < mod.getMotorCount(); j++)

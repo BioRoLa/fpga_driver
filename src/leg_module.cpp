@@ -131,39 +131,76 @@ void LegModule::load_config()
     channel_->setup(CAN_timeout_us);
 }
 
+namespace {
+std::vector<CANMotor*> toPointers(std::vector<std::unique_ptr<CANMotor>>& motors)
+{
+    std::vector<CANMotor*> ptrs;
+    ptrs.reserve(motors.size());
+    for (auto& m : motors) ptrs.push_back(m.get());
+    return ptrs;
+}
+}  // namespace
+
 void LegModule::sendCommands()
 {
-    if (enable_ && channel_) {
-        channel_->sendCommands();
+    if (!enable_ || !channel_) return;
+
+    // Always (re)bind this module's own (persistent) motors into the channel's
+    // hardware slots before sending - pushes both the CAN ID and FC/mode
+    // registers, since attachMotorGroup() reads FunctionMode straight off each
+    // CANMotor. This is required even for group_size_ == 1 (exclusive channel):
+    // setMode()/setMotorMode() only update own_motors_ state now (see below),
+    // they no longer write hardware directly, so this is the only place that
+    // FC register actually gets pushed. For group_size_ == 1 the channel is
+    // already bound to these exact motors, so this is a cheap, idempotent
+    // re-write, not a hand-off.
+    channel_->attachMotorGroup(toPointers(own_motors_));
+
+    channel_->sendCommands();
+
+    if (group_size_ > 1) {
+        // Block until this module's own transmit finishes before returning control
+        // to the caller. Without this, a second module sharing the same physical
+        // channel (e.g. calibration's start_hall_stage(), which calls sendCommands()
+        // on every enabled LegModule back-to-back within a single mainLoop tick)
+        // could re-attach and re-trigger transmit_ while this request is still
+        // in flight.
+        channel_->waitForTransmitComplete();
     }
 }
 
 void LegModule::receiveFeedback()
 {
-    if (enable_ && channel_) {
-        channel_->receiveFeedback();
-    }
+    if (!enable_ || !channel_) return;
+    // No attach needed here: for group_size_ == 1 the channel is permanently
+    // bound to this module's own motors. For group_size_ > 1, sendCommands()
+    // (above) already attached + waited for completion immediately before this
+    // call in every code path that pairs the two (canLoop_, and every direct
+    // caller in motor_fsm.cpp - confirmed by inspection), so the channel is
+    // still bound to this module's own motors when we read.
+    channel_->receiveFeedback();
 }
 
 void LegModule::setMode(FunctionMode mode)
 {
-    if (channel_) {
-        channel_->setMode(mode);
-    }
+    // Update this module's own persistent motor state only. The FC/mode register
+    // is not written to hardware here - it is pushed the next time this module's
+    // motors are attached to a channel, inside sendCommands(). This avoids writing
+    // FC registers for a shared channel while it may currently be bound to a
+    // different module's motors.
+    for (auto& m : own_motors_) m->setMode(mode);
 }
 
 void LegModule::setMotorMode(size_t index, FunctionMode mode)
 {
-    if (channel_) {
-        channel_->setMotorMode(index, mode);
+    if (index < own_motors_.size()) {
+        own_motors_[index]->setMode(mode);
     }
 }
 
 void LegModule::setConfigSubMode(ConfigSubMode sub_mode)
 {
-    if (channel_) {
-        channel_->setConfigSubMode(sub_mode);
-    }
+    for (auto& m : own_motors_) m->setConfigSubMode(sub_mode);
 }
 
 void LegModule::updateTimeoutDebounce(uint32_t loop_period_us)
