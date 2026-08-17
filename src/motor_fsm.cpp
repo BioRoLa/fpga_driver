@@ -570,6 +570,12 @@ bool MotorFSM::switchMode(FunctionMode next_mode)
                     return true;
                 }
 
+                if (robot_fsm_ && robot_fsm_->checkEStop())
+                {
+                    LOG_ERROR << "HALL_CALIBRATE: Emergency stop detected, aborting mode switch";
+                    return false;
+                }
+
                 if (time_elapsed > 30)
                 {
                     LOG_ERROR << "HALL_CALIBRATE: timeout — only " << mode_switched_cnt

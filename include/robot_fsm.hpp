@@ -37,6 +37,7 @@ public:
     void emergencyStop();
     void setErrorFlags(bool can_error, bool switch_error);
     void setLoopPeriod(int period_us);
+    bool checkEStop();
 
 private:
     // Constants
@@ -86,8 +87,7 @@ private:
     bool powerSwitchSequence(int& step_counter, int& cycle_counter);
     bool waitAfterMotorPowerOn(int& cycle_counter);
     bool shouldUpdateTimeoutDebounce() const;
-    bool checkEStop();
-    
+
     // Convert RobotMode to string
     const char* modeToString(RobotMode mode) const;
 };
