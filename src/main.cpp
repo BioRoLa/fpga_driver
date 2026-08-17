@@ -63,6 +63,16 @@ Corgi::Corgi()
 
     load_config_();
 
+    // The motor function-code register lives on the FPGA and survives a driver
+    // restart (it is only ever written by MotorFSM::switchMode()). If the previous
+    // process was killed while a module was in HALL_CALIBRATE/MOTOR mode, that
+    // register stays latched even though this fresh process believes it's REST.
+    // Force it back to REST here so a restart can't resume stale motor commands.
+    for (auto& mod : modules_list_)
+    {
+        if (mod.enable_) mod.setMode(FunctionMode::REST);
+    }
+
     console_.init(&fpga_, &modules_list_, &powerboard1_state_, &powerboard2_state_, &motor_fsm_, &robot_fsm_, &main_mtx_);
 
     fpga_.setIrqPeriod(main_irq_period_us_, can_irq_period_us_);
