@@ -165,8 +165,18 @@ void MotorFSM::handleHallCalibrateMode()
                 }
             }
             
-            if (cal_cnt == module_enabled && measure_offset_ == 0) hall_calibrate_status_++;
-            else if (cal_cnt == module_enabled && measure_offset_ == 1) hall_calibrate_status_ = -1;
+            if (cal_cnt == module_enabled && measure_offset_ == 0)
+            {
+                LOG_INFO << "HALL_CALIBRATION: all motors report hall_cal_state=2; "
+                            "starting R/L calibration-position setup";
+                hall_calibrate_status_++;
+            }
+            else if (cal_cnt == module_enabled && measure_offset_ == 1)
+            {
+                LOG_INFO << "HALL_CALIBRATION: measure-offset mode requested; "
+                            "returning motors to REST";
+                hall_calibrate_status_ = -1;
+            }
         }
         break;
 
@@ -196,6 +206,8 @@ void MotorFSM::handleHallCalibrateMode()
                 }
                 mod_index++;
             }
+            LOG_INFO << "HALL_CALIBRATION: R/L initial commands configured; "
+                        "moving R/L motors to calibration position";
             hall_calibrate_status_++;
         }
         break;
@@ -236,14 +248,32 @@ void MotorFSM::handleHallCalibrateMode()
                 }
                 mod_index++;
             }
-            if (finish_cnt == total_motors) hall_calibrate_status_++;
+            if (finish_cnt == total_motors)
+            {
+                LOG_INFO << "HALL_CALIBRATION: R/L motors reached calibration position; "
+                            "finalizing calibration";
+                hall_calibrate_status_++;
+            }
         }
         break;
 
         case 3:{
             hall_calibrated_ = true;
-            hall_calibrate_status_ = 0;
-            switchMode(FunctionMode::MOTOR);
+            hall_calibrate_status_ = 4;
+            hall_switch_stage_ = HallSwitchStage::WAIT_MOTOR_MODE;
+            hall_switch_elapsed_ = 0.0;
+
+            LOG_INFO << "HALL_CALIBRATION: calibration complete for all motors; "
+                        "starting HALL_CALIBRATE -> MOTOR transition";
+        }
+        break;
+
+        case 4:{
+            // The mode transition is advanced one polling cycle at a time.
+            if (!switchMode(FunctionMode::MOTOR))
+            {
+                LOG_ERROR << "HALL_CALIBRATION: failed to transition to MOTOR mode";
+            }
         }
         break;
     }
@@ -510,116 +540,231 @@ bool MotorFSM::switchMode(FunctionMode next_mode)
         if (mod.enable_) module_enabled++;
     }
 
-    if (next_mode_switch == FunctionMode::HALL_CALIBRATE)
-    {
-        hall_calibrated_ = false;
-        hall_calibrate_status_ = 0;
+    const bool hall_mode_switch =
+        next_mode_switch == FunctionMode::HALL_CALIBRATE;
+    const bool hall_to_motor_switch =
+        next_mode_switch == FunctionMode::MOTOR &&
+        hall_switch_stage_ == HallSwitchStage::WAIT_MOTOR_MODE;
 
-        auto switch_hall_stage = [&](const std::vector<size_t>& motor_indices) {
-            double time_elapsed = 0;
-            std::string stage_indices;
-            for (size_t i : motor_indices) stage_indices += std::to_string(i) + " ";
-            LOG_INFO << "HALL_CALIBRATE: switching motor indices [" << stage_indices
-                     << "] across " << module_enabled << " enabled module(s)";
-            while (1)
+    if (hall_mode_switch || hall_to_motor_switch)
+    {
+        // HALL mode requests are retried one control cycle at a time.
+        if (hall_mode_switch &&
+            (hall_switch_stage_ == HallSwitchStage::NONE ||
+             hall_switch_stage_ == HallSwitchStage::FAILED))
+        {
+            hall_calibrated_ = false;
+            hall_calibrate_status_ = 0;
+            hall_switch_elapsed_ = 0.0;
+            hall_switch_stage_ = HallSwitchStage::WAIT_H_MODE;
+
+            LOG_INFO << "HALL_MODE_SWITCH stage=H start";
+        }
+
+        if (hall_switch_stage_ == HallSwitchStage::FAILED)
+        {
+            return false;
+        }
+
+        std::vector<size_t> motor_indices;
+        const char* stage_name = "unknown";
+
+        if (hall_switch_stage_ == HallSwitchStage::WAIT_H_MODE)
+        {
+            motor_indices = {2};
+            stage_name = "H";
+        }
+        else if (hall_switch_stage_ == HallSwitchStage::WAIT_RL_MODE)
+        {
+            motor_indices = {0, 1};
+            stage_name = "RL";
+        }
+        else if (hall_switch_stage_ == HallSwitchStage::WAIT_MOTOR_MODE)
+        {
+            stage_name = "MOTOR";
+            for (auto& mod : modules_list_)
             {
-                mode_switched_cnt = 0;
+                if (mod.enable_)
+                {
+                    for (size_t i = 0; i < mod.getMotorCount(); i++)
+                    {
+                        motor_indices.push_back(i);
+                    }
+                    break;
+                }
+            }
+        }
+
+        mode_switched_cnt = 0;
+
+        for (auto& mod : modules_list_)
+        {
+            if (!mod.enable_)
+            {
+                continue;
+            }
+
+            if (hall_switch_stage_ == HallSwitchStage::WAIT_MOTOR_MODE)
+            {
+                mod.setMode(FunctionMode::MOTOR);
+            }
+            else
+            {
+                for (size_t motor_index : motor_indices)
+                {
+                    if (motor_index < mod.getMotorCount())
+                    {
+                        mod.setMotorMode(
+                            motor_index,
+                            FunctionMode::HALL_CALIBRATE);
+                    }
+                }
+            }
+
+            mod.sendCommands();
+            mod.receiveFeedback();
+
+            bool selected_motors_switched = true;
+
+            for (size_t motor_index : motor_indices)
+            {
+                CANMotor* motor = mod.getMotor(motor_index);
+
+                if (!motor)
+                {
+                    selected_motors_switched = false;
+                    break;
+                }
+
+                motor->decodeBasedOnMode();
+
+                // During HALL_CALIBRATE, firmware reports MOTOR mode.
+                if (motor->getModeState() !=
+                    static_cast<uint8_t>(FunctionMode::MOTOR))
+                {
+                    selected_motors_switched = false;
+                    break;
+                }
+            }
+
+            if (selected_motors_switched)
+            {
+                mode_switched_cnt++;
+            }
+        }
+
+        if (mode_switched_cnt == module_enabled)
+        {
+            if (hall_switch_stage_ == HallSwitchStage::WAIT_H_MODE)
+            {
+                hall_switch_stage_ = HallSwitchStage::WAIT_RL_MODE;
+                hall_switch_elapsed_ = 0.0;
+                LOG_INFO << "HALL_MODE_SWITCH stage=H complete; "
+                            "stage=RL start";
+            }
+            else if (hall_switch_stage_ == HallSwitchStage::WAIT_RL_MODE)
+            {
+                current_mode_ = FunctionMode::HALL_CALIBRATE;
+                hall_switch_stage_ = HallSwitchStage::NONE;
+                hall_switch_elapsed_ = 0.0;
+
+                LOG_INFO << "HALL_MODE_SWITCH stage=RL complete; "
+                            "current_mode=HALL_CALIBRATE";
 
                 for (auto& mod : modules_list_)
                 {
-                    if (!mod.enable_) continue;
-
-                    for (size_t motor_index : motor_indices)
+                    if (mod.enable_)
                     {
-                        if (motor_index < mod.getMotorCount())
-                        {
-                            mod.setMotorMode(motor_index, next_mode_switch);
-                        }
-                    }
-
-                    mod.sendCommands();
-                    mod.receiveFeedback();
-
-                    bool selected_motors_switched = true;
-                    for (size_t motor_index : motor_indices)
-                    {
-                        CANMotor* motor = mod.getMotor(motor_index);
-                        if (!motor)
-                        {
-                            LOG_ERROR << "HALL_CALIBRATE: motor index " << motor_index << " is null";
-                            selected_motors_switched = false;
-                            break;
-                        }
-
-                        motor->decodeBasedOnMode();
-                        if (motor->getModeState() != (uint8_t)FunctionMode::MOTOR)  // During HALL_CALIBRATE, motor should report MOTOR mode state
-                        {
-                            selected_motors_switched = false;
-                            break;
-                        }
-                    }
-
-                    if (selected_motors_switched)
-                    {
-                        mode_switched_cnt++;
+                        mod.setMode(FunctionMode::CONFIG);
+                        mod.setConfigSubMode(
+                            ConfigSubMode::REQUEST_STATE);
                     }
                 }
-
-                if (mode_switched_cnt == module_enabled)
-                {
-                    return true;
-                }
-
-                if (robot_fsm_ && robot_fsm_->checkEStop())
-                {
-                    LOG_ERROR << "HALL_CALIBRATE: Emergency stop detected, aborting mode switch";
-                    return false;
-                }
-
-                if (time_elapsed > 30)
-                {
-                    LOG_ERROR << "HALL_CALIBRATE: timeout — only " << mode_switched_cnt
-                              << "/" << module_enabled << " modules switched";
-                    size_t mod_idx = 0;
-                    for (auto& mod : modules_list_)
-                    {
-                        if (!mod.enable_) { mod_idx++; continue; }
-                        for (size_t motor_index : motor_indices)
-                        {
-                            CANMotor* motor = mod.getMotor(motor_index);
-                            if (motor)
-                            {
-                                const uint8_t* feedback_raw = motor->getFeedbackRaw();
-                                const uint8_t raw_state = feedback_raw[7] & 0x0F;
-                                LOG_ERROR << "  module[" << mod_idx << "] motor[" << motor_index
-                                          << "] mode_state=" << (int)motor->getModeState()
-                                          << ", raw_state=" << (int)raw_state
-                                          << " (expected " << (int)next_mode_switch << ")";
-                            }
-                            else
-                            {
-                                LOG_ERROR << "  module[" << mod_idx << "] motor[" << motor_index << "] is null";
-                            }
-                        }
-                        mod_idx++;
-                    }
-                    return false;
-                }
-
-                time_elapsed += 0.01;
-                usleep(1e4);
             }
-        };
+            else if (hall_switch_stage_ == HallSwitchStage::WAIT_MOTOR_MODE)
+            {
+                current_mode_ = FunctionMode::MOTOR;
+                hall_switch_stage_ = HallSwitchStage::NONE;
+                hall_switch_elapsed_ = 0.0;
 
-        success = switch_hall_stage({2});
-        if (success) {
-            success = switch_hall_stage({0, 1});
+                LOG_INFO << "HALL_MODE_SWITCH stage=MOTOR complete; "
+                            "current_mode=MOTOR";
+
+                for (auto& mod : modules_list_)
+                {
+                    if (mod.enable_)
+                    {
+                        mod.setMode(FunctionMode::CONTROL);
+                    }
+                }
+            }
+
+            return true;
         }
-        // success = switch_hall_stage({0, 1});
-        if (success)
+
+        if (robot_fsm_ && robot_fsm_->checkEStop())
         {
-            current_mode_ = next_mode_switch;
+            LOG_ERROR << "HALL_MODE_SWITCH stage=" << stage_name
+                      << " aborted by emergency stop";
+            hall_switch_stage_ = HallSwitchStage::FAILED;
+            return false;
         }
+
+        hall_switch_elapsed_ += dt_;
+        const double timeout_sec =
+            hall_switch_stage_ == HallSwitchStage::WAIT_MOTOR_MODE
+                ? 3.0
+                : 30.0;
+
+        if (hall_switch_elapsed_ > timeout_sec)
+        {
+            LOG_ERROR << "HALL_MODE_SWITCH stage=" << stage_name
+                      << " timeout; modules_ready=" << mode_switched_cnt
+                      << "/" << module_enabled;
+
+            size_t mod_idx = 0;
+            for (auto& mod : modules_list_)
+            {
+                if (!mod.enable_)
+                {
+                    mod_idx++;
+                    continue;
+                }
+
+                for (size_t motor_index : motor_indices)
+                {
+                    CANMotor* motor = mod.getMotor(motor_index);
+                    if (motor)
+                    {
+                        const uint8_t* feedback_raw =
+                            motor->getFeedbackRaw();
+                        const uint8_t raw_state = feedback_raw[7] & 0x0F;
+
+                        LOG_ERROR << "  stage=" << stage_name
+                                  << " module[" << mod_idx << "] motor["
+                                  << motor_index << "] mode_state="
+                                  << static_cast<int>(motor->getModeState())
+                                  << ", hall_cal_state="
+                                  << static_cast<int>(motor->getHallCalibrateState())
+                                  << ", raw_state="
+                                  << static_cast<int>(raw_state);
+                    }
+                    else
+                    {
+                        LOG_ERROR << "  stage=" << stage_name
+                                  << " module[" << mod_idx << "] motor["
+                                  << motor_index << "] is null";
+                    }
+                }
+                mod_idx++;
+            }
+
+            hall_switch_stage_ = HallSwitchStage::FAILED;
+            return false;
+        }
+
+        // Still waiting. The next main loop will call switchMode() again.
+        return true;
     }
     else
     {

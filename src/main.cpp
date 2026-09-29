@@ -1,4 +1,5 @@
 #include "main.hpp"
+#include <chrono>
 
 /* TCP node connection setup*/
 std::atomic<int> motor_message_updated{0};
@@ -215,6 +216,8 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
                       core::Publisher<robot_msg::RobotStateStamped>& robot_state_pub_,
                       core::Subscriber<robot_msg::RobotCmdStamped>& robot_cmd_sub_)
 {
+    const auto main_loop_start = std::chrono::steady_clock::now();
+
     fpga_.write_powerboard_(&powerboard1_state_, &powerboard2_state_);
     fpga_.read_powerboard_data_();
 
@@ -266,6 +269,19 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
     state_pb_pub_.publish(power_fb_msg);
     robot_state_pub_.publish(robot_fb_msg);
     seq++;
+
+    const auto main_loop_elapsed_us =
+        std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::steady_clock::now() - main_loop_start)
+            .count();
+
+    // A multi-millisecond main-loop duration indicates that telemetry may be delayed.
+    if (main_loop_elapsed_us > 5000)
+    {
+        LOG_WARN << "[MainLoop] execution_time_us="
+                 << main_loop_elapsed_us
+                 << ", power_seq=" << seq;
+    }
 }
 
 void Corgi::canLoop_()
@@ -494,6 +510,5 @@ void inthand(int signum)
     // Only set atomic flag in signal handler (async-signal-safe)
     shutdown_requested = true;
 }
-
 
 

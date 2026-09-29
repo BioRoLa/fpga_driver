@@ -17,6 +17,15 @@
 // Forward declaration
 class RobotFSM;
 
+enum class HallSwitchStage
+{
+  NONE,
+  WAIT_H_MODE,
+  WAIT_RL_MODE,
+  WAIT_MOTOR_MODE,
+  FAILED
+};
+
 class MotorFSM
 {
 public:
@@ -32,6 +41,7 @@ public:
   FunctionMode getCurrentMode() const { return current_mode_; }
   bool isHallCalibrated() const { return hall_calibrated_; }
   int getCalibrationStatus() const { return hall_calibrate_status_; }
+  HallSwitchStage getHallSwitchStage() const { return hall_switch_stage_; }
   
   // Setters for external dependencies
   void setTimeoutErrorFlags(bool* no_can_error, bool* no_switch_error) {
@@ -59,6 +69,8 @@ private:
   // Calibration state
   bool hall_calibrated_;
   int hall_calibrate_status_;
+  HallSwitchStage hall_switch_stage_ = HallSwitchStage::NONE;
+  double hall_switch_elapsed_ = 0.0;
   int measure_offset_ = 0;
   
   // Control parameters
