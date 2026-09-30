@@ -112,7 +112,8 @@ void MotorFSM::handleHallCalibrateMode()
     int module_enabled = 0;
     int total_motors = 0;
     
-    // Set all motor command to zero initially
+    // Count enabled modules and motors. Each calibration stage owns its
+    // command encoding so a state-request packet is not reused as control data.
     for (auto& mod : modules_list_)
     {
         if (mod.enable_)
@@ -121,13 +122,11 @@ void MotorFSM::handleHallCalibrateMode()
             {
                 CANMotor* motor = mod.getMotor(j);
                 if (motor) {
-                    motor->setCommand(0, 0, 0, 0, 0);
                     total_motors++;
                 }
             }
             CANMotor* motorH = mod.getMotor(2);
             if(motorH) {
-                motorH->setCommand(0, 0, 5, 0, 1);
                 total_motors++;
             }
             module_enabled++;
@@ -223,6 +222,7 @@ void MotorFSM::handleHallCalibrateMode()
                     // For the H motor, dont need to move to calibration position
                     CANMotor* motorH = mod.getMotor(2);
                     if(motorH) {
+                        motorH->setCommand(0, 0, 50, 0, 1.5);
                         finish_cnt++;
                     }
                     // For the R and L motor, need to move to the calibration position additionally
@@ -235,16 +235,19 @@ void MotorFSM::handleHallCalibrateMode()
 
                         if (fabs(errj) < cal_tol_)
                         {
-                            motor->setCommand(0, 0, 0, 0, 0);
+                            motor->setCommand(0, 0, 50, 0, 1.5);
                             finish_cnt++;
                         }
                         else
                         {
-                            mod.setMode(FunctionMode::CONTROL);
                             cal_command[mod_index][j] += cal_dir_[mod_index][j] * cal_vel_ * dt_;
                             motor->setCommand(cal_command[mod_index][j], 0, 50, 0, 1.5);
                         }
                     }
+
+                    // All motor-control payloads must be encoded before FC=5
+                    // is written for this module.
+                    mod.setMode(FunctionMode::CONTROL);
                 }
                 mod_index++;
             }
