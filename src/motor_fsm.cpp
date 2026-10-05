@@ -426,15 +426,26 @@ void MotorFSM::handleMotorMode(const motor_msg::MotorCmdStamped& motor_cmd_msg)
                 
                 if (motorR && motorL && motorH)
                 {
-                    // Convert torque using kt (torque constant)
-                    float torque_r_motor = torque_r / motorR->getConfig().kt_;
-                    float torque_l_motor = torque_l / motorL->getConfig().kt_;
-                    float torque_h_motor = torque_h / motorH->getConfig().kt_;
-                    
+                    const float kt_r = motorR->getConfig().kt_;
+                    const float kt_l = motorL->getConfig().kt_;
+                    const float kt_h = motorH->getConfig().kt_;
+
+                    // kt_ = true torque / firmware torque (the boards all
+                    // carry the default KT; the real motors make ~2.1x it).
+                    // It scales everything the firmware turns into current --
+                    // the feedforward AND kp*err, ki*int, kd*vel -- so the
+                    // gains are divided by it too. Then the delivered joint
+                    // torque, stiffness and damping all equal the commanded
+                    // ones, as in sim. (Before, the gains went through raw and
+                    // the motor applied kt_ x the commanded gain.)
+                    float torque_r_motor = torque_r / kt_r;
+                    float torque_l_motor = torque_l / kt_l;
+                    float torque_h_motor = torque_h / kt_h;
+
                     // Set commands (setCommand internally calls encodeControl)
-                    motorR->setCommand(phi_cmd[0], torque_r_motor, kp_r, ki_r, kd_r);
-                    motorL->setCommand(phi_cmd[1], torque_l_motor, kp_l, ki_l, kd_l);
-                    motorH->setCommand(gamma, torque_h_motor, kp_h, ki_h, kd_h);
+                    motorR->setCommand(phi_cmd[0], torque_r_motor, kp_r / kt_r, ki_r / kt_r, kd_r / kt_r);
+                    motorL->setCommand(phi_cmd[1], torque_l_motor, kp_l / kt_l, ki_l / kt_l, kd_l / kt_l);
+                    motorH->setCommand(gamma, torque_h_motor, kp_h / kt_h, ki_h / kt_h, kd_h / kt_h);
                 }
 
             }

@@ -14,6 +14,12 @@ Measure_offset: 0
 Hall_calibration_vel: 0.5
 Hall_calibration_tol: 0.005
 
+# KT (per motor, below) = true torque / firmware torque: the motor boards all
+# carry the default KT 0.08 N.m/A and the real motors make ~2.1x that. The
+# driver divides the gRPC torque AND kp/ki/kd by it, so delivered joint
+# torque, stiffness and damping equal the commanded values (as in sim).
+# NOTE: every Motor_H KT is still an unmeasured copy of LF Motor_L (2.148).
+
 # MOD A Bias represented in radian
 LF_Module:
   Enable: 1
