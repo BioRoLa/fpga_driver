@@ -1,4 +1,6 @@
 #include "can_motor.hpp"
+#include "Logger.h"
+#include <cmath>
 
 CANMotor::CANMotor(uint32_t can_id, const Motor& motor_config)
     : can_id_(can_id)
@@ -35,13 +37,39 @@ void CANMotor::setCommand(float position, float torque, float kp, float ki, floa
     encodeMotorControl();
 }
 
+// Saturate a value into [x_min, x_max] before it is packed into a 12-bit
+// field. Unclamped, kp=600 wrapped to ~100, a negative kp packed as ~499,
+// and an out-of-range ki/torque spilled its high bits into the low nibble
+// of kp/kd. NaN maps to x_min (zero gain). Position is deliberately NOT
+// routed through here: it relies on the 16-bit wrap to stay modulo 2*pi.
+static float saturate(float x, float x_min, float x_max, bool& clipped)
+{
+    if (std::isnan(x)) { clipped = true; return x_min; }
+    if (x < x_min)     { clipped = true; return x_min; }
+    if (x > x_max)     { clipped = true; return x_max; }
+    return x;
+}
+
 void CANMotor::encodeMotorControl()
 {
+    bool clipped = false;
+    float kp = saturate(control_data_.kp, KP_MIN, KP_MAX, clipped);
+    float ki = saturate(control_data_.ki, KI_MIN, KI_MAX, clipped);
+    float kd = saturate(control_data_.kd, KD_MIN, KD_MAX, clipped);
+    float torque = saturate(-control_data_.torque, T_MIN, T_MAX, clipped);
+    static int clip_count = 0;  // warn on the first clip, then every 1000th (1 s at 1 kHz)
+    if (clipped && clip_count++ % 1000 == 0) {
+        LOG_WARN << "[CANMotor 0x" << std::hex << can_id_ << std::dec
+                 << "] command out of range, saturated: kp=" << control_data_.kp
+                 << " ki=" << control_data_.ki << " kd=" << control_data_.kd
+                 << " torque=" << control_data_.torque;
+    }
+
     int pos_int = float_to_uint(-(control_data_.position + position_bias_), P_CMD_MIN, P_CMD_MAX, 16); // Negate to match system coordinate convention
-    int kp_int = float_to_uint(control_data_.kp, KP_MIN, KP_MAX, 12);
-    int ki_int = float_to_uint(control_data_.ki, KI_MIN, KI_MAX, 12);
-    int kd_int = float_to_uint(control_data_.kd, KD_MIN, KD_MAX, 12);
-    int torque_int = float_to_uint(-control_data_.torque, T_MIN, T_MAX, 12);
+    int kp_int = float_to_uint(kp, KP_MIN, KP_MAX, 12);
+    int ki_int = float_to_uint(ki, KI_MIN, KI_MAX, 12);
+    int kd_int = float_to_uint(kd, KD_MIN, KD_MAX, 12);
+    int torque_int = float_to_uint(torque, T_MIN, T_MAX, 12);
     
     command_data_raw[0] = pos_int >> 8;
     command_data_raw[1] = pos_int & 0xFF;
