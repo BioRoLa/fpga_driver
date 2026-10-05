@@ -12,8 +12,8 @@ RobotFSM::RobotFSM(MotorFSM& motor_fsm, std::vector<LegModule>& modules_list,
     , powerboard2_state_(powerboard2_state)
     , powerboard1_voltage_(powerboard1_voltage)
     , powerboard2_voltage_(powerboard2_voltage)
-    , current_mode_(RobotMode::SystemOn)
-    , previous_mode_(RobotMode::SystemOn)
+    , current_mode_(RobotMode::Uninitialized)
+    , previous_mode_(RobotMode::Uninitialized)
     , has_can_error_(false)
     , has_switch_error_(false)
     , loop_period_us_(500)  // Default 500us
@@ -23,17 +23,17 @@ RobotFSM::RobotFSM(MotorFSM& motor_fsm, std::vector<LegModule>& modules_list,
     , config_step_(0)
     , config_counter_(0)
 {
-    LOG_INFO << "Initialized in SystemOn mode";
+    LOG_INFO << "Starting in Uninitialized mode";
 }
 
 const char* RobotFSM::modeToString(RobotMode mode) const
 {
     switch (mode) {
-        case RobotMode::SystemOn:    return "SystemOn";
+        case RobotMode::Uninitialized:    return "Uninitialized";
         case RobotMode::Init:        return "Init";
         case RobotMode::IDLE:        return "IDLE";
-        case RobotMode::Standby:     return "Standby";
-        case RobotMode::MotorConfig: return "MotorConfig";
+        case RobotMode::Active:     return "Active";
+        case RobotMode::Config: return "Config";
         default:                     return "Unknown";
     }
 }
@@ -51,8 +51,8 @@ void RobotFSM::runFsm()
     // Execute behavior for current mode
     switch (current_mode_)
     {
-        case RobotMode::SystemOn:
-            handleSystemOn();
+        case RobotMode::Uninitialized:
+            handleUninitialized();
             break;
             
         case RobotMode::Init:
@@ -63,12 +63,12 @@ void RobotFSM::runFsm()
             handleIdle();
             break;
             
-        case RobotMode::Standby:
-            handleStandby();
+        case RobotMode::Active:
+            handleActive();
             break;
             
-        case RobotMode::MotorConfig:
-            handleMotorConfig();
+        case RobotMode::Config:
+            handleConfig();
             break;
             
         default:
@@ -86,10 +86,10 @@ bool RobotFSM::requestModeTransition(RobotMode next_mode)
         return true;
     }
     
-    // Special case: SystemOn -> IDLE request will go through Init first
-    if (current_mode_ == RobotMode::SystemOn && next_mode == RobotMode::IDLE)
+    // Special case: Uninitialized -> IDLE request will go through Init first
+    if (current_mode_ == RobotMode::Uninitialized && next_mode == RobotMode::IDLE)
     {
-        LOG_INFO << "SystemOn -> IDLE requested, going through Init first";
+        LOG_INFO << "Uninitialized -> IDLE requested, going through Init first";
         exitMode(current_mode_);
         previous_mode_ = current_mode_;
         current_mode_ = RobotMode::Init;
@@ -113,9 +113,9 @@ bool RobotFSM::requestModeTransition(RobotMode next_mode)
     return true;
 }
 
-void RobotFSM::handleSystemOn()
+void RobotFSM::handleUninitialized()
 {
-    // SystemOn: Safe state
+    // Uninitialized: Safe state
     // Ensure motors are in REST mode and power is OFF
     
     // Ensure all motors are in REST mode
@@ -275,7 +275,7 @@ void RobotFSM::handleInit()
         // Check EStop first: EStop cuts power to motors, causing timeout.
         if (checkEStop())
         {
-            LOG_ERROR << "Emergency stop detected in Init, returning to SystemOn";
+            LOG_ERROR << "Emergency stop detected in Init, returning to Uninitialized";
             emergencyStop();
             return;
         }
@@ -314,23 +314,23 @@ void RobotFSM::handleIdle()
     // Check for emergency stop
     if (checkEStop())
     {
-        LOG_ERROR << "Emergency stop detected in IDLE, returning to SystemOn";
+        LOG_ERROR << "Emergency stop detected in IDLE, returning to Uninitialized";
         emergencyStop();
         return;
     }
     
-    // Check for errors - if errors detected, go back to SystemOn
+    // Check for errors - if errors detected, go back to Uninitialized
     // Use LOG_CHANGED to only log when error state changes (not every loop)
     if (has_can_error_ || has_switch_error_)
     {
-        LOG_ERROR_ONCE << "Error detected in IDLE, returning to SystemOn";
-        requestModeTransition(RobotMode::SystemOn);
+        LOG_ERROR_ONCE << "Error detected in IDLE, returning to Uninitialized";
+        requestModeTransition(RobotMode::Uninitialized);
     }
 }
 
-void RobotFSM::handleStandby()
+void RobotFSM::handleActive()
 {
-    // Standby: Ready for active control
+    // Active: Ready for active control
     // Motors should be in MOTOR mode (torque control enabled)
     
     if (motor_fsm_.getCurrentMode() != FunctionMode::MOTOR)
@@ -341,7 +341,7 @@ void RobotFSM::handleStandby()
     // Check for emergency stop
     if (checkEStop())
     {
-        LOG_ERROR << "Emergency stop detected in Standby, returning to SystemOn";
+        LOG_ERROR << "Emergency stop detected in Active, returning to Uninitialized";
         emergencyStop();
         return;
     }
@@ -349,14 +349,14 @@ void RobotFSM::handleStandby()
     // Check for errors - only log when error state changes
     if (has_can_error_ || has_switch_error_)
     {
-        LOG_ERROR_ONCE << "Error detected in Standby, returning to IDLE";
+        LOG_ERROR_ONCE << "Error detected in Active, returning to IDLE";
         requestModeTransition(RobotMode::IDLE);
     }
 }
 
-void RobotFSM::handleMotorConfig()
+void RobotFSM::handleConfig()
 {
-    // MotorConfig: Motor configuration
+    // Config: Motor configuration
     // Steps:
     // 0-2. Power switch sequence (digital -> signal -> power)
     // 3. Wait for motors to boot after power is applied
@@ -404,7 +404,7 @@ void RobotFSM::handleMotorConfig()
     {
         if (checkEStop())
         {
-            LOG_ERROR << "Emergency stop detected in MotorConfig, returning to SystemOn";
+            LOG_ERROR << "Emergency stop detected in Config, returning to Uninitialized";
             emergencyStop();
             return;
         }
@@ -418,24 +418,24 @@ bool RobotFSM::isTransitionAllowed(RobotMode from, RobotMode to) const
     
     switch (from)
     {
-        case RobotMode::SystemOn:
+        case RobotMode::Uninitialized:
             return (to == RobotMode::Init ||
-                    to == RobotMode::MotorConfig);
+                    to == RobotMode::Config);
             
         case RobotMode::Init:
-            return (to == RobotMode::SystemOn);
+            return (to == RobotMode::Uninitialized);
             
         case RobotMode::IDLE:
-            return (to == RobotMode::Standby || 
-                    to == RobotMode::MotorConfig || 
-                    to == RobotMode::SystemOn);
+            return (to == RobotMode::Active || 
+                    to == RobotMode::Config || 
+                    to == RobotMode::Uninitialized);
             
-        case RobotMode::Standby:
+        case RobotMode::Active:
             return (to == RobotMode::IDLE ||
-                    to == RobotMode::SystemOn);
+                    to == RobotMode::Uninitialized);
             
-        case RobotMode::MotorConfig:
-            return (to == RobotMode::SystemOn);
+        case RobotMode::Config:
+            return (to == RobotMode::Uninitialized);
             
         default:
             return false;
@@ -455,7 +455,7 @@ void RobotFSM::enterMode(RobotMode new_mode)
             hall_calibrate_requested_ = false;
             break;
             
-        case RobotMode::MotorConfig:
+        case RobotMode::Config:
             config_step_ = 0;
             config_counter_ = 0;
             break;
@@ -477,8 +477,8 @@ void RobotFSM::emergencyStop()
 {
     LOG_FATAL << "EMERGENCY STOP!";
     
-    // Force transition to SystemOn (safe state)
-    requestModeTransition(RobotMode::SystemOn);
+    // Force transition to Uninitialized (safe state)
+    requestModeTransition(RobotMode::Uninitialized);
     
     // Stop all motors
     motor_fsm_.switchMode(FunctionMode::REST);
@@ -575,12 +575,12 @@ bool RobotFSM::shouldUpdateTimeoutDebounce() const
         return init_step_ >= 4;
     }
 
-    if (current_mode_ == RobotMode::MotorConfig)
+    if (current_mode_ == RobotMode::Config)
     {
         return config_step_ >= 4;
     }
 
-    return current_mode_ == RobotMode::IDLE || current_mode_ == RobotMode::Standby;
+    return current_mode_ == RobotMode::IDLE || current_mode_ == RobotMode::Active;
 }
 
 bool RobotFSM::checkEStop()

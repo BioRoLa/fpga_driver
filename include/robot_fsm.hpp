@@ -11,7 +11,7 @@
 /**
  * @brief Robot-level Finite State Machine
  * 
- * Manages high-level robot states (SystemOn, Init, IDLE, Standby, MotorConfig)
+ * Manages high-level robot states (Uninitialized, Init, IDLE, Active, Config)
  * and coordinates lower-level MotorFSM for all leg modules.
  */
 class RobotFSM
@@ -72,11 +72,11 @@ private:
     int config_counter_;
     
     // Private state handler methods
-    void handleSystemOn();
+    void handleUninitialized();
     void handleInit();
     void handleIdle();
-    void handleStandby();
-    void handleMotorConfig();
+    void handleActive();
+    void handleConfig();
     
     // Transition validation
     bool isTransitionAllowed(RobotMode from, RobotMode to) const;

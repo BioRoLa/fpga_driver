@@ -291,7 +291,7 @@ void MotorFSM::handleMotorMode(const motor_msg::MotorCmdStamped& motor_cmd_msg)
         if (robot_fsm_ != nullptr)
         {
             RobotMode robot_mode = robot_fsm_->getCurrentMode();
-            if (robot_mode == RobotMode::Standby)
+            if (robot_mode == RobotMode::Active)
             {
                 if (motor_message_updated == 1)
                 {
@@ -309,7 +309,7 @@ void MotorFSM::handleMotorMode(const motor_msg::MotorCmdStamped& motor_cmd_msg)
                 Eigen::Vector2d tb_cmd;
                 float gamma, torque_r, torque_l, torque_h, kp_r, kp_l, kp_h, ki_r, ki_l, ki_h, kd_r, kd_l, kd_h;
                 
-                // Only update from gRPC if in Standby or other active modes
+                // Only update from gRPC if in Active or other active modes
                 if (accept_grpc_commands)
                 {
                 

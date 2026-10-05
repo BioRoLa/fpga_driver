@@ -68,7 +68,7 @@ void Console::refreshWindow()
 
         p_power_.infoDisplay(fpga_, powerboard1_state_->at(0), powerboard1_state_->at(1), powerboard1_state_->at(2), powerboard2_state_->at(0), powerboard2_state_->at(1), powerboard2_state_->at(2));
         p_robot_.infoDisplay(robot_fsm_->getCurrentMode());
-        if(robot_fsm_->getCurrentMode() == RobotMode::MotorConfig)
+        if(robot_fsm_->getCurrentMode() == RobotMode::Config)
         {
             p_config_B_.infoDisplayConfig();
         }
@@ -209,17 +209,17 @@ void InputPanel::commandDecode(string buf)
                 {
                     switchFSM_success = robot_fsm_->requestModeTransition(RobotMode::IDLE);
                 }
-                else if (bufs[2] == "S")  // Standby
+                else if (bufs[2] == "S" || bufs[2] == "A")  // Active (S kept from Standby)
                 {
-                    switchFSM_success = robot_fsm_->requestModeTransition(RobotMode::Standby);
+                    switchFSM_success = robot_fsm_->requestModeTransition(RobotMode::Active);
                 }
-                else if (bufs[2] == "C")  // MotorConfig
+                else if (bufs[2] == "C")  // Config
                 {
-                    switchFSM_success = robot_fsm_->requestModeTransition(RobotMode::MotorConfig);
+                    switchFSM_success = robot_fsm_->requestModeTransition(RobotMode::Config);
                 }
-                else if (bufs[2] == "O")  // SystemOn (safe state)
+                else if (bufs[2] == "O" || bufs[2] == "U")  // Uninitialized (O kept from SystemOn)
                 {
-                    switchFSM_success = robot_fsm_->requestModeTransition(RobotMode::SystemOn);
+                    switchFSM_success = robot_fsm_->requestModeTransition(RobotMode::Uninitialized);
                 }
                 else
                 {
@@ -437,16 +437,16 @@ void Panel::infoDisplay(RobotMode robot_mode)
 {
     // Display current Robot FSM mode
     mvwprintw(win_, 1, 1, "Current Robot FSM Mode:");
-    if (robot_mode == RobotMode::SystemOn)
-        mvwprintw(win_, 2, 1, "  [O] SystemOn (Safe State)");
+    if (robot_mode == RobotMode::Uninitialized)
+        mvwprintw(win_, 2, 1, "  [O] Uninitialized (motors off)");
     else if (robot_mode == RobotMode::Init)
-        mvwprintw(win_, 2, 1, "  [I] Init (Initializing)  ");
+        mvwprintw(win_, 2, 1, "  [I] Init (Initializing)        ");
     else if (robot_mode == RobotMode::IDLE)
-        mvwprintw(win_, 2, 1, "  [D] IDLE (Ready)         ");
-    else if (robot_mode == RobotMode::Standby)
-        mvwprintw(win_, 2, 1, "  [S] Standby (Active)     ");
-    else if (robot_mode == RobotMode::MotorConfig)
-        mvwprintw(win_, 2, 1, "  [C] MotorConfig          ");
+        mvwprintw(win_, 2, 1, "  [D] IDLE (Ready)               ");
+    else if (robot_mode == RobotMode::Active)
+        mvwprintw(win_, 2, 1, "  [S] Active (commands enabled)  ");
+    else if (robot_mode == RobotMode::Config)
+        mvwprintw(win_, 2, 1, "  [C] Config                     ");
     
     // Display allowed transitions based on current mode
     mvwprintw(win_, 4, 1, "Allowed Transitions:");
@@ -456,28 +456,29 @@ void Panel::infoDisplay(RobotMode robot_mode)
     mvwprintw(win_, 6, 1, "                                        ");
     mvwprintw(win_, 7, 1, "                                        ");
     
-    if (robot_mode == RobotMode::SystemOn)
+    if (robot_mode == RobotMode::Uninitialized)
     {
         mvwprintw(win_, 5, 1, "  :R M I  -> Init");
-        mvwprintw(win_, 6, 1, "  :R M C  -> MotorConfig");
+        mvwprintw(win_, 6, 1, "  :R M C  -> Config");
     }
     else if (robot_mode == RobotMode::Init)
     {
-        mvwprintw(win_, 6, 1, "  :R M O  -> SystemOn");
+        mvwprintw(win_, 6, 1, "  :R M O  -> Uninitialized");
     }
     else if (robot_mode == RobotMode::IDLE)
     {
-        mvwprintw(win_, 5, 1, "  :R M S  -> Standby");
-        mvwprintw(win_, 6, 1, "  :R M C  -> MotorConfig");
-        mvwprintw(win_, 7, 1, "  :R M O  -> SystemOn");
+        mvwprintw(win_, 5, 1, "  :R M S  -> Active");
+        mvwprintw(win_, 6, 1, "  :R M C  -> Config");
+        mvwprintw(win_, 7, 1, "  :R M O  -> Uninitialized");
     }
-    else if (robot_mode == RobotMode::Standby)
+    else if (robot_mode == RobotMode::Active)
     {
         mvwprintw(win_, 5, 1, "  :R M D  -> IDLE");
+        mvwprintw(win_, 6, 1, "  :R M O  -> Uninitialized");
     }
-    else if (robot_mode == RobotMode::MotorConfig)
+    else if (robot_mode == RobotMode::Config)
     {
-        mvwprintw(win_, 5, 1, "  :R M O  -> SystemOn");
+        mvwprintw(win_, 5, 1, "  :R M O  -> Uninitialized");
     }
     
     mvwprintw(win_, 9, 1, "Emergency Stop: :R E S");

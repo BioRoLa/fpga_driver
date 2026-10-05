@@ -189,7 +189,7 @@ void Corgi::interruptHandler(core::Publisher<power_msg::PowerStateStamped>& stat
             }
             if (irqsAsserted & NiFpga_Irq_1)
             {
-                if (robot_fsm_.getCurrentMode() != RobotMode::MotorConfig)
+                if (robot_fsm_.getCurrentMode() != RobotMode::Config)
                 {
                     /* Handling CAN-BUS communication */
                     canLoop_();
@@ -247,7 +247,7 @@ void Corgi::mainLoop_(core::Publisher<power_msg::PowerStateStamped>& state_pb_pu
         motor_message_updated = 0;
         HALL_CALIBRATED_ = motor_fsm_.isHallCalibrated();
 
-        if (robot_fsm_.getCurrentMode() == RobotMode::MotorConfig && motor_config_message_updated == 1) 
+        if (robot_fsm_.getCurrentMode() == RobotMode::Config && motor_config_message_updated == 1) 
         {
             config_pub_.publish(motor_config_reply);
         }
